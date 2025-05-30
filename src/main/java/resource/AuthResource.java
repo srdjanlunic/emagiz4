@@ -2,9 +2,13 @@ package resource;
 
 import service.AuthService;
 import model.User;
+import security.JWTUtil;
+import util.JsonUtil;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.HashMap;
+import java.util.Map;
 
 @Path("/auth")
 @Produces(MediaType.APPLICATION_JSON)
@@ -20,27 +24,82 @@ public class AuthResource {
     @POST
     @Path("/login")
     public Response login(LoginRequest loginRequest) {
-        // TODO: validate login credentials
-        // TODO: generate JWT token
-        // TODO: return token or error
-        return null;
+        try {
+            if (loginRequest.username == null || loginRequest.password == null) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(JsonUtil.toJson(Map.of("error", "Username and password are required")))
+                        .build();
+            }
+
+            User user = authService.authenticate(loginRequest.username, loginRequest.password);
+            if (user != null) {
+                String token = JWTUtil.generateToken(user);
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("token", token);
+                response.put("user", Map.of(
+                        "id", user.getId(),
+                        "username", user.getUsername(),
+                        "role", user.getRole().toString(),
+                        "departmentId", user.getDepartmentId()
+                ));
+
+                return Response.ok(JsonUtil.toJson(response)).build();
+            } else {
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(JsonUtil.toJson(Map.of("error", "Invalid credentials")))
+                        .build();
+            }
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(JsonUtil.toJson(Map.of("error", "Login failed: " + e.getMessage())))
+                    .build();
+        }
     }
 
     // logout endpoint
     @POST
     @Path("/logout")
     public Response logout() {
-        // TODO: implement logout logic
-        return null;
+        // For JWT, logout is handled client-side by removing the token
+        return Response.ok(JsonUtil.toJson(Map.of("message", "Logged out successfully"))).build();
     }
 
     // validate token endpoint
     @GET
     @Path("/validate")
     public Response validateToken(@HeaderParam("Authorization") String authHeader) {
-        // TODO: validate JWT token
-        // TODO: return user info or error
-        return null;
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(JsonUtil.toJson(Map.of("error", "Missing or invalid authorization header")))
+                        .build();
+            }
+
+            String token = authHeader.substring(7);
+            if (JWTUtil.validateToken(token)) {
+                String username = JWTUtil.getUsernameFromToken(token);
+                Long userId = JWTUtil.getUserIdFromToken(token);
+                String role = JWTUtil.getRoleFromToken(token);
+
+                Map<String, Object> response = Map.of(
+                        "valid", true,
+                        "username", username,
+                        "userId", userId,
+                        "role", role
+                );
+
+                return Response.ok(JsonUtil.toJson(response)).build();
+            } else {
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(JsonUtil.toJson(Map.of("error", "Invalid or expired token")))
+                        .build();
+            }
+        } catch (Exception e) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(JsonUtil.toJson(Map.of("error", "Token validation failed")))
+                    .build();
+        }
     }
 
     // inner class for login request
