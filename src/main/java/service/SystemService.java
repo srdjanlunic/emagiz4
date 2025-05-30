@@ -2,6 +2,7 @@ package service;
 
 import dao.SystemDAO;
 import model.ITSystem;
+import java.sql.Timestamp;
 import java.util.List;
 
 public class SystemService {
@@ -11,49 +12,73 @@ public class SystemService {
         this.systemDAO = new SystemDAO();
     }
 
-    // register new system (security officer only)
-    public ITSystem registerSystem(ITSystem system) {
-        // TODO: validate system data
-        // TODO: calculate risk score
-        // TODO: save to database
-        return null;
+    // Create new system with risk calculation
+    public ITSystem createSystem(ITSystem system) {
+        // Calculate risk score based on system properties
+        int riskScore = calculateRiskScore(system);
+        system.setRiskScore(riskScore);
+        system.setCreatedAt(new Timestamp(System.currentTimeMillis()));
+
+        return systemDAO.create(system);
     }
 
-    // get system by id
-    public ITSystem getSystemById(Long id) {
-        // TODO: get system from database
-        return null;
+    // Calculate risk score based on system properties
+    private int calculateRiskScore(ITSystem system) {
+        int score = 0;
+
+        // Internet facing adds risk
+        if (system.isInternetFacing()) {
+            score += 30;
+        }
+
+        // Data classification adds risk
+        String dataClass = system.getDataClassification();
+        if ("CONFIDENTIAL".equalsIgnoreCase(dataClass)) {
+            score += 40;
+        } else if ("SENSITIVE".equalsIgnoreCase(dataClass)) {
+            score += 25;
+        } else if ("INTERNAL".equalsIgnoreCase(dataClass)) {
+            score += 10;
+        }
+
+        // Criticality level adds risk
+        String criticality = system.getCriticalityLevel();
+        if ("HIGH".equalsIgnoreCase(criticality)) {
+            score += 30;
+        } else if ("MEDIUM".equalsIgnoreCase(criticality)) {
+            score += 20;
+        } else if ("LOW".equalsIgnoreCase(criticality)) {
+            score += 10;
+        }
+
+        return Math.min(score, 100); // Cap at 100
     }
 
-    // get all systems
     public List<ITSystem> getAllSystems() {
-        // TODO: get all systems from database
-        return null;
+        return systemDAO.findAll();
     }
 
-    // update system
+    public ITSystem getSystemById(Long id) {
+        return systemDAO.findById(id);
+    }
+
     public ITSystem updateSystem(ITSystem system) {
-        // TODO: validate system data
-        // TODO: recalculate risk score
-        // TODO: update in database
-        return null;
+        // Recalculate risk score on update
+        int riskScore = calculateRiskScore(system);
+        system.setRiskScore(riskScore);
+
+        return systemDAO.update(system);
     }
 
-    // delete system
     public boolean deleteSystem(Long id) {
-        // TODO: delete system from database
-        return false;
+        return systemDAO.delete(id);
     }
 
-    // get systems by owner
     public List<ITSystem> getSystemsByOwner(Long ownerId) {
-        // TODO: get systems from database
-        return null;
+        return systemDAO.findByOwner(ownerId);
     }
 
-    // calculate risk score for system
-    public int calculateRiskScore(ITSystem system) {
-        // TODO: implement risk calculation logic
-        return 0;
+    public List<ITSystem> getSystemsByDepartment(Long departmentId) {
+        return systemDAO.findByDepartment(departmentId);
     }
 }

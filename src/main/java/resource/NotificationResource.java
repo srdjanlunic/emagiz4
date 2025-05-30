@@ -2,10 +2,13 @@ package resource;
 
 import service.NotificationService;
 import model.Notification;
+import util.JsonUtil;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.annotation.security.RolesAllowed;
+import java.util.List;
+import java.util.Map;
 
 @Path("/notifications")
 @Produces(MediaType.APPLICATION_JSON)
@@ -17,34 +20,54 @@ public class NotificationResource {
         this.notificationService = new NotificationService();
     }
 
-    // get notifications for current user
+    // Get notifications for user
     @GET
+    @Path("/user/{userId}")
     @RolesAllowed({"system_owner", "security_officer", "technical_expert"})
-    public Response getNotifications() {
-        // TODO: get current user from JWT
-        // TODO: get notifications for user
-        // TODO: return notification list
-        return null;
+    public Response getNotificationsForUser(@PathParam("userId") Long userId) {
+        try {
+            List<Notification> notifications = notificationService.getNotificationsForUser(userId);
+            return Response.ok(JsonUtil.toJson(notifications)).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve notifications: " + e.getMessage())))
+                    .build();
+        }
     }
 
-    // get unread notifications for current user
+    // Get unread notifications for user
     @GET
-    @Path("/unread")
+    @Path("/user/{userId}/unread")
     @RolesAllowed({"system_owner", "security_officer", "technical_expert"})
-    public Response getUnreadNotifications() {
-        // TODO: get current user from JWT
-        // TODO: get unread notifications for user
-        // TODO: return notification list
-        return null;
+    public Response getUnreadNotificationsForUser(@PathParam("userId") Long userId) {
+        try {
+            List<Notification> notifications = notificationService.getUnreadNotificationsForUser(userId);
+            return Response.ok(JsonUtil.toJson(notifications)).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve unread notifications: " + e.getMessage())))
+                    .build();
+        }
     }
 
-    // mark notification as read
+    // Mark notification as read
     @PUT
     @Path("/{id}/read")
     @RolesAllowed({"system_owner", "security_officer", "technical_expert"})
-    public Response markNotificationAsRead(@PathParam("id") Long id) {
-        // TODO: mark notification as read
-        // TODO: return success or error
-        return null;
+    public Response markAsRead(@PathParam("id") Long id) {
+        try {
+            boolean success = notificationService.markNotificationAsRead(id);
+            if (success) {
+                return Response.ok(JsonUtil.toJson(Map.of("message", "Notification marked as read"))).build();
+            } else {
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity(JsonUtil.toJson(Map.of("error", "Notification not found")))
+                        .build();
+            }
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(JsonUtil.toJson(Map.of("error", "Failed to mark notification as read: " + e.getMessage())))
+                    .build();
+        }
     }
 }
