@@ -5,11 +5,11 @@ import { useAuthStore } from '../stores/auth'
 import DashboardLayout from '../layouts/DashboardLayout.vue'
 
 // Auth components
-import LoginPage from '../views/auth/LoginPage.vue'
-import RegisterPage from '../views/auth/RegisterPage.vue'
+import LoginPage from '../views/auth/Login.vue'
+import RegisterPage from '../views/auth/Register.vue'
 
 // Dashboard components
-import DashboardView from '../views/dashboard/DashboardView.vue'
+import DashboardView from '../views/Dashboard.vue'
 
 // Systems components
 import Systems from '../views/systems/Systems.vue'
@@ -24,7 +24,7 @@ import UserManagement from '../views/admin/UserManagement.vue'
 import Departments from '../views/admin/Departments.vue'
 
 // Notifications component
-import NotificationsView from '../views/notifications/NotificationsView.vue'
+import NotificationsView from '../views/Notifications.vue'
 
 const routes = [
   {
