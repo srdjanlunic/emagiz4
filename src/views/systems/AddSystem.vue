@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useSystemsStore } from '../../stores/systems';
 import { useAuthStore } from '../../stores/auth';
@@ -8,271 +8,202 @@ const router = useRouter();
 const systemsStore = useSystemsStore();
 const authStore = useAuthStore();
 
-const user = computed(() => authStore.user);
+const loading = ref(false);
+const error = ref(null);
 
-const system = ref({
+// Form data matching the API schema
+const formData = ref({
   name: '',
   description: '',
-  criticality: 'medium',
-  dataClassification: 'internal',
+  version: '',
+  vendor: '',
+  ownerId: null, // Will be set to current user if not admin
   internetFacing: false,
-  ownerId: user.value?.id,
-  operatingSystem: '',
-  hostName: '',
-  ipAddress: '',
-  location: '',
-  contacts: '',
-  notes: ''
+  dataClassification: 'PUBLIC',
+  criticalityLevel: 'LOW'
 });
 
-const errors = ref({});
-const loading = ref(false);
+// Options for dropdowns
+const dataClassificationOptions = [
+  { value: 'PUBLIC', label: 'Public' },
+  { value: 'INTERNAL', label: 'Internal' },
+  { value: 'CONFIDENTIAL', label: 'Confidential' },
+  { value: 'RESTRICTED', label: 'Restricted' },
+  { value: 'SENSITIVE', label: 'Sensitive' }
+];
 
+const criticalityOptions = [
+  { value: 'LOW', label: 'Low' },
+  { value: 'MEDIUM', label: 'Medium' },
+  { value: 'HIGH', label: 'High' },
+  { value: 'CRITICAL', label: 'Critical' }
+];
+
+// Validation
 const validateForm = () => {
-  const newErrors = {};
-  
-  if (!system.value.name) {
-    newErrors.name = 'System name is required';
+  if (!formData.value.name.trim()) {
+    return 'System name is required';
   }
-  
-  if (!system.value.description) {
-    newErrors.description = 'System description is required';
+  if (!formData.value.description.trim()) {
+    return 'Description is required';
   }
-  
-  if (!system.value.criticality) {
-    newErrors.criticality = 'Criticality is required';
+  if (!formData.value.version.trim()) {
+    return 'Version is required';
   }
-  
-  if (!system.value.dataClassification) {
-    newErrors.dataClassification = 'Data classification is required';
+  if (!formData.value.vendor.trim()) {
+    return 'Vendor is required';
   }
-  
-  if (!system.value.operatingSystem) {
-    newErrors.operatingSystem = 'Operating system is required';
-  }
-  
-  errors.value = newErrors;
-  return Object.keys(newErrors).length === 0;
+  return null;
 };
 
+// Submit form
 const handleSubmit = async () => {
-  if (!validateForm()) {
+  error.value = null;
+  
+  const validationError = validateForm();
+  if (validationError) {
+    error.value = validationError;
     return;
   }
   
   loading.value = true;
   
   try {
-    await systemsStore.addSystem(system.value);
+    // Set owner to current user if not admin
+    const systemData = {
+      ...formData.value,
+      ownerId: authStore.isAdmin ? formData.value.ownerId : authStore.user.id
+    };
+    
+    await systemsStore.addSystem(systemData);
+    
+    // Navigate back to systems list
     router.push('/systems');
-  } catch (error) {
-    alert('Error adding system');
+  } catch (err) {
+    error.value = err.message;
+    console.error('Error adding system:', err);
   } finally {
     loading.value = false;
   }
 };
+
+// Cancel and go back
+const handleCancel = () => {
+  router.push('/systems');
+};
+
+// Initialize form
+onMounted(() => {
+  // Set default owner to current user if not admin
+  if (!authStore.isAdmin) {
+    formData.value.ownerId = authStore.user.id;
+  }
+});
 </script>
 
 <template>
-  <div class="add-system-page">
-    <div class="page-header">
-      <h1>Add New System</h1>
-      <p>Register a new information system and set its initial risk profile</p>
+  <div style="padding: 24px;">
+    <!-- Header -->
+    <div style="margin-bottom: 32px;">
+      <h1 style="font-size: 24px; font-weight: bold; color: #111827; margin-bottom: 4px;">Add New System</h1>
+      <p style="color: #6b7280; font-size: 14px;">Register a new information system for CVE tracking</p>
     </div>
-    
-    <div class="form-container">
+
+    <!-- Error message -->
+    <div v-if="error" style="background: #fee2e2; border: 1px solid #fca5a5; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <svg style="width: 20px; height: 20px; color: #dc2626;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <span style="color: #dc2626; font-weight: 500;">{{ error }}</span>
+      </div>
+    </div>
+
+    <!-- Form -->
+    <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); padding: 32px;">
       <form @submit.prevent="handleSubmit">
-        <div class="form-grid">
+        <div style="display: grid; gap: 24px;">
           <!-- Basic Information -->
-          <div class="form-section">
-            <div class="section-header">
-              <svg class="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <h2>Basic Information</h2>
-            </div>
+          <div>
+            <h3 style="font-size: 18px; font-weight: 600; color: #111827; margin-bottom: 16px;">Basic Information</h3>
             
-            <div class="form-group">
-              <label for="name">
-                System Name
-                <span class="required">*</span>
-              </label>
-              <div class="input-wrapper">
-                <input
-                  id="name"
-                  v-model="system.name"
-                  type="text"
-                  :class="{ 'error': errors.name }"
-                  placeholder="Enter system name"
-                />
-                <p v-if="errors.name" class="error-message">{{ errors.name }}</p>
+            <div style="display: grid; gap: 16px;">
+              <div>
+                <label for="name" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">System Name *</label>
+                <input id="name" v-model="formData.name" type="text" required style="width: 100%; border-radius: 6px; border: 1px solid #D1D5DB; padding: 10px 12px; font-size: 14px; line-height: 1.5; color: #111827; background-color: white; transition: border-color 0.2s; box-sizing: border-box;" placeholder="Enter system name">
               </div>
-            </div>
-            
-            <div class="form-group">
-              <label for="description">
-                Description
-                <span class="required">*</span>
-              </label>
-              <div class="input-wrapper">
-                <textarea
-                  id="description"
-                  v-model="system.description"
-                  rows="3"
-                  :class="{ 'error': errors.description }"
-                  placeholder="Enter system description"
-                ></textarea>
-                <p v-if="errors.description" class="error-message">{{ errors.description }}</p>
+              
+              <div>
+                <label for="description" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">Description *</label>
+                <textarea id="description" v-model="formData.description" rows="3" required style="width: 100%; border-radius: 6px; border: 1px solid #D1D5DB; padding: 10px 12px; font-size: 14px; line-height: 1.5; color: #111827; background-color: white; transition: border-color 0.2s; box-sizing: border-box; resize: vertical; min-height: 80px;" placeholder="Describe the system's purpose and functionality"></textarea>
               </div>
-            </div>
-            
-            <div class="form-group">
-              <label for="os">
-                Operating System
-                <span class="required">*</span>
-              </label>
-              <div class="input-wrapper">
-                <input
-                  id="os"
-                  v-model="system.operatingSystem"
-                  type="text"
-                  :class="{ 'error': errors.operatingSystem }"
-                  placeholder="e.g., Windows Server 2019, Ubuntu 20.04"
-                />
-                <p v-if="errors.operatingSystem" class="error-message">{{ errors.operatingSystem }}</p>
+              
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div>
+                  <label for="version" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">Version *</label>
+                  <input id="version" v-model="formData.version" type="text" required style="width: 100%; border-radius: 6px; border: 1px solid #D1D5DB; padding: 10px 12px; font-size: 14px; line-height: 1.5; color: #111827; background-color: white; transition: border-color 0.2s; box-sizing: border-box;" placeholder="e.g., 1.0.0">
+                </div>
+                
+                <div>
+                  <label for="vendor" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">Vendor *</label>
+                  <input id="vendor" v-model="formData.vendor" type="text" required style="width: 100%; border-radius: 6px; border: 1px solid #D1D5DB; padding: 10px 12px; font-size: 14px; line-height: 1.5; color: #111827; background-color: white; transition: border-color 0.2s; box-sizing: border-box;" placeholder="System vendor/manufacturer">
+                </div>
               </div>
-            </div>
-            
-            <div class="form-group">
-              <label for="hostname">Host Name</label>
-              <input
-                id="hostname"
-                v-model="system.hostName"
-                type="text"
-                placeholder="Enter host name"
-              />
-            </div>
-            
-            <div class="form-group">
-              <label for="ip">IP Address</label>
-              <input
-                id="ip"
-                v-model="system.ipAddress"
-                type="text"
-                placeholder="e.g., 192.168.1.1"
-              />
             </div>
           </div>
-          
-          <!-- Risk and Additional Information -->
-          <div class="form-section">
-            <div class="section-header">
-              <svg class="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              <h2>Risk Profile</h2>
-            </div>
+
+          <!-- Security Classification -->
+          <div>
+            <h3 style="font-size: 18px; font-weight: 600; color: #111827; margin-bottom: 16px;">Security Classification</h3>
             
-            <div class="form-group">
-              <label for="criticality">
-                Criticality
-                <span class="required">*</span>
-              </label>
-              <div class="input-wrapper">
-                <select
-                  id="criticality"
-                  v-model="system.criticality"
-                  :class="{ 'error': errors.criticality }"
-                >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                </select>
-                <p v-if="errors.criticality" class="error-message">{{ errors.criticality }}</p>
+            <div style="display: grid; gap: 16px;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div>
+                  <label for="dataClassification" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">Data Classification</label>
+                  <select id="dataClassification" v-model="formData.dataClassification" style="width: 100%; border-radius: 6px; border: 1px solid #D1D5DB; padding: 10px 12px; font-size: 14px; line-height: 1.5; color: #111827; background-color: white; transition: border-color 0.2s; box-sizing: border-box; appearance: none; background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTYgOEwxMCAxMkwxNCA4IiBzdHJva2U9IiM2QjcyODAiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+'); background-position: right 12px center; background-repeat: no-repeat; background-size: 16px 16px; padding-right: 40px;">
+                    <option v-for="option in dataClassificationOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label for="criticalityLevel" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">Criticality Level</label>
+                  <select id="criticalityLevel" v-model="formData.criticalityLevel" style="width: 100%; border-radius: 6px; border: 1px solid #D1D5DB; padding: 10px 12px; font-size: 14px; line-height: 1.5; color: #111827; background-color: white; transition: border-color 0.2s; box-sizing: border-box; appearance: none; background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTYgOEwxMCAxMkwxNCA4IiBzdHJva2U9IiM2QjcyODAiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+'); background-position: right 12px center; background-repeat: no-repeat; background-size: 16px 16px; padding-right: 40px;">
+                    <option v-for="option in criticalityOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+                  </select>
+                </div>
               </div>
-            </div>
-            
-            <div class="form-group">
-              <label for="dataClass">
-                Data Classification
-                <span class="required">*</span>
-              </label>
-              <div class="input-wrapper">
-                <select
-                  id="dataClass"
-                  v-model="system.dataClassification"
-                  :class="{ 'error': errors.dataClassification }"
-                >
-                  <option value="public">Public</option>
-                  <option value="internal">Internal</option>
-                  <option value="sensitive">Sensitive/Confidential</option>
-                </select>
-                <p v-if="errors.dataClassification" class="error-message">{{ errors.dataClassification }}</p>
+              
+              <div>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input type="checkbox" v-model="formData.internetFacing" style="width: 16px; height: 16px; accent-color: #3b82f6;">
+                  <span style="font-size: 14px; font-weight: 500; color: #374151;">Internet Facing</span>
+                </label>
+                <p style="font-size: 13px; color: #6b7280; margin-top: 4px; margin-left: 24px;">Check if this system is accessible from the internet</p>
               </div>
-            </div>
-            
-            <div class="form-group checkbox-group">
-              <div class="checkbox-wrapper">
-                <input
-                  id="internet"
-                  v-model="system.internetFacing"
-                  type="checkbox"
-                />
-                <label for="internet">Internet Facing System</label>
-              </div>
-              <p class="help-text">Check if this system is directly accessible from the internet</p>
-            </div>
-            
-            <div class="form-group">
-              <label for="location">Location</label>
-              <input
-                id="location"
-                v-model="system.location"
-                type="text"
-                placeholder="e.g., Main Datacenter, Cloud"
-              />
-            </div>
-            
-            <div class="form-group">
-              <label for="contacts">Additional Contacts</label>
-              <textarea
-                id="contacts"
-                v-model="system.contacts"
-                rows="2"
-                placeholder="Enter additional contacts"
-              ></textarea>
-            </div>
-            
-            <div class="form-group">
-              <label for="notes">Notes</label>
-              <textarea
-                id="notes"
-                v-model="system.notes"
-                rows="2"
-                placeholder="Any additional notes"
-              ></textarea>
             </div>
           </div>
-        </div>
-        
-        <!-- Submit buttons -->
-        <div class="form-actions">
-          <button
-            type="button"
-            class="btn-secondary"
-            @click="router.push('/systems')"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            class="btn-primary"
-            :class="{ 'loading': loading }"
-            :disabled="loading"
-          >
-            <span v-if="loading" class="loader"></span>
-            <span>{{ loading ? 'Saving...' : 'Save System' }}</span>
-          </button>
+
+          <!-- Owner (Admin only) -->
+          <div v-if="authStore.isAdmin">
+            <h3 style="font-size: 18px; font-weight: 600; color: #111827; margin-bottom: 16px;">System Owner</h3>
+            
+            <div>
+              <label for="ownerId" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">Owner ID</label>
+              <input id="ownerId" v-model="formData.ownerId" type="number" style="width: 100%; border-radius: 6px; border: 1px solid #D1D5DB; padding: 10px 12px; font-size: 14px; line-height: 1.5; color: #111827; background-color: white; transition: border-color 0.2s; box-sizing: border-box;" placeholder="User ID of the system owner">
+              <p style="font-size: 13px; color: #6b7280; margin-top: 4px;">Leave empty to assign to yourself</p>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div style="display: flex; justify-content: flex-end; gap: 12px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+            <button type="button" @click="handleCancel" :disabled="loading" style="padding: 10px 20px; background-color: #F3F4F6; color: #374151; border-radius: 6px; font-weight: 500; border: none; cursor: pointer; transition: background-color 0.2s;" :style="loading ? 'opacity: 0.7; cursor: not-allowed;' : ''">Cancel</button>
+            <button type="submit" :disabled="loading" style="padding: 10px 20px; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color: white; border-radius: 6px; font-weight: 500; border: none; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px;" :style="loading ? 'opacity: 0.7; cursor: not-allowed;' : ''">
+              <svg v-if="loading" style="width: 16px; height: 16px; animation: spin 1s linear infinite;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              {{ loading ? 'Adding System...' : 'Add System' }}
+            </button>
+          </div>
         </div>
       </form>
     </div>
@@ -280,293 +211,23 @@ const handleSubmit = async () => {
 </template>
 
 <style scoped>
-.add-system-page {
-  padding: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.page-header {
-  margin-bottom: 32px;
-}
-
-.page-header h1 {
-  font-size: 24px;
-  font-weight: bold;
-  color: #111827;
-  margin-bottom: 4px;
-}
-
-.page-header p {
-  color: #6b7280;
-  font-size: 14px;
-}
-
-.form-container {
-  background: white;
-  border-radius: 12px;
-  padding: 32px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 32px;
-}
-
-@media (min-width: 768px) {
-  .form-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 48px;
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
-.form-section {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.section-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-
-.section-header h2 {
-  font-size: 18px;
-  font-weight: 600;
-  color: #111827;
-}
-
-.section-icon {
-  width: 24px;
-  height: 24px;
-  color: #6b7280;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.form-group label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #374151;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.required {
-  color: #dc2626;
-}
-
-.input-wrapper {
-  position: relative;
-  width: 100%;
-}
-
-input,
-select,
-textarea {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 14px;
-  line-height: 1.5;
-  color: #111827;
-  background-color: white;
-  transition: all 0.2s;
-}
-
-select {
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-  background-position: right 12px center;
-  background-repeat: no-repeat;
-  background-size: 16px 16px;
-  padding-right: 40px;
-}
-
-textarea {
-  resize: vertical;
-  min-height: 80px;
-}
-
-input:hover,
-select:hover,
-textarea:hover {
-  border-color: #9ca3af;
-}
-
 input:focus,
-select:focus,
-textarea:focus {
+textarea:focus,
+select:focus {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.error {
-  border-color: #dc2626 !important;
-}
-
-.error-message {
-  color: #dc2626;
-  font-size: 13px;
-  margin-top: 4px;
-}
-
-.checkbox-group {
-  margin-top: 4px;
-}
-
-.checkbox-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.checkbox-wrapper input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  border-radius: 4px;
-  border: 1px solid #d1d5db;
-  cursor: pointer;
-}
-
-.checkbox-wrapper label {
-  font-size: 14px;
-  color: #374151;
-  cursor: pointer;
-}
-
-.help-text {
-  font-size: 12px;
-  color: #6b7280;
-  margin-top: 4px;
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 32px;
-  padding-top: 24px;
-  border-top: 1px solid #e5e7eb;
-}
-
-.btn-primary,
-.btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-  color: white;
-  border: none;
-}
-
-.btn-primary:hover:not(:disabled) {
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transform: translateY(-1px);
-}
-
-.btn-primary:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.btn-secondary {
-  background: white;
-  color: #374151;
-  border: 1px solid #d1d5db;
-}
-
-.btn-secondary:hover {
-  background: #f9fafb;
+input:hover,
+textarea:hover,
+select:hover {
   border-color: #9ca3af;
-}
-
-.loader {
-  width: 16px;
-  height: 16px;
-  border: 2px solid #ffffff;
-  border-bottom-color: transparent;
-  border-radius: 50%;
-  display: inline-block;
-  animation: rotation 1s linear infinite;
-}
-
-@keyframes rotation {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  .form-container {
-    background-color: #1f2937;
-  }
-
-  .section-header h2 {
-    color: #f3f4f6;
-  }
-
-  .form-group label {
-    color: #e5e7eb;
-  }
-
-  input,
-  select,
-  textarea {
-    background-color: #374151;
-    border-color: #4b5563;
-    color: #f3f4f6;
-  }
-
-  input::placeholder,
-  textarea::placeholder {
-    color: #9ca3af;
-  }
-
-  input:hover,
-  select:hover,
-  textarea:hover {
-    border-color: #6b7280;
-  }
-
-  .btn-secondary {
-    background-color: #374151;
-    border-color: #4b5563;
-    color: #e5e7eb;
-  }
-
-  .btn-secondary:hover {
-    background-color: #4b5563;
-    border-color: #6b7280;
-  }
-
-  .form-actions {
-    border-color: #374151;
-  }
 }
 </style> 

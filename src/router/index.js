@@ -1,123 +1,159 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
 
 // Layout components
-import DefaultLayout from '../layouts/DefaultLayout.vue'
-import AuthLayout from '../layouts/AuthLayout.vue'
+import DashboardLayout from '../layouts/DashboardLayout.vue'
 
-// Auth pages
-import Login from '../views/auth/Login.vue'
-import Register from '../views/auth/Register.vue'
+// Auth components
+import LoginPage from '../views/auth/LoginPage.vue'
+import RegisterPage from '../views/auth/RegisterPage.vue'
 
-// Main pages
-import Dashboard from '../views/Dashboard.vue'
+// Dashboard components
+import DashboardView from '../views/dashboard/DashboardView.vue'
+
+// Systems components
 import Systems from '../views/systems/Systems.vue'
 import AddSystem from '../views/systems/AddSystem.vue'
+
+// CVE components
 import CVEList from '../views/cve/CVEList.vue'
 import CVEDetails from '../views/cve/CVEDetails.vue'
-import Notifications from '../views/Notifications.vue'
+
+// Admin components
 import UserManagement from '../views/admin/UserManagement.vue'
 import Departments from '../views/admin/Departments.vue'
+
+// Notifications component
+import NotificationsView from '../views/notifications/NotificationsView.vue'
 
 const routes = [
   {
     path: '/',
-    component: DefaultLayout,
+    redirect: '/dashboard'
+  },
+  {
+    path: '/auth/login',
+    name: 'Login',
+    component: LoginPage,
+    meta: { requiresGuest: true }
+  },
+  {
+    path: '/auth/register',
+    name: 'Register',
+    component: RegisterPage,
+    meta: { requiresGuest: true }
+  },
+  {
+    path: '/',
+    component: DashboardLayout,
     meta: { requiresAuth: true },
     children: [
       {
-        path: '/',
+        path: '/dashboard',
         name: 'Dashboard',
-        component: Dashboard,
+        component: DashboardView
       },
       {
         path: '/systems',
         name: 'Systems',
         component: Systems,
+        meta: { 
+          roles: ['ADMIN', 'SECURITY_OFFICER', 'SYSTEM_OWNER', 'TECHNICAL_EXPERT'] 
+        }
       },
       {
         path: '/systems/add',
         name: 'AddSystem',
         component: AddSystem,
+        meta: { 
+          roles: ['ADMIN', 'SYSTEM_OWNER'] 
+        }
       },
       {
         path: '/cve',
         name: 'CVEList',
         component: CVEList,
+        meta: { 
+          roles: ['ADMIN', 'SECURITY_OFFICER', 'SYSTEM_OWNER', 'TECHNICAL_EXPERT'] 
+        }
       },
       {
         path: '/cve/:id',
         name: 'CVEDetails',
         component: CVEDetails,
-        props: true,
+        meta: { 
+          roles: ['ADMIN', 'SECURITY_OFFICER', 'SYSTEM_OWNER', 'TECHNICAL_EXPERT'] 
+        }
       },
       {
         path: '/notifications',
         name: 'Notifications',
-        component: Notifications,
+        component: NotificationsView,
+        meta: { 
+          roles: ['ADMIN', 'SECURITY_OFFICER', 'SYSTEM_OWNER', 'TECHNICAL_EXPERT'] 
+        }
       },
       {
         path: '/admin/users',
         name: 'UserManagement',
         component: UserManagement,
-        meta: { requiresAdmin: true }
+        meta: { 
+          roles: ['ADMIN'] 
+        }
       },
       {
         path: '/admin/departments',
         name: 'Departments',
         component: Departments,
-        meta: { requiresAdmin: true }
-      },
+        meta: { 
+          roles: ['ADMIN', 'SECURITY_OFFICER'] 
+        }
+      }
     ]
   },
   {
-    path: '/',
-    component: AuthLayout,
-    meta: { isGuest: true },
-    children: [
-      {
-        path: '/login',
-        name: 'Login',
-        component: Login
-      },
-      {
-        path: '/register',
-        name: 'Register',
-        component: Register
-      }
-    ]
+    path: '/:pathMatch(.*)*',
+    redirect: '/dashboard'
   }
 ]
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes,
+  scrollBehavior() {
+    return { top: 0 }
+  }
 })
 
-// Navigation guard for auth
-router.beforeEach((to, from, next) => {
-  // This is a demo, so we'll just check if there's a user in localStorage
-  const user = localStorage.getItem('user')
-  
-  // If route requires auth and user is not logged in
-  if (to.meta.requiresAuth && !user) {
-    next({ name: 'Login' })
-  }
-  // If route is for guests only and user is logged in
-  else if (to.meta.isGuest && user) {
-    next({ name: 'Dashboard' })
-  }
-  // If route requires admin and user is not admin
-  else if (to.meta.requiresAdmin && user) {
-    const userData = JSON.parse(user)
-    if (userData.role !== 'admin') {
-      next({ name: 'Dashboard' })
-    } else {
-      next()
+// Navigation guards
+router.beforeEach(async (to, from, next) => {
+  const authStore = useAuthStore()
+
+  // Check if route requires authentication
+  if (to.meta.requiresAuth) {
+    if (!authStore.isAuthenticated) {
+      return next('/auth/login')
+    }
+
+    // Validate token
+    const isValid = await authStore.validateToken()
+    if (!isValid) {
+      return next('/auth/login')
+    }
+
+    // Check role-based access
+    if (to.meta.roles && !to.meta.roles.includes(authStore.userRole)) {
+      // Redirect to dashboard if user doesn't have permission
+      return next('/dashboard')
     }
   }
-  else {
-    next()
+
+  // Redirect authenticated users away from guest-only pages
+  if (to.meta.requiresGuest && authStore.isAuthenticated) {
+    return next('/dashboard')
   }
+
+  next()
 })
 
 export default router 

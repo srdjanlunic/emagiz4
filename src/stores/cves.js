@@ -1,31 +1,41 @@
 import { defineStore } from 'pinia'
-import { useSystemsStore } from './systems'
+import { useAuthStore } from './auth'
 
 export const useCVEsStore = defineStore('cves', {
   state: () => ({
-    cves: JSON.parse(localStorage.getItem('cves')) || [],
+    cves: [],
     loading: false,
-    lastImportDate: localStorage.getItem('lastImportDate') || null,
+    error: null,
+    lastImportDate: null,
+    lastFetchTime: null
   }),
+  
   getters: {
-    getCVEById: (state) => (id) => state.cves.find(cve => cve.id === id),
+    getCVEById: (state) => (id) => state.cves.find(cve => cve.cveId === id),
+    
     getOpenCVEsBySystem: (state) => (systemId) => {
       return state.cves.filter(cve => 
-        cve.affectedSystems.includes(systemId) && 
+        cve.affectedSystems?.includes(systemId) && 
         cve.status !== 'resolved' && 
         cve.status !== 'accepted_risk'
       );
     },
+    
     getResolvedCVEsBySystem: (state) => (systemId) => {
       return state.cves.filter(cve => 
-        cve.affectedSystems.includes(systemId) && 
+        cve.affectedSystems?.includes(systemId) && 
         (cve.status === 'resolved' || cve.status === 'accepted_risk')
       );
     },
+    
+    getCVEsBySystem: (state) => (systemId) => {
+      return state.cves.filter(cve => cve.affectedSystems?.includes(systemId));
+    },
+    
     getUnreadNotifications: (state) => (userId) => {
       return state.cves
         .filter(cve => 
-          cve.notifications.some(n => n.userId === userId && !n.read)
+          cve.notifications?.some(n => n.userId === userId && !n.read)
         )
         .map(cve => ({
           ...cve,
@@ -33,69 +43,134 @@ export const useCVEsStore = defineStore('cves', {
         }));
     }
   },
+  
   actions: {
-    async importCVEs() {
+    async fetchCVEs() {
+      const authStore = useAuthStore();
       this.loading = true;
+      this.error = null;
+      
       try {
-        // For demo, generate some random CVEs
-        const systems = useSystemsStore().systems;
-        const newCVEs = [];
-        
-        for (let i = 0; i < 5; i++) {
-          const randSystem = systems[Math.floor(Math.random() * systems.length)];
-          if (!randSystem) continue;
-          
-          const cveYear = 2023 + Math.floor(Math.random() * 2);
-          const cveNum = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-          
-          const newCVE = {
-            id: `CVE-${cveYear}-${cveNum}`,
-            description: `Security vulnerability affecting ${randSystem.name} that could allow unauthorized access.`,
-            severity: ['low', 'medium', 'high', 'critical'][Math.floor(Math.random() * 4)],
-            status: 'open',
-            dateDiscovered: new Date().toISOString(),
-            affectedSystems: [randSystem.id],
-            externalLinks: [
-              { title: 'MITRE', url: `https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-${cveYear}-${cveNum}` },
-              { title: 'NVD', url: `https://nvd.nist.gov/vuln/detail/CVE-${cveYear}-${cveNum}` }
-            ],
-            statusHistory: [],
-            notifications: [
-              { 
-                userId: randSystem.ownerId,
-                read: false,
-                createdAt: new Date().toISOString(),
-                message: `New vulnerability CVE-${cveYear}-${cveNum} affects your system ${randSystem.name}`
-              }
-            ]
-          };
-          
-          newCVEs.push(newCVE);
-        }
-        
-        this.cves = [...this.cves, ...newCVEs];
-        this.lastImportDate = new Date().toISOString();
-        
-        localStorage.setItem('cves', JSON.stringify(this.cves));
-        localStorage.setItem('lastImportDate', this.lastImportDate);
-        
-        return Promise.resolve(newCVEs);
+        const data = await authStore.apiCall('/vulnerabilities');
+        this.cves = data.map(this.transformCVEData);
+        this.lastFetchTime = new Date().toISOString();
       } catch (error) {
-        return Promise.reject(error);
+        this.error = error.message;
+        console.error('Error fetching CVEs:', error);
       } finally {
         this.loading = false;
       }
     },
+    
+    async fetchCVEById(cveId) {
+      const authStore = useAuthStore();
+      this.loading = true;
+      this.error = null;
+      
+      try {
+        const data = await authStore.apiCall(`/vulnerabilities/${cveId}`);
+        const transformedCVE = this.transformCVEData(data);
+        
+        // Update the CVE in the array or add it if not present
+        const existingIndex = this.cves.findIndex(c => c.cveId === transformedCVE.cveId);
+        if (existingIndex >= 0) {
+          this.cves[existingIndex] = transformedCVE;
+        } else {
+          this.cves.push(transformedCVE);
+        }
+        
+        return transformedCVE;
+      } catch (error) {
+        this.error = error.message;
+        console.error('Error fetching CVE:', error);
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+    
+    async fetchCVEsBySystem(systemId) {
+      const authStore = useAuthStore();
+      this.loading = true;
+      this.error = null;
+      
+      try {
+        const data = await authStore.apiCall(`/vulnerabilities/system/${systemId}`);
+        const transformedCVEs = data.map(this.transformCVEData);
+        
+        // Update CVEs list with fetched CVEs
+        transformedCVEs.forEach(fetchedCVE => {
+          const existingIndex = this.cves.findIndex(c => c.cveId === fetchedCVE.cveId);
+          if (existingIndex >= 0) {
+            this.cves[existingIndex] = fetchedCVE;
+          } else {
+            this.cves.push(fetchedCVE);
+          }
+        });
+        
+        return transformedCVEs;
+      } catch (error) {
+        this.error = error.message;
+        console.error('Error fetching CVEs by system:', error);
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+    
+    async searchCVEs(searchTerm) {
+      const authStore = useAuthStore();
+      this.loading = true;
+      this.error = null;
+      
+      try {
+        const data = await authStore.apiCall(`/vulnerabilities/search?q=${encodeURIComponent(searchTerm)}`);
+        return data.map(this.transformCVEData);
+      } catch (error) {
+        this.error = error.message;
+        console.error('Error searching CVEs:', error);
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+    
+    async importCVEs() {
+      const authStore = useAuthStore();
+      this.loading = true;
+      this.error = null;
+      
+      try {
+        await authStore.apiCall('/vulnerabilities/import', {
+          method: 'POST'
+        });
+        
+        this.lastImportDate = new Date().toISOString();
+        
+        // Refresh CVEs after import
+        await this.fetchCVEs();
+        
+        return { message: 'CVE import completed successfully' };
+      } catch (error) {
+        this.error = error.message;
+        console.error('Error importing CVEs:', error);
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+    
     async updateCVEStatus(cveId, newStatus, note, userId) {
-      const cveIndex = this.cves.findIndex(cve => cve.id === cveId);
+      // Note: This might need to be implemented on the backend
+      // For now, we'll update locally and sync when backend is ready
+      const cveIndex = this.cves.findIndex(cve => cve.cveId === cveId);
       if (cveIndex === -1) return Promise.reject('CVE not found');
       
-      // Update the CVE
       const updatedCVE = {
         ...this.cves[cveIndex],
         status: newStatus,
         statusHistory: [
-          ...this.cves[cveIndex].statusHistory,
+          ...(this.cves[cveIndex].statusHistory || []),
           {
             status: newStatus,
             note,
@@ -106,22 +181,69 @@ export const useCVEsStore = defineStore('cves', {
       };
       
       this.cves[cveIndex] = updatedCVE;
-      localStorage.setItem('cves', JSON.stringify(this.cves));
       
       return Promise.resolve(updatedCVE);
     },
+    
     async markNotificationRead(cveId, userId) {
-      const cveIndex = this.cves.findIndex(cve => cve.id === cveId);
-      if (cveIndex === -1) return Promise.reject('CVE not found');
+      // Note: This should use the notifications API endpoint
+      const authStore = useAuthStore();
       
-      const notificationIndex = this.cves[cveIndex].notifications.findIndex(n => n.userId === userId);
-      if (notificationIndex === -1) return Promise.reject('Notification not found');
+      try {
+        // Find the notification for this CVE and user
+        const cve = this.getCVEById(cveId);
+        if (cve && cve.notifications) {
+          const notification = cve.notifications.find(n => n.userId === userId);
+          if (notification) {
+            // This would call PUT /notifications/{id}/read in the real implementation
+            notification.read = true;
+          }
+        }
+      } catch (error) {
+        console.error('Error marking notification as read:', error);
+      }
+    },
+    
+    // Transform backend CVE data to match frontend expectations
+    transformCVEData(backendCVE) {
+      return {
+        id: backendCVE.cveId,
+        cveId: backendCVE.cveId,
+        description: backendCVE.description,
+        severity: this.mapSeverity(backendCVE.severity),
+        status: backendCVE.status || 'open',
+        dateDiscovered: backendCVE.publishedDate || backendCVE.importedAt,
+        discoveredAt: backendCVE.publishedDate || backendCVE.importedAt,
+        lastModified: backendCVE.lastModified,
+        cvssScore: backendCVE.cvssScore,
+        affectedProducts: backendCVE.affectedProducts,
+        vendor: backendCVE.vendor,
+        affectedSystems: backendCVE.affectedSystems || [],
+        externalLinks: [
+          { title: 'MITRE', url: `https://cve.mitre.org/cgi-bin/cvename.cgi?name=${backendCVE.cveId}` },
+          { title: 'NVD', url: `https://nvd.nist.gov/vuln/detail/${backendCVE.cveId}` }
+        ],
+        statusHistory: backendCVE.statusHistory || [
+          { 
+            status: 'open', 
+            note: 'Imported from external source.', 
+            userId: 1, 
+            timestamp: backendCVE.importedAt || new Date().toISOString() 
+          }
+        ],
+        notifications: backendCVE.notifications || []
+      };
+    },
+    
+    // Map backend severity to frontend severity
+    mapSeverity(backendSeverity) {
+      if (!backendSeverity) return 'low';
       
-      // Mark as read
-      this.cves[cveIndex].notifications[notificationIndex].read = true;
-      localStorage.setItem('cves', JSON.stringify(this.cves));
-      
-      return Promise.resolve(this.cves[cveIndex]);
+      const severity = backendSeverity.toLowerCase();
+      if (severity.includes('critical')) return 'critical';
+      if (severity.includes('high')) return 'high';
+      if (severity.includes('medium')) return 'medium';
+      return 'low';
     }
   }
-}); 
+}) 

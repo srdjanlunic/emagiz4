@@ -6,31 +6,45 @@ const adminStore = useAdminStore();
 const departments = computed(() => adminStore.departments);
 const users = computed(() => adminStore.users);
 const loading = ref(false);
+const showAddDepartmentModal = ref(false);
 
 // Placeholder for creating a new department
 const newDepartment = ref({
   name: '',
-  userIds: []
+  description: '',
+  manager: ''
 });
 
 // Selected department for assigning users
 const selectedDepartment = ref(null);
 const selectedUserIds = ref([]);
 
+// Open add department modal
+const openAddDepartmentModal = () => {
+  showAddDepartmentModal.value = true;
+};
+
+// Close add department modal
+const closeAddDepartmentModal = () => {
+  showAddDepartmentModal.value = false;
+  newDepartment.value = {
+    name: '',
+    description: '',
+    manager: ''
+  };
+};
+
 // Add a department (demo purposes)
 const addDepartment = async () => {
   if (!newDepartment.value.name) {
-    alert('Please enter a department name');
+    alert('Department name is required');
     return;
   }
   
   loading.value = true;
   try {
-    await adminStore.createDepartment({
-      name: newDepartment.value.name,
-      userIds: []
-    });
-    newDepartment.value.name = '';
+    await adminStore.createDepartment(newDepartment.value);
+    closeAddDepartmentModal();
   } catch (error) {
     console.error(error);
   } finally {
@@ -39,10 +53,10 @@ const addDepartment = async () => {
 };
 
 // Delete a department (demo purposes)
-const deleteDepartment = async (deptId) => {
+const deleteDepartment = async (departmentId) => {
   if (confirm('Are you sure you want to delete this department?')) {
     try {
-      await adminStore.deleteDepartment(deptId);
+      await adminStore.deleteDepartment(departmentId);
     } catch (error) {
       console.error(error);
     }
@@ -97,109 +111,119 @@ const toggleUserSelection = (userId) => {
 </script>
 
 <template>
-  <div>
-    <div class="mb-6 flex justify-between items-center">
-      <div>
-        <h1 class="text-2xl font-bold text-gray-900">Departments</h1>
-        <p class="text-gray-600">Manage departments and assign users</p>
+  <div class="departments-page" style="padding: 24px;">
+    <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+      <div class="header-content">
+        <h1 style="font-size: 24px; font-weight: bold; color: #111827; margin-bottom: 4px;">Departments</h1>
+        <p style="color: #6b7280; font-size: 14px;">Manage organizational departments and their managers</p>
       </div>
+      <button @click="openAddDepartmentModal" style="display: inline-flex; align-items: center; padding: 10px 20px; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+        <svg style="width: 16px; height: 16px; margin-right: 8px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+        </svg>
+        Add Department
+      </button>
     </div>
-    
-    <!-- Add Department Form -->
-    <div class="card bg-white mb-6">
-      <h2 class="text-lg font-medium text-gray-900 mb-4">Add New Department</h2>
-      
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label for="name" class="form-label">Department Name</label>
-          <input
-            id="name"
-            v-model="newDepartment.name"
-            type="text"
-            class="form-input"
-            placeholder="Enter department name"
-          />
-        </div>
+
+    <div class="systems-container" style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); overflow: hidden;">
+      <div v-if="departments.length === 0" style="text-align: center; padding: 48px 24px;">
+        <h3 style="font-size: 18px; font-weight: 500; color: #374151; margin-bottom: 8px;">No departments registered yet</h3>
+        <p style="color: #6b7280; margin-bottom: 24px;">Add a department to get started</p>
+        <button @click="openAddDepartmentModal" style="display: inline-flex; align-items: center; padding: 10px 20px; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;">Add Department</button>
       </div>
-      
-      <div class="mt-4">
-        <button @click="addDepartment" class="btn btn-primary" :disabled="loading">
-          {{ loading ? 'Adding...' : 'Add Department' }}
-        </button>
-      </div>
-    </div>
-    
-    <!-- Departments List -->
-    <div class="card bg-white">
-      <h2 class="text-lg font-medium text-gray-900 mb-4">Departments</h2>
-      
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
+
+      <div v-else style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: separate; border-spacing: 0;">
+          <thead>
             <tr>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Department Name
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Users
-              </th>
-              <th scope="col" class="relative px-6 py-3">
-                <span class="sr-only">Actions</span>
-              </th>
+              <th style="padding: 12px 24px; text-align: left; font-size: 12px; font-weight: 500; text-transform: uppercase; color: #6b7280; background: #f9fafb; border-bottom: 1px solid #e5e7eb;">Department Name</th>
+              <th style="padding: 12px 24px; text-align: left; font-size: 12px; font-weight: 500; text-transform: uppercase; color: #6b7280; background: #f9fafb; border-bottom: 1px solid #e5e7eb;">Description</th>
+              <th style="padding: 12px 24px; text-align: left; font-size: 12px; font-weight: 500; text-transform: uppercase; color: #6b7280; background: #f9fafb; border-bottom: 1px solid #e5e7eb;">Manager</th>
+              <th style="padding: 12px 24px; text-align: right; font-size: 12px; font-weight: 500; text-transform: uppercase; color: #6b7280; background: #f9fafb; border-bottom: 1px solid #e5e7eb;"><span style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;">Actions</span></th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="dept in departments" :key="dept.id">
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="font-medium text-gray-900">{{ dept.name }}</div>
+          <tbody>
+            <tr v-for="dept in departments" :key="dept.id" style="border-bottom: 1px solid #e5e7eb;">
+              <td style="padding: 16px 24px;">
+                <div style="font-weight: 500; color: #111827;">{{ dept.name }}</div>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {{ getDepartmentUsers(dept.userIds) || 'No users assigned' }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <button @click="openAssignUsers(dept)" class="text-blue-600 hover:text-blue-900 mr-4">
-                  Assign Users
-                </button>
-                <button v-if="dept.id !== 1" @click="deleteDepartment(dept.id)" class="text-red-600 hover:text-red-900">
-                  Delete
-                </button>
+              <td style="padding: 16px 24px; color: #6b7280;">{{ dept.description }}</td>
+              <td style="padding: 16px 24px; color: #6b7280;">{{ dept.manager }}</td>
+              <td style="padding: 16px 24px; text-align: right;">
+                <button @click="deleteDepartment(dept.id)" style="color: #2563eb; font-weight: 500; text-decoration: none; transition: color 0.2s; :hover { color: #1d4ed8; }">Delete</button>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
     </div>
-    
+
+    <!-- Add Department Modal -->
+    <div v-if="showAddDepartmentModal" style="position: fixed; inset: 0; background-color: rgba(107, 114, 128, 0.75); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50;">
+      <div style="background-color: white; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); padding: 24px; max-width: 500px; width: 100%;">
+        <h3 style="font-size: 20px; font-weight: 600; color: #111827; margin-bottom: 24px;">Add New Department</h3>
+        
+        <div style="display: grid; gap: 16px; margin-bottom: 24px;">
+          <div>
+            <label for="modal-dept-name" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">Department Name <span style="color: #EF4444;">*</span></label>
+            <input id="modal-dept-name" v-model="newDepartment.name" type="text" style="width: 100%; border-radius: 6px; border: 1px solid #D1D5DB; padding: 10px 12px; font-size: 14px; line-height: 1.5; color: #111827; background-color: white; transition: border-color 0.2s; box-sizing: border-box;" placeholder="Enter department name"/>
+          </div>
+          
+          <div>
+            <label for="modal-dept-description" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">Description</label>
+            <textarea id="modal-dept-description" v-model="newDepartment.description" rows="3" style="width: 100%; border-radius: 6px; border: 1px solid #D1D5DB; padding: 10px 12px; font-size: 14px; line-height: 1.5; color: #111827; background-color: white; transition: border-color 0.2s; box-sizing: border-box; resize: vertical; min-height: 80px;" placeholder="Enter department description"></textarea>
+          </div>
+          
+          <div>
+            <label for="modal-dept-manager" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">Manager</label>
+            <input id="modal-dept-manager" v-model="newDepartment.manager" type="text" style="width: 100%; border-radius: 6px; border: 1px solid #D1D5DB; padding: 10px 12px; font-size: 14px; line-height: 1.5; color: #111827; background-color: white; transition: border-color 0.2s; box-sizing: border-box;" placeholder="Enter manager name"/>
+          </div>
+        </div>
+        
+        <div style="display: flex; justify-content: flex-end; gap: 12px;">
+          <button @click="closeAddDepartmentModal" style="padding: 10px 20px; background-color: #F3F4F6; color: #374151; border-radius: 6px; font-weight: 500; border: none; cursor: pointer; transition: background-color 0.2s;">Cancel</button>
+          <button @click="addDepartment" :disabled="loading" style="padding: 10px 20px; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color: white; border-radius: 6px; font-weight: 500; border: none; cursor: pointer; transition: all 0.2s;" :style="loading ? 'opacity: 0.7; cursor: not-allowed;' : ''">
+            {{ loading ? 'Adding...' : 'Add Department' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Assign Users Dialog -->
-    <div v-if="selectedDepartment" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
-      <div class="bg-white rounded-lg p-6 max-w-md w-full">
-        <h3 class="text-lg font-medium text-gray-900 mb-4">
+    <div v-if="selectedDepartment" style="position: fixed; inset: 0; background-color: rgba(107, 114, 128, 0.75); display: flex; align-items: center; justify-content: center; padding: 16px;">
+      <div style="background-color: white; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); padding: 24px; max-width: 500px; width: 100%;">
+        <h3 style="font-size: 20px; font-weight: 600; color: #111827; margin-bottom: 24px;">
           Assign Users to {{ selectedDepartment.name }}
         </h3>
         
-        <div class="max-h-60 overflow-y-auto mb-4">
-          <div v-for="user in users" :key="user.id" class="py-2">
-            <label class="flex items-center">
+        <div style="max-height: 300px; overflow-y: auto; margin-bottom: 24px; border: 1px solid #E5E7EB; border-radius: 6px;">
+          <div v-for="user in users" :key="user.id" style="padding: 12px 16px; border-bottom: 1px solid #E5E7EB; :last-child { border-bottom: none; }">
+            <label style="display: flex; align-items: center; font-size: 14px; color: #374151;">
               <input
                 type="checkbox"
                 :checked="selectedUserIds.includes(user.id)"
                 @change="toggleUserSelection(user.id)"
-                class="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                style="height: 16px; width: 16px; color: #3B82F6; border: 1px solid #D1D5DB; border-radius: 4px; margin-right: 12px;"
               />
-              <span class="ml-2">{{ user.username }} ({{ user.email }})</span>
+              <span>{{ user.username }} <span style="color: #6B7280;">({{ user.email }})</span></span>
             </label>
           </div>
+           <div v-if="users.length === 0" style="padding: 16px; text-align: center; color: #6B7280;">No users available to assign.</div>
         </div>
         
-        <div class="flex justify-end space-x-3">
-          <button @click="cancelAssignUsers" class="btn btn-secondary">
+        <div style="display: flex; justify-content: flex-end; gap: 12px;">
+          <button @click="cancelAssignUsers" class="btn btn-secondary" style="padding: 10px 20px; background-color: #E5E7EB; color: #374151; border-radius: 6px; font-weight: 500; border: none; cursor: pointer;">
             Cancel
           </button>
-          <button @click="assignUsers" class="btn btn-primary">
-            Save
+          <button @click="assignUsers" class="btn btn-primary" style="padding: 10px 20px; background-color: #3B82F6; color: white; border-radius: 6px; font-weight: 500; border: none; cursor: pointer;">
+            Save Assignments
           </button>
         </div>
       </div>
     </div>
   </div>
-</template> 
+</template>
+
+<style scoped>
+/* Using inline styles as requested */
+</style> 

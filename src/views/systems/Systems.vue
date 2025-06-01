@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useSystemsStore } from '../../stores/systems';
 import { useCVEsStore } from '../../stores/cves';
@@ -10,17 +10,26 @@ const systemsStore = useSystemsStore();
 const cvesStore = useCVEsStore();
 const authStore = useAuthStore();
 
+const loading = ref(false);
+const error = ref(null);
+
 const systems = computed(() => systemsStore.systems);
 const isAdmin = computed(() => authStore.isAdmin);
 const isSecurityOfficer = computed(() => authStore.isSecurityOfficer);
+const isTechnicalExpert = computed(() => authStore.isTechnicalExpert);
+const isSystemOwner = computed(() => authStore.isSystemOwner);
 const userId = computed(() => authStore.user?.id);
 
-// Filter systems if user is a system owner
+// Filter systems based on user role
 const filteredSystems = computed(() => {
-  if (isAdmin.value || isSecurityOfficer.value) {
+  if (isAdmin.value || isSecurityOfficer.value || isTechnicalExpert.value) {
     return systems.value;
   }
-  return systems.value.filter(s => s.ownerId === userId.value);
+  // System owners only see their own systems
+  if (isSystemOwner.value) {
+    return systems.value.filter(s => s.ownerId === userId.value);
+  }
+  return [];
 });
 
 // Count CVEs for each system
@@ -34,100 +43,182 @@ const getResolvedCVEsCount = (systemId) => {
 
 // Get criticality class
 const getCriticalityClass = (criticality) => {
-  if (criticality === 'high') return 'badge-red';
-  if (criticality === 'medium') return 'badge-yellow';
+  const level = criticality?.toUpperCase();
+  if (level === 'CRITICAL' || level === 'HIGH') return 'badge-red';
+  if (level === 'MEDIUM') return 'badge-yellow';
   return 'badge-green';
+};
+
+// Calculate risk score based on criticality
+const calculateRiskScore = (system) => {
+  if (!system) return 0;
+  
+  const baseScore = {
+    'CRITICAL': 90,
+    'HIGH': 70,
+    'MEDIUM': 40,
+    'LOW': 20
+  }[system.criticalityLevel?.toUpperCase()] || 20;
+  
+  // Add factors for internet facing and data classification
+  let score = baseScore;
+  if (system.internetFacing) score += 10;
+  if (system.dataClassification === 'SENSITIVE') score += 10;
+  
+  // Add random variance for demo
+  return Math.min(100, score + Math.floor(Math.random() * 10));
 };
 
 // Format date
 const formatDate = (dateString) => {
+  if (!dateString) return 'N/A';
   return new Date(dateString).toLocaleDateString();
 };
 
-// Navigate to add system
+// Navigate to add system (only for authorized users)
 const addSystem = () => {
-  router.push('/systems/add');
+  if (isAdmin.value || isSystemOwner.value) {
+    router.push('/systems/add');
+  }
 };
+
+// Check if user can add systems
+const canAddSystem = computed(() => {
+  return isAdmin.value || isSystemOwner.value;
+});
+
+// Fetch data on mount
+onMounted(async () => {
+  loading.value = true;
+  error.value = null;
+  
+  try {
+    if (isSystemOwner.value && userId.value) {
+      // Fetch only user's systems
+      await systemsStore.fetchSystemsByOwner(userId.value);
+    } else {
+      // Fetch all systems
+      await systemsStore.fetchSystems();
+    }
+    
+    // Fetch CVEs to get counts
+    await cvesStore.fetchCVEs();
+  } catch (err) {
+    error.value = err.message;
+    console.error('Error loading systems:', err);
+  } finally {
+    loading.value = false;
+  }
+});
 </script>
 
 <template>
   <div class="systems-page">
-    <div class="page-header">
-      <div class="header-content">
-        <h1>Systems</h1>
-        <p>Manage registered information systems</p>
+    <!-- Loading state -->
+    <div v-if="loading && systems.length === 0" style="padding: 24px; text-align: center;">
+      <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); padding: 48px 24px;">
+        <div style="width: 32px; height: 32px; border: 3px solid #f3f4f6; border-radius: 50%; border-top-color: #3b82f6; animation: spin 1s ease-in-out infinite; margin: 0 auto 16px;"></div>
+        <p style="color: #6b7280;">Loading systems...</p>
       </div>
-      <button @click="addSystem" class="add-button">
-        <svg class="plus-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-        </svg>
-        Add System
-      </button>
     </div>
-    
-    <!-- Systems list -->
-    <div class="systems-container">
-      <div v-if="filteredSystems.length === 0" class="empty-state">
-        <h3>No systems registered yet</h3>
-        <p>Add a system to start tracking CVEs</p>
-        <button @click="addSystem" class="add-button">Add System</button>
+
+    <!-- Error state -->
+    <div v-else-if="error" style="padding: 24px;">
+      <div style="background: #fee2e2; border: 1px solid #fca5a5; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <svg style="width: 20px; height: 20px; color: #dc2626;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <span style="color: #dc2626; font-weight: 500;">Error loading systems: {{ error }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main content -->
+    <div v-else>
+      <div class="page-header">
+        <div class="header-content">
+          <h1>{{ isSystemOwner ? 'My Systems' : 'Systems' }}</h1>
+          <p>{{ isSystemOwner ? 'Manage your registered information systems' : 'View registered information systems' }}</p>
+        </div>
+        <button v-if="canAddSystem" @click="addSystem" class="add-button">
+          <svg class="plus-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          </svg>
+          Add System
+        </button>
       </div>
       
-      <div v-else class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>System Name</th>
-              <th>Risk Score</th>
-              <th>Criticality</th>
-              <th>CVEs</th>
-              <th>Date Added</th>
-              <th><span class="sr-only">Actions</span></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="system in filteredSystems" :key="system.id">
-              <td class="system-name">
-                <div class="name">{{ system.name }}</div>
-                <div class="os">{{ system.operatingSystem || 'N/A' }}</div>
-              </td>
-              <td>
-                <div class="risk-score" :class="{
-                  'high': system.riskScore > 50,
-                  'medium': system.riskScore > 30 && system.riskScore <= 50,
-                  'low': system.riskScore <= 30
-                }">
-                  {{ system.riskScore }}
-                </div>
-              </td>
-              <td>
-                <span class="criticality-badge" :class="getCriticalityClass(system.criticality)">
-                  {{ system.criticality.charAt(0).toUpperCase() + system.criticality.slice(1) }}
-                </span>
-              </td>
-              <td>
-                <div class="cve-count">
-                  <span class="open">{{ getOpenCVEsCount(system.id) }}</span> open, 
-                  <span class="resolved">{{ getResolvedCVEsCount(system.id) }}</span> resolved
-                </div>
-              </td>
-              <td class="date">
-                {{ formatDate(system.createdAt) }}
-              </td>
-              <td class="actions">
-                <router-link :to="`/cve?system=${system.id}`" class="view-link">
-                  View CVEs
-                </router-link>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <!-- Systems list -->
+      <div class="systems-container">
+        <div v-if="filteredSystems.length === 0" class="empty-state">
+          <h3>{{ isSystemOwner ? 'No systems registered yet' : 'No systems found' }}</h3>
+          <p>{{ isSystemOwner ? 'Add a system to start tracking CVEs' : 'No systems are currently registered in the system' }}</p>
+          <button v-if="canAddSystem" @click="addSystem" class="add-button">Add System</button>
+        </div>
+        
+        <div v-else class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>System Name</th>
+                <th>Risk Score</th>
+                <th>Criticality</th>
+                <th>CVEs</th>
+                <th>Date Added</th>
+                <th><span class="sr-only">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="system in filteredSystems" :key="system.id">
+                <td class="system-name">
+                  <div class="name">{{ system.name }}</div>
+                  <div class="os">{{ system.version || 'N/A' }}</div>
+                </td>
+                <td>
+                  <div class="risk-score" :class="{
+                    'high': calculateRiskScore(system) > 60,
+                    'medium': calculateRiskScore(system) > 30 && calculateRiskScore(system) <= 60,
+                    'low': calculateRiskScore(system) <= 30
+                  }">
+                    {{ calculateRiskScore(system) }}
+                  </div>
+                </td>
+                <td>
+                  <span class="criticality-badge" :class="getCriticalityClass(system.criticalityLevel)">
+                    {{ system.criticalityLevel?.charAt(0).toUpperCase() + system.criticalityLevel?.slice(1).toLowerCase() || 'Unknown' }}
+                  </span>
+                </td>
+                <td>
+                  <div class="cve-count">
+                    <span class="open">{{ getOpenCVEsCount(system.id) }}</span> open, 
+                    <span class="resolved">{{ getResolvedCVEsCount(system.id) }}</span> resolved
+                  </div>
+                </td>
+                <td class="date">
+                  {{ formatDate(system.createdAt) }}
+                </td>
+                <td class="actions">
+                  <router-link :to="`/cve?system=${system.id}`" class="view-link">
+                    View CVEs
+                  </router-link>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .systems-page {
   padding: 24px;
 }
