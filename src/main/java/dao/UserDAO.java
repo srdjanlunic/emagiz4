@@ -2,11 +2,11 @@ package dao;
 
 import config.DatabaseConfig;
 import model.User;
-import model.UserRole;
 import util.DatabaseUtil;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class UserDAO {
 
@@ -19,7 +19,7 @@ public class UserDAO {
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement(
-                    "SELECT * FROM users WHERE username = ? AND is_active = true"
+                    "SELECT * FROM UserAccount WHERE username = ? AND is_active = true"
             );
             stmt.setString(1, username);
             rs = stmt.executeQuery();
@@ -43,29 +43,31 @@ public class UserDAO {
 
         try {
             conn = DatabaseConfig.getConnection();
+
+            // Generate UUID in Java if not set
+            if (user.getId() == null) {
+                user.setId(UUID.randomUUID());
+            }
+
             stmt = conn.prepareStatement(
-                    "INSERT INTO users (username, password, email, first_name, last_name, role, department_id, is_active, created_at) " +
-                            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
-                    Statement.RETURN_GENERATED_KEYS
+                    "INSERT INTO UserAccount (id, username, password, email, first_name, last_name, role_id, organization_id, is_active, created_at) " +
+                            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             );
 
-            stmt.setString(1, user.getUsername());
-            stmt.setString(2, user.getPassword());
-            stmt.setString(3, user.getEmail());
-            stmt.setString(4, user.getFirstName());
-            stmt.setString(5, user.getLastName());
-            stmt.setString(6, user.getRole().toString());
-            stmt.setLong(7, user.getDepartmentId());
-            stmt.setBoolean(8, user.isActive());
-            stmt.setTimestamp(9, user.getCreatedAt());
+            stmt.setObject(1, user.getId());
+            stmt.setString(2, user.getUsername());
+            stmt.setString(3, user.getPassword());
+            stmt.setString(4, user.getEmail());
+            stmt.setString(5, user.getFirstName());
+            stmt.setString(6, user.getLastName());
+            stmt.setObject(7, user.getRoleId());
+            stmt.setObject(8, user.getOrganizationId());
+            stmt.setBoolean(9, user.isActive());
+            stmt.setTimestamp(10, user.getCreatedAt());
 
             int affectedRows = stmt.executeUpdate();
             if (affectedRows > 0) {
-                rs = stmt.getGeneratedKeys();
-                if (rs.next()) {
-                    user.setId(rs.getLong(1));
-                    return user;
-                }
+                return user;
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -76,15 +78,15 @@ public class UserDAO {
     }
 
     // get user by id
-    public User findById(Long id) {
+    public User findById(UUID id) {
         Connection conn = null;
         PreparedStatement stmt = null;
         ResultSet rs = null;
 
         try {
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("SELECT * FROM users WHERE id = ?");
-            stmt.setLong(1, id);
+            stmt = conn.prepareStatement("SELECT * FROM UserAccount WHERE id = ?");
+            stmt.setObject(1, id);
             rs = stmt.executeQuery();
 
             if (rs.next()) {
@@ -107,7 +109,7 @@ public class UserDAO {
 
         try {
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("SELECT * FROM users ORDER BY created_at DESC");
+            stmt = conn.prepareStatement("SELECT * FROM UserAccount ORDER BY created_at DESC");
             rs = stmt.executeQuery();
 
             while (rs.next()) {
@@ -129,18 +131,18 @@ public class UserDAO {
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement(
-                    "UPDATE users SET username = ?, email = ?, first_name = ?, last_name = ?, " +
-                            "role = ?, department_id = ?, is_active = ? WHERE id = ?"
+                    "UPDATE UserAccount SET username = ?, email = ?, first_name = ?, last_name = ?, " +
+                            "role_id = ?, organization_id = ?, is_active = ? WHERE id = ?"
             );
 
             stmt.setString(1, user.getUsername());
             stmt.setString(2, user.getEmail());
             stmt.setString(3, user.getFirstName());
             stmt.setString(4, user.getLastName());
-            stmt.setString(5, user.getRole().toString());
-            stmt.setLong(6, user.getDepartmentId());
+            stmt.setObject(5, user.getRoleId());
+            stmt.setObject(6, user.getOrganizationId());
             stmt.setBoolean(7, user.isActive());
-            stmt.setLong(8, user.getId());
+            stmt.setObject(8, user.getId());
 
             int affectedRows = stmt.executeUpdate();
             if (affectedRows > 0) {
@@ -155,14 +157,14 @@ public class UserDAO {
     }
 
     // delete user
-    public boolean delete(Long id) {
+    public boolean delete(UUID id) {
         Connection conn = null;
         PreparedStatement stmt = null;
 
         try {
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("UPDATE users SET is_active = false WHERE id = ?");
-            stmt.setLong(1, id);
+            stmt = conn.prepareStatement("UPDATE UserAccount SET is_active = false WHERE id = ?");
+            stmt.setObject(1, id);
 
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -174,7 +176,7 @@ public class UserDAO {
     }
 
     // find users by department
-    public List<User> findByDepartment(Long departmentId) {
+    public List<User> findByDepartment(UUID departmentId) {
         List<User> users = new ArrayList<>();
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -182,8 +184,12 @@ public class UserDAO {
 
         try {
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("SELECT * FROM users WHERE department_id = ? AND is_active = true");
-            stmt.setLong(1, departmentId);
+            stmt = conn.prepareStatement(
+                    "SELECT u.* FROM UserAccount u " +
+                            "JOIN UserDepartment ud ON u.id = ud.user_id " +
+                            "WHERE ud.department_id = ? AND u.is_active = true"
+            );
+            stmt.setObject(1, departmentId);
             rs = stmt.executeQuery();
 
             while (rs.next()) {
@@ -198,7 +204,7 @@ public class UserDAO {
     }
 
     // find users by role
-    public List<User> findByRole(String role) {
+    public List<User> findByRole(UUID roleId) {
         List<User> users = new ArrayList<>();
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -206,8 +212,8 @@ public class UserDAO {
 
         try {
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("SELECT * FROM users WHERE role = ? AND is_active = true");
-            stmt.setString(1, role);
+            stmt = conn.prepareStatement("SELECT * FROM UserAccount WHERE role_id = ? AND is_active = true");
+            stmt.setObject(1, roleId);
             rs = stmt.executeQuery();
 
             while (rs.next()) {
@@ -223,14 +229,14 @@ public class UserDAO {
 
     private User mapResultSetToUser(ResultSet rs) throws SQLException {
         User user = new User();
-        user.setId(rs.getLong("id"));
+        user.setId((UUID) rs.getObject("id"));
         user.setUsername(rs.getString("username"));
         user.setPassword(rs.getString("password"));
         user.setEmail(rs.getString("email"));
         user.setFirstName(rs.getString("first_name"));
         user.setLastName(rs.getString("last_name"));
-        user.setRole(UserRole.valueOf(rs.getString("role")));
-        user.setDepartmentId(rs.getLong("department_id"));
+        user.setRoleId((UUID) rs.getObject("role_id"));
+        user.setOrganizationId((UUID) rs.getObject("organization_id"));
         user.setActive(rs.getBoolean("is_active"));
         user.setCreatedAt(rs.getTimestamp("created_at"));
         return user;

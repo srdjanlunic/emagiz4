@@ -1,0 +1,151 @@
+package dao;
+
+import config.DatabaseConfig;
+import model.AssessmentHistory;
+import model.AssessmentStatus;
+import util.DatabaseUtil;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+public class AssessmentHistoryDAO {
+
+    public AssessmentHistory create(AssessmentHistory history) {
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DatabaseConfig.getConnection();
+            stmt = conn.prepareStatement(
+                    "INSERT INTO AssessmentHistory (assessment_id, changed_by, old_status, " +
+                            "new_status, change_reason, changed_at) VALUES (?, ?, ?::assessment_status, ?::assessment_status, ?, ?) RETURNING id",
+                    Statement.RETURN_GENERATED_KEYS
+            );
+
+            stmt.setObject(1, history.getAssessmentId());
+            stmt.setObject(2, history.getChangedBy());
+            stmt.setString(3, history.getOldStatus() != null ? history.getOldStatus().getValue() : null);
+            stmt.setString(4, history.getNewStatus().getValue());
+            stmt.setString(5, history.getChangeReason());
+            stmt.setTimestamp(6, history.getChangedAt());
+
+            int affectedRows = stmt.executeUpdate();
+            if (affectedRows > 0) {
+                rs = stmt.getGeneratedKeys();
+                if (rs.next()) {
+                    history.setId((UUID) rs.getObject(1));
+                    return history;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            DatabaseUtil.closeResources(conn, stmt, rs);
+        }
+        return null;
+    }
+
+    public AssessmentHistory findById(UUID id) {
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DatabaseConfig.getConnection();
+            stmt = conn.prepareStatement("SELECT * FROM AssessmentHistory WHERE id = ?");
+            stmt.setObject(1, id);
+            rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return mapResultSetToAssessmentHistory(rs);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            DatabaseUtil.closeResources(conn, stmt, rs);
+        }
+        return null;
+    }
+
+    public List<AssessmentHistory> findByAssessment(UUID assessmentId) {
+        List<AssessmentHistory> histories = new ArrayList<>();
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DatabaseConfig.getConnection();
+            stmt = conn.prepareStatement("SELECT * FROM AssessmentHistory WHERE assessment_id = ? ORDER BY changed_at DESC");
+            stmt.setObject(1, assessmentId);
+            rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                histories.add(mapResultSetToAssessmentHistory(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            DatabaseUtil.closeResources(conn, stmt, rs);
+        }
+        return histories;
+    }
+
+    public List<AssessmentHistory> findAll() {
+        List<AssessmentHistory> histories = new ArrayList<>();
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DatabaseConfig.getConnection();
+            stmt = conn.prepareStatement("SELECT * FROM AssessmentHistory ORDER BY changed_at DESC");
+            rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                histories.add(mapResultSetToAssessmentHistory(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            DatabaseUtil.closeResources(conn, stmt, rs);
+        }
+        return histories;
+    }
+
+    public boolean delete(UUID id) {
+        Connection conn = null;
+        PreparedStatement stmt = null;
+
+        try {
+            conn = DatabaseConfig.getConnection();
+            stmt = conn.prepareStatement("DELETE FROM AssessmentHistory WHERE id = ?");
+            stmt.setObject(1, id);
+
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            DatabaseUtil.closeResources(conn, stmt, null);
+        }
+        return false;
+    }
+
+    private AssessmentHistory mapResultSetToAssessmentHistory(ResultSet rs) throws SQLException {
+        AssessmentHistory history = new AssessmentHistory();
+        history.setId((UUID) rs.getObject("id"));
+        history.setAssessmentId((UUID) rs.getObject("assessment_id"));
+        history.setChangedBy((UUID) rs.getObject("changed_by"));
+
+        String oldStatusStr = rs.getString("old_status");
+        if (oldStatusStr != null) {
+            history.setOldStatus(AssessmentStatus.fromValue(oldStatusStr));
+        }
+
+        history.setNewStatus(AssessmentStatus.fromValue(rs.getString("new_status")));
+        history.setChangeReason(rs.getString("change_reason"));
+        history.setChangedAt(rs.getTimestamp("changed_at"));
+        return history;
+    }
+}

@@ -1,43 +1,173 @@
 package dao;
 
+import config.DatabaseConfig;
 import model.Department;
+import util.DatabaseUtil;
+import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class DepartmentDAO {
 
     // create new department
     public Department create(Department department) {
-        // TODO: implement database insert
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DatabaseConfig.getConnection();
+            stmt = conn.prepareStatement(
+                    "INSERT INTO Department (name, description, organization_id, created_at) VALUES (?, ?, ?, ?) RETURNING id",
+                    Statement.RETURN_GENERATED_KEYS
+            );
+
+            stmt.setString(1, department.getName());
+            stmt.setString(2, department.getDescription());
+            stmt.setObject(3, department.getOrganizationId());
+            stmt.setTimestamp(4, department.getCreatedAt());
+
+            int affectedRows = stmt.executeUpdate();
+            if (affectedRows > 0) {
+                rs = stmt.getGeneratedKeys();
+                if (rs.next()) {
+                    department.setId((UUID) rs.getObject(1));
+                    return department;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            DatabaseUtil.closeResources(conn, stmt, rs);
+        }
         return null;
     }
 
     // get department by id
-    public Department findById(Long id) {
-        // TODO: implement database query
+    public Department findById(UUID id) {
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DatabaseConfig.getConnection();
+            stmt = conn.prepareStatement("SELECT * FROM Department WHERE id = ?");
+            stmt.setObject(1, id);
+            rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return mapResultSetToDepartment(rs);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            DatabaseUtil.closeResources(conn, stmt, rs);
+        }
         return null;
     }
 
     // get all departments
     public List<Department> findAll() {
-        // TODO: implement database query
-        return null;
+        List<Department> departments = new ArrayList<>();
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DatabaseConfig.getConnection();
+            stmt = conn.prepareStatement("SELECT * FROM Department ORDER BY created_at DESC");
+            rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                departments.add(mapResultSetToDepartment(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            DatabaseUtil.closeResources(conn, stmt, rs);
+        }
+        return departments;
     }
 
     // update department
     public Department update(Department department) {
-        // TODO: implement database update
+        Connection conn = null;
+        PreparedStatement stmt = null;
+
+        try {
+            conn = DatabaseConfig.getConnection();
+            stmt = conn.prepareStatement(
+                    "UPDATE Department SET name = ?, description = ?, organization_id = ? WHERE id = ?"
+            );
+
+            stmt.setString(1, department.getName());
+            stmt.setString(2, department.getDescription());
+            stmt.setObject(3, department.getOrganizationId());
+            stmt.setObject(4, department.getId());
+
+            int affectedRows = stmt.executeUpdate();
+            if (affectedRows > 0) {
+                return department;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            DatabaseUtil.closeResources(conn, stmt, null);
+        }
         return null;
     }
 
     // delete department
-    public boolean delete(Long id) {
-        // TODO: implement database delete
+    public boolean delete(UUID id) {
+        Connection conn = null;
+        PreparedStatement stmt = null;
+
+        try {
+            conn = DatabaseConfig.getConnection();
+            stmt = conn.prepareStatement("DELETE FROM Department WHERE id = ?");
+            stmt.setObject(1, id);
+
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            DatabaseUtil.closeResources(conn, stmt, null);
+        }
         return false;
     }
 
     // find departments by organization
-    public List<Department> findByOrganization(Long organizationId) {
-        // TODO: implement database query
-        return null;
+    public List<Department> findByOrganization(UUID organizationId) {
+        List<Department> departments = new ArrayList<>();
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DatabaseConfig.getConnection();
+            stmt = conn.prepareStatement("SELECT * FROM Department WHERE organization_id = ?");
+            stmt.setObject(1, organizationId);
+            rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                departments.add(mapResultSetToDepartment(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            DatabaseUtil.closeResources(conn, stmt, rs);
+        }
+        return departments;
+    }
+
+    private Department mapResultSetToDepartment(ResultSet rs) throws SQLException {
+        Department department = new Department();
+        department.setId((UUID) rs.getObject("id"));
+        department.setName(rs.getString("name"));
+        department.setDescription(rs.getString("description"));
+        department.setOrganizationId((UUID) rs.getObject("organization_id"));
+        department.setCreatedAt(rs.getTimestamp("created_at"));
+        return department;
     }
 }

@@ -6,12 +6,13 @@ import util.DatabaseUtil;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class NotificationDAO {
 
     // create new notification
     public Notification create(Notification notification) {
-        String sql = "INSERT INTO notifications (message, user_id, system_id, vulnerability_id, is_read, type, created_at) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id";
+        String sql = "INSERT INTO Notification (user_id, match_id, system_id, vulnerability_id, message, type, priority, is_read, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id";
 
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -21,17 +22,19 @@ public class NotificationDAO {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement(sql);
 
-            stmt.setString(1, notification.getMessage());
-            stmt.setLong(2, notification.getUserId());
+            stmt.setObject(1, notification.getUserId());
+            stmt.setObject(2, notification.getMatchId());
             stmt.setObject(3, notification.getSystemId());
             stmt.setObject(4, notification.getVulnerabilityId());
-            stmt.setBoolean(5, notification.isRead());
+            stmt.setString(5, notification.getMessage());
             stmt.setString(6, notification.getType());
-            stmt.setTimestamp(7, notification.getCreatedAt());
+            stmt.setString(7, notification.getPriority());
+            stmt.setBoolean(8, notification.isRead());
+            stmt.setTimestamp(9, notification.getCreatedAt());
 
             rs = stmt.executeQuery();
             if (rs.next()) {
-                notification.setId(rs.getLong("id"));
+                notification.setId((UUID) rs.getObject("id"));
                 return notification;
             }
         } catch (SQLException e) {
@@ -43,8 +46,8 @@ public class NotificationDAO {
     }
 
     // get notification by id
-    public Notification findById(Long id) {
-        String sql = "SELECT * FROM notifications WHERE id = ?";
+    public Notification findById(UUID id) {
+        String sql = "SELECT * FROM Notification WHERE id = ?";
 
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -53,7 +56,7 @@ public class NotificationDAO {
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement(sql);
-            stmt.setLong(1, id);
+            stmt.setObject(1, id);
             rs = stmt.executeQuery();
 
             if (rs.next()) {
@@ -68,8 +71,8 @@ public class NotificationDAO {
     }
 
     // find notifications by user
-    public List<Notification> findByUser(Long userId) {
-        String sql = "SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC";
+    public List<Notification> findByUser(UUID userId) {
+        String sql = "SELECT * FROM Notification WHERE user_id = ? ORDER BY created_at DESC";
         List<Notification> notifications = new ArrayList<>();
 
         Connection conn = null;
@@ -79,7 +82,7 @@ public class NotificationDAO {
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement(sql);
-            stmt.setLong(1, userId);
+            stmt.setObject(1, userId);
             rs = stmt.executeQuery();
 
             while (rs.next()) {
@@ -94,8 +97,8 @@ public class NotificationDAO {
     }
 
     // find unread notifications by user
-    public List<Notification> findUnreadByUser(Long userId) {
-        String sql = "SELECT * FROM notifications WHERE user_id = ? AND is_read = false ORDER BY created_at DESC";
+    public List<Notification> findUnreadByUser(UUID userId) {
+        String sql = "SELECT * FROM Notification WHERE user_id = ? AND is_read = false ORDER BY created_at DESC";
         List<Notification> notifications = new ArrayList<>();
 
         Connection conn = null;
@@ -105,7 +108,7 @@ public class NotificationDAO {
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement(sql);
-            stmt.setLong(1, userId);
+            stmt.setObject(1, userId);
             rs = stmt.executeQuery();
 
             while (rs.next()) {
@@ -120,8 +123,8 @@ public class NotificationDAO {
     }
 
     // mark notification as read
-    public boolean markAsRead(Long id) {
-        String sql = "UPDATE notifications SET is_read = true WHERE id = ?";
+    public boolean markAsRead(UUID id) {
+        String sql = "UPDATE Notification SET is_read = true, read_at = CURRENT_TIMESTAMP WHERE id = ?";
 
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -129,7 +132,7 @@ public class NotificationDAO {
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement(sql);
-            stmt.setLong(1, id);
+            stmt.setObject(1, id);
             int rowsUpdated = stmt.executeUpdate();
             return rowsUpdated > 0;
         } catch (SQLException e) {
@@ -141,8 +144,8 @@ public class NotificationDAO {
     }
 
     // delete notification
-    public boolean delete(Long id) {
-        String sql = "DELETE FROM notifications WHERE id = ?";
+    public boolean delete(UUID id) {
+        String sql = "DELETE FROM Notification WHERE id = ?";
 
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -150,7 +153,7 @@ public class NotificationDAO {
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement(sql);
-            stmt.setLong(1, id);
+            stmt.setObject(1, id);
             int rowsDeleted = stmt.executeUpdate();
             return rowsDeleted > 0;
         } catch (SQLException e) {
@@ -163,18 +166,16 @@ public class NotificationDAO {
 
     private Notification mapResultSetToNotification(ResultSet rs) throws SQLException {
         Notification notification = new Notification();
-        notification.setId(rs.getLong("id"));
+        notification.setId((UUID) rs.getObject("id"));
+        notification.setUserId((UUID) rs.getObject("user_id"));
+        notification.setMatchId((UUID) rs.getObject("match_id"));
+        notification.setSystemId((UUID) rs.getObject("system_id"));
+        notification.setVulnerabilityId((UUID) rs.getObject("vulnerability_id"));
         notification.setMessage(rs.getString("message"));
-        notification.setUserId(rs.getLong("user_id"));
-
-        Long systemId = rs.getObject("system_id", Long.class);
-        notification.setSystemId(systemId);
-
-        Long vulnerabilityId = rs.getObject("vulnerability_id", Long.class);
-        notification.setVulnerabilityId(vulnerabilityId);
-
-        notification.setRead(rs.getBoolean("is_read"));
         notification.setType(rs.getString("type"));
+        notification.setPriority(rs.getString("priority"));
+        notification.setRead(rs.getBoolean("is_read"));
+        notification.setReadAt(rs.getTimestamp("read_at"));
         notification.setCreatedAt(rs.getTimestamp("created_at"));
         return notification;
     }

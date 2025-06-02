@@ -2,13 +2,14 @@ package resource;
 
 import service.SystemService;
 import model.ITSystem;
+import model.SystemImplementation;
 import util.JsonUtil;
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.annotation.security.RolesAllowed;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Path("/systems")
 @Produces(MediaType.APPLICATION_JSON)
@@ -20,10 +21,10 @@ public class SystemResource {
         this.systemService = new SystemService();
     }
 
-    // register system (security officer only)
+    // ========== ITSystem endpoints ==========
+
     @POST
-    @RolesAllowed({"security_officer"})
-    public Response registerSystem(String systemJson) {
+    public Response createSystem(String systemJson) {
         try {
             ITSystem system = JsonUtil.fromJson(systemJson, ITSystem.class);
             ITSystem createdSystem = systemService.createSystem(system);
@@ -39,14 +40,12 @@ public class SystemResource {
             }
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(JsonUtil.toJson(Map.of("error", "System registration failed: " + e.getMessage())))
+                    .entity(JsonUtil.toJson(Map.of("error", "System creation failed: " + e.getMessage())))
                     .build();
         }
     }
 
-    // get all systems
     @GET
-    @RolesAllowed({"security_officer", "system_owner"})
     public Response getAllSystems() {
         try {
             List<ITSystem> systems = systemService.getAllSystems();
@@ -58,12 +57,11 @@ public class SystemResource {
         }
     }
 
-    // get system by id
     @GET
     @Path("/{id}")
-    @RolesAllowed({"security_officer", "system_owner"})
-    public Response getSystemById(@PathParam("id") Long id) {
+    public Response getSystemById(@PathParam("id") String idStr) {
         try {
+            UUID id = UUID.fromString(idStr);
             ITSystem system = systemService.getSystemById(id);
             if (system != null) {
                 return Response.ok(JsonUtil.toJson(system)).build();
@@ -79,12 +77,11 @@ public class SystemResource {
         }
     }
 
-    // update system
     @PUT
     @Path("/{id}")
-    @RolesAllowed({"security_officer"})
-    public Response updateSystem(@PathParam("id") Long id, String systemJson) {
+    public Response updateSystem(@PathParam("id") String idStr, String systemJson) {
         try {
+            UUID id = UUID.fromString(idStr);
             ITSystem system = JsonUtil.fromJson(systemJson, ITSystem.class);
             system.setId(id);
             ITSystem updatedSystem = systemService.updateSystem(system);
@@ -103,12 +100,11 @@ public class SystemResource {
         }
     }
 
-    // delete system
     @DELETE
     @Path("/{id}")
-    @RolesAllowed({"security_officer"})
-    public Response deleteSystem(@PathParam("id") Long id) {
+    public Response deleteSystem(@PathParam("id") String idStr) {
         try {
+            UUID id = UUID.fromString(idStr);
             boolean deleted = systemService.deleteSystem(id);
             if (deleted) {
                 return Response.ok(JsonUtil.toJson(Map.of("message", "System deleted successfully"))).build();
@@ -124,17 +120,131 @@ public class SystemResource {
         }
     }
 
-    // get systems by owner
-    @GET
-    @Path("/owner/{ownerId}")
-    @RolesAllowed({"system_owner", "security_officer"})
-    public Response getSystemsByOwner(@PathParam("ownerId") Long ownerId) {
+    // ========== SystemImplementation endpoints ==========
+
+    @POST
+    @Path("/implementations")
+    public Response createSystemImplementation(String implementationJson) {
         try {
-            List<ITSystem> systems = systemService.getSystemsByOwner(ownerId);
-            return Response.ok(JsonUtil.toJson(systems)).build();
+            SystemImplementation implementation = JsonUtil.fromJson(implementationJson, SystemImplementation.class);
+            SystemImplementation createdImplementation = systemService.createSystemImplementation(implementation);
+
+            if (createdImplementation != null) {
+                return Response.status(Response.Status.CREATED)
+                        .entity(JsonUtil.toJson(createdImplementation))
+                        .build();
+            } else {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(JsonUtil.toJson(Map.of("error", "Failed to create system implementation")))
+                        .build();
+            }
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve systems by owner: " + e.getMessage())))
+                    .entity(JsonUtil.toJson(Map.of("error", "System implementation creation failed: " + e.getMessage())))
+                    .build();
+        }
+    }
+
+    @GET
+    @Path("/implementations")
+    public Response getAllSystemImplementations() {
+        try {
+            List<SystemImplementation> implementations = systemService.getAllSystemImplementations();
+            return Response.ok(JsonUtil.toJson(implementations)).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve system implementations: " + e.getMessage())))
+                    .build();
+        }
+    }
+
+    @GET
+    @Path("/implementations/{id}")
+    public Response getSystemImplementationById(@PathParam("id") String idStr) {
+        try {
+            UUID id = UUID.fromString(idStr);
+            SystemImplementation implementation = systemService.getSystemImplementationById(id);
+            if (implementation != null) {
+                return Response.ok(JsonUtil.toJson(implementation)).build();
+            } else {
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity(JsonUtil.toJson(Map.of("error", "System implementation not found")))
+                        .build();
+            }
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve system implementation: " + e.getMessage())))
+                    .build();
+        }
+    }
+
+    @PUT
+    @Path("/implementations/{id}")
+    public Response updateSystemImplementation(@PathParam("id") String idStr, String implementationJson) {
+        try {
+            UUID id = UUID.fromString(idStr);
+            SystemImplementation implementation = JsonUtil.fromJson(implementationJson, SystemImplementation.class);
+            implementation.setId(id);
+            SystemImplementation updatedImplementation = systemService.updateSystemImplementation(implementation);
+
+            if (updatedImplementation != null) {
+                return Response.ok(JsonUtil.toJson(updatedImplementation)).build();
+            } else {
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity(JsonUtil.toJson(Map.of("error", "System implementation not found")))
+                        .build();
+            }
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(JsonUtil.toJson(Map.of("error", "System implementation update failed: " + e.getMessage())))
+                    .build();
+        }
+    }
+
+    @DELETE
+    @Path("/implementations/{id}")
+    public Response deleteSystemImplementation(@PathParam("id") String idStr) {
+        try {
+            UUID id = UUID.fromString(idStr);
+            boolean deleted = systemService.deleteSystemImplementation(id);
+            if (deleted) {
+                return Response.ok(JsonUtil.toJson(Map.of("message", "System implementation deleted successfully"))).build();
+            } else {
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity(JsonUtil.toJson(Map.of("error", "System implementation not found")))
+                        .build();
+            }
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(JsonUtil.toJson(Map.of("error", "System implementation deletion failed: " + e.getMessage())))
+                    .build();
+        }
+    }
+
+    @GET
+    @Path("/implementations/department/{departmentId}")
+    public Response getSystemImplementationsByDepartment(@PathParam("departmentId") String departmentIdStr) {
+        try {
+            UUID departmentId = UUID.fromString(departmentIdStr);
+            List<SystemImplementation> implementations = systemService.getSystemImplementationsByDepartment(departmentId);
+            return Response.ok(JsonUtil.toJson(implementations)).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve system implementations by department: " + e.getMessage())))
+                    .build();
+        }
+    }
+
+    @GET
+    @Path("/{systemId}/implementations")
+    public Response getSystemImplementationsBySystem(@PathParam("systemId") String systemIdStr) {
+        try {
+            UUID systemId = UUID.fromString(systemIdStr);
+            List<SystemImplementation> implementations = systemService.getSystemImplementationsBySystem(systemId);
+            return Response.ok(JsonUtil.toJson(implementations)).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve system implementations by system: " + e.getMessage())))
                     .build();
         }
     }

@@ -2,10 +2,13 @@ package resource;
 
 import service.UserService;
 import model.User;
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.annotation.security.RolesAllowed;
+import util.JsonUtil;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @Path("/users")
 @Produces(MediaType.APPLICATION_JSON)
@@ -19,49 +22,118 @@ public class UserResource {
 
     // create user (admin only)
     @POST
-    @RolesAllowed({"admin"})
-    public Response createUser(User user) {
-        // TODO: create new user
-        // TODO: return created user or error
-        return null;
+    public Response createUser(String userJson) {
+        try {
+            User user = JsonUtil.fromJson(userJson, User.class);
+            User createdUser = userService.createUser(user);
+
+            if (createdUser != null) {
+                return Response.status(Response.Status.CREATED)
+                        .entity(JsonUtil.toJson(createdUser))
+                        .build();
+            } else {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(JsonUtil.toJson(Map.of("error", "Failed to create user")))
+                        .build();
+            }
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(JsonUtil.toJson(Map.of("error", "User creation failed: " + e.getMessage())))
+                    .build();
+        }
     }
 
     // get all users
     @GET
-    @RolesAllowed({"admin", "security_officer"})
     public Response getAllUsers() {
-        // TODO: get all users
-        // TODO: return user list
-        return null;
+        try {
+            List<User> users = userService.getAllUsers();
+            return Response.ok(JsonUtil.toJson(users)).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve users: " + e.getMessage())))
+                    .build();
+        }
     }
 
     // get user by id
     @GET
     @Path("/{id}")
-    @RolesAllowed({"admin", "security_officer"})
-    public Response getUserById(@PathParam("id") Long id) {
-        // TODO: get user by id
-        // TODO: return user or error
-        return null;
+    public Response getUserById(@PathParam("id") String idStr) {
+        try {
+            UUID id = UUID.fromString(idStr);
+            User user = userService.getUserById(id);
+            if (user != null) {
+                return Response.ok(JsonUtil.toJson(user)).build();
+            } else {
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity(JsonUtil.toJson(Map.of("error", "User not found")))
+                        .build();
+            }
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve user: " + e.getMessage())))
+                    .build();
+        }
     }
 
     // update user
     @PUT
     @Path("/{id}")
-    @RolesAllowed({"admin"})
-    public Response updateUser(@PathParam("id") Long id, User user) {
-        // TODO: update user
-        // TODO: return updated user or error
-        return null;
+    public Response updateUser(@PathParam("id") String idStr, String userJson) {
+        try {
+            UUID id = UUID.fromString(idStr);
+            User user = JsonUtil.fromJson(userJson, User.class);
+            user.setId(id);
+            User updatedUser = userService.updateUser(user);
+
+            if (updatedUser != null) {
+                return Response.ok(JsonUtil.toJson(updatedUser)).build();
+            } else {
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity(JsonUtil.toJson(Map.of("error", "User not found")))
+                        .build();
+            }
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(JsonUtil.toJson(Map.of("error", "User update failed: " + e.getMessage())))
+                    .build();
+        }
     }
 
     // delete user
     @DELETE
     @Path("/{id}")
-    @RolesAllowed({"admin"})
-    public Response deleteUser(@PathParam("id") Long id) {
-        // TODO: delete user
-        // TODO: return success or error
-        return null;
+    public Response deleteUser(@PathParam("id") String idStr) {
+        try {
+            UUID id = UUID.fromString(idStr);
+            boolean deleted = userService.deleteUser(id);
+            if (deleted) {
+                return Response.ok(JsonUtil.toJson(Map.of("message", "User deleted successfully"))).build();
+            } else {
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity(JsonUtil.toJson(Map.of("error", "User not found")))
+                        .build();
+            }
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(JsonUtil.toJson(Map.of("error", "User deletion failed: " + e.getMessage())))
+                    .build();
+        }
+    }
+
+    // get users by department
+    @GET
+    @Path("/department/{departmentId}")
+    public Response getUsersByDepartment(@PathParam("departmentId") String departmentIdStr) {
+        try {
+            UUID departmentId = UUID.fromString(departmentIdStr);
+            List<User> users = userService.getUsersByDepartment(departmentId);
+            return Response.ok(JsonUtil.toJson(users)).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve users by department: " + e.getMessage())))
+                    .build();
+        }
     }
 }
