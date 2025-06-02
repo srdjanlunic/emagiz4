@@ -3,22 +3,18 @@ package model;
 import java.sql.Timestamp;
 import java.util.UUID;
 
-public class ITSystem {
+public class Organization {
     private UUID id;
     private String name;
-    private String vendor;
-    private String description;
     private Timestamp createdAt;
 
-    public ITSystem() {
+    public Organization() {
         this.createdAt = new Timestamp(System.currentTimeMillis());
     }
 
-    public ITSystem(String name, String vendor, String description) {
+    public Organization(String name) {
         this();
         this.name = name;
-        this.vendor = vendor;
-        this.description = description;
     }
 
     // Getters and setters
@@ -28,12 +24,15 @@ public class ITSystem {
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 
-    public String getVendor() { return vendor; }
-    public void setVendor(String vendor) { this.vendor = vendor; }
-
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-
     public Timestamp getCreatedAt() { return createdAt; }
     public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
+
+    @Override
+    public String toString() {
+        return "Organization{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", createdAt=" + createdAt +
+                '}';
+    }
 }

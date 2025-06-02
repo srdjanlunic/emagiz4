@@ -2,6 +2,7 @@ package util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 
 public class JsonUtil {
     private static final ObjectMapper objectMapper = new ObjectMapper();
@@ -9,6 +10,8 @@ public class JsonUtil {
     static {
         // Configure for basic JSON handling without JavaTimeModule
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        // Ignore unknown properties during deserialization
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     // convert object to JSON string

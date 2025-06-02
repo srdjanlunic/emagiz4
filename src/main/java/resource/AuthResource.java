@@ -4,9 +4,9 @@ import service.AuthService;
 import model.User;
 import security.JWTUtil;
 import util.JsonUtil;
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,10 +38,10 @@ public class AuthResource {
                 Map<String, Object> response = new HashMap<>();
                 response.put("token", token);
                 response.put("user", Map.of(
-                        "id", user.getId(),
+                        "id", user.getId().toString(),
                         "username", user.getUsername(),
-                        "role", user.getRole().toString(),
-                        "departmentId", user.getDepartmentId()
+                        "roleId", user.getRoleId() != null ? user.getRoleId().toString() : "",
+                        "organizationId", user.getOrganizationId() != null ? user.getOrganizationId().toString() : ""
                 ));
 
                 return Response.ok(JsonUtil.toJson(response)).build();
@@ -79,14 +79,15 @@ public class AuthResource {
             String token = authHeader.substring(7);
             if (JWTUtil.validateToken(token)) {
                 String username = JWTUtil.getUsernameFromToken(token);
-                Long userId = JWTUtil.getUserIdFromToken(token);
-                String role = JWTUtil.getRoleFromToken(token);
+                String userId = JWTUtil.getUserIdFromToken(token).toString();
+                String roleId = JWTUtil.getRoleIdFromToken(token) != null ?
+                        JWTUtil.getRoleIdFromToken(token).toString() : "";
 
                 Map<String, Object> response = Map.of(
                         "valid", true,
                         "username", username,
                         "userId", userId,
-                        "role", role
+                        "roleId", roleId
                 );
 
                 return Response.ok(JsonUtil.toJson(response)).build();

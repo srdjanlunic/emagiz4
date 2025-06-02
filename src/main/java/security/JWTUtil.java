@@ -3,6 +3,7 @@ package security;
 import model.User;
 import java.util.Base64;
 import java.util.Date;
+import java.util.UUID;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,8 +25,8 @@ public class JWTUtil {
             // Payload
             ObjectNode payload = mapper.createObjectNode();
             payload.put("sub", user.getUsername());
-            payload.put("userId", user.getId());
-            payload.put("role", user.getRole().toString());
+            payload.put("userId", user.getId().toString());
+            payload.put("roleId", user.getRoleId() != null ? user.getRoleId().toString() : "");
             payload.put("iat", System.currentTimeMillis() / 1000);
             payload.put("exp", (System.currentTimeMillis() + EXPIRATION_TIME) / 1000);
 
@@ -80,26 +81,27 @@ public class JWTUtil {
     }
 
     // extract user ID from token
-    public static Long getUserIdFromToken(String token) {
+    public static UUID getUserIdFromToken(String token) {
         try {
             String[] parts = token.split("\\.");
             ObjectNode payload = (ObjectNode) mapper.readTree(
                     Base64.getUrlDecoder().decode(parts[1])
             );
-            return payload.get("userId").asLong();
+            return UUID.fromString(payload.get("userId").asText());
         } catch (Exception e) {
             return null;
         }
     }
 
     // extract role from token
-    public static String getRoleFromToken(String token) {
+    public static UUID getRoleIdFromToken(String token) {
         try {
             String[] parts = token.split("\\.");
             ObjectNode payload = (ObjectNode) mapper.readTree(
                     Base64.getUrlDecoder().decode(parts[1])
             );
-            return payload.get("role").asText();
+            String roleId = payload.get("roleId").asText();
+            return roleId.isEmpty() ? null : UUID.fromString(roleId);
         } catch (Exception e) {
             return null;
         }

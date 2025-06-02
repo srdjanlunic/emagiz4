@@ -1,17 +1,16 @@
 package dao;
 
 import config.DatabaseConfig;
-import model.ITSystem;
+import model.Role;
 import util.DatabaseUtil;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class SystemDAO {
+public class RoleDAO {
 
-    // create new system
-    public ITSystem create(ITSystem system) {
+    public Role create(Role role) {
         Connection conn = null;
         PreparedStatement stmt = null;
         ResultSet rs = null;
@@ -19,22 +18,20 @@ public class SystemDAO {
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement(
-                    "INSERT INTO ITSystem (name, vendor, description, created_at) " +
-                            "VALUES (?, ?, ?, ?) RETURNING id",
+                    "INSERT INTO Role (name, description, created_at) VALUES (?, ?, ?) RETURNING id",
                     Statement.RETURN_GENERATED_KEYS
             );
 
-            stmt.setString(1, system.getName());
-            stmt.setString(2, system.getVendor());
-            stmt.setString(3, system.getDescription());
-            stmt.setTimestamp(4, system.getCreatedAt());
+            stmt.setString(1, role.getName());
+            stmt.setString(2, role.getDescription());
+            stmt.setTimestamp(3, role.getCreatedAt());
 
             int affectedRows = stmt.executeUpdate();
             if (affectedRows > 0) {
                 rs = stmt.getGeneratedKeys();
                 if (rs.next()) {
-                    system.setId((UUID) rs.getObject(1));
-                    return system;
+                    role.setId((UUID) rs.getObject(1));
+                    return role;
                 }
             }
         } catch (SQLException e) {
@@ -45,20 +42,19 @@ public class SystemDAO {
         return null;
     }
 
-    // get system by id
-    public ITSystem findById(UUID id) {
+    public Role findById(UUID id) {
         Connection conn = null;
         PreparedStatement stmt = null;
         ResultSet rs = null;
 
         try {
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("SELECT * FROM ITSystem WHERE id = ?");
+            stmt = conn.prepareStatement("SELECT * FROM Role WHERE id = ?");
             stmt.setObject(1, id);
             rs = stmt.executeQuery();
 
             if (rs.next()) {
-                return mapResultSetToSystem(rs);
+                return mapResultSetToRole(rs);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -68,48 +64,67 @@ public class SystemDAO {
         return null;
     }
 
-    // get all systems
-    public List<ITSystem> findAll() {
-        List<ITSystem> systems = new ArrayList<>();
+    public Role findByName(String name) {
         Connection conn = null;
         PreparedStatement stmt = null;
         ResultSet rs = null;
 
         try {
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("SELECT * FROM ITSystem ORDER BY created_at DESC");
+            stmt = conn.prepareStatement("SELECT * FROM Role WHERE name = ?");
+            stmt.setString(1, name);
             rs = stmt.executeQuery();
 
-            while (rs.next()) {
-                systems.add(mapResultSetToSystem(rs));
+            if (rs.next()) {
+                return mapResultSetToRole(rs);
             }
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
             DatabaseUtil.closeResources(conn, stmt, rs);
         }
-        return systems;
+        return null;
     }
 
-    // update system
-    public ITSystem update(ITSystem system) {
+    public List<Role> findAll() {
+        List<Role> roles = new ArrayList<>();
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DatabaseConfig.getConnection();
+            stmt = conn.prepareStatement("SELECT * FROM Role ORDER BY name");
+            rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                roles.add(mapResultSetToRole(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            DatabaseUtil.closeResources(conn, stmt, rs);
+        }
+        return roles;
+    }
+
+    public Role update(Role role) {
         Connection conn = null;
         PreparedStatement stmt = null;
 
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement(
-                    "UPDATE ITSystem SET name = ?, vendor = ?, description = ? WHERE id = ?"
+                    "UPDATE Role SET name = ?, description = ? WHERE id = ?"
             );
 
-            stmt.setString(1, system.getName());
-            stmt.setString(2, system.getVendor());
-            stmt.setString(3, system.getDescription());
-            stmt.setObject(4, system.getId());
+            stmt.setString(1, role.getName());
+            stmt.setString(2, role.getDescription());
+            stmt.setObject(3, role.getId());
 
             int affectedRows = stmt.executeUpdate();
             if (affectedRows > 0) {
-                return system;
+                return role;
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -119,14 +134,13 @@ public class SystemDAO {
         return null;
     }
 
-    // delete system
     public boolean delete(UUID id) {
         Connection conn = null;
         PreparedStatement stmt = null;
 
         try {
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("DELETE FROM ITSystem WHERE id = ?");
+            stmt = conn.prepareStatement("DELETE FROM Role WHERE id = ?");
             stmt.setObject(1, id);
 
             return stmt.executeUpdate() > 0;
@@ -138,13 +152,12 @@ public class SystemDAO {
         return false;
     }
 
-    private ITSystem mapResultSetToSystem(ResultSet rs) throws SQLException {
-        ITSystem system = new ITSystem();
-        system.setId((UUID) rs.getObject("id"));
-        system.setName(rs.getString("name"));
-        system.setVendor(rs.getString("vendor"));
-        system.setDescription(rs.getString("description"));
-        system.setCreatedAt(rs.getTimestamp("created_at"));
-        return system;
+    private Role mapResultSetToRole(ResultSet rs) throws SQLException {
+        Role role = new Role();
+        role.setId((UUID) rs.getObject("id"));
+        role.setName(rs.getString("name"));
+        role.setDescription(rs.getString("description"));
+        role.setCreatedAt(rs.getTimestamp("created_at"));
+        return role;
     }
 }

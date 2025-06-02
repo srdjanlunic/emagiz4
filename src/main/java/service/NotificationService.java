@@ -1,26 +1,32 @@
 package service;
 
 import dao.NotificationDAO;
-import dao.SystemDAO;
+import dao.SystemImplementationDAO;
 import dao.UserDAO;
+import dao.VulnerabilityDAO;
 import model.Notification;
-import model.ITSystem;
+import model.SystemImplementation;
 import model.User;
+import model.Vulnerability;
+import model.VulnerabilityMatch;
 import java.util.List;
+import java.util.UUID;
 
 public class NotificationService {
     private NotificationDAO notificationDAO;
-    private SystemDAO systemDAO;
+    private SystemImplementationDAO systemImplementationDAO;
     private UserDAO userDAO;
+    private VulnerabilityDAO vulnerabilityDAO;
 
     public NotificationService() {
         this.notificationDAO = new NotificationDAO();
-        this.systemDAO = new SystemDAO();
+        this.systemImplementationDAO = new SystemImplementationDAO();
         this.userDAO = new UserDAO();
+        this.vulnerabilityDAO = new VulnerabilityDAO();
     }
 
     // create notification for user
-    public Notification createNotification(Long userId, String message, String type) {
+    public Notification createNotification(UUID userId, String message, String type) {
         Notification notification = new Notification();
         notification.setUserId(userId);
         notification.setMessage(message);
@@ -31,49 +37,55 @@ public class NotificationService {
     }
 
     // get notifications for user
-    public List<Notification> getNotificationsForUser(Long userId) {
+    public List<Notification> getNotificationsForUser(UUID userId) {
         return notificationDAO.findByUser(userId);
     }
 
     // get unread notifications for user
-    public List<Notification> getUnreadNotificationsForUser(Long userId) {
+    public List<Notification> getUnreadNotificationsForUser(UUID userId) {
         return notificationDAO.findUnreadByUser(userId);
     }
 
     // mark notification as read
-    public boolean markNotificationAsRead(Long notificationId) {
+    public boolean markNotificationAsRead(UUID notificationId) {
         return notificationDAO.markAsRead(notificationId);
     }
 
-    // create vulnerability notification for system owner
-    public void createVulnerabilityNotification(Long systemId, Long vulnerabilityId, String cveId) {
-        ITSystem system = systemDAO.findById(systemId);
-        if (system == null) {
+    // create vulnerability match notification for system owners
+    public void createVulnerabilityMatchNotification(VulnerabilityMatch match) {
+        SystemImplementation implementation = systemImplementationDAO.findById(match.getSystemImplementationId());
+        if (implementation == null) {
             return;
         }
 
-        // Find system owner
-        User systemOwner = userDAO.findById(system.getOwnerId());
-        if (systemOwner == null) {
+        Vulnerability vulnerability = vulnerabilityDAO.findById(match.getVulnerabilityId());
+        if (vulnerability == null) {
             return;
         }
 
-        // Create notification message
-        String message = String.format(
-                "New vulnerability %s detected for system '%s'. Please review and assess the impact.",
-                cveId, system.getName()
-        );
+        // Find system owners for this implementation
+        List<User> systemOwners = userDAO.findByDepartment(implementation.getDepartmentId());
 
-        // Create notification
-        Notification notification = new Notification();
-        notification.setUserId(systemOwner.getId());
-        notification.setSystemId(systemId);
-        notification.setVulnerabilityId(vulnerabilityId);
-        notification.setMessage(message);
-        notification.setType("VULNERABILITY_MATCH");
-        notification.setRead(false);
+        for (User owner : systemOwners) {
+            // Create notification message
+            String message = String.format(
+                    "New vulnerability %s detected for system implementation in your department. Please review and assess the impact.",
+                    vulnerability.getCveId()
+            );
 
-        notificationDAO.create(notification);
+            // Create notification
+            Notification notification = new Notification();
+            notification.setUserId(owner.getId());
+            notification.setMatchId(match.getId());
+            notification.setSystemId(implementation.getId());
+            notification.setVulnerabilityId(vulnerability.getId());
+            notification.setMessage(message);
+            notification.setType("VULNERABILITY_MATCH");
+            notification.setPriority("HIGH");
+            notification.setRead(false);
+
+            notificationDAO.create(notification);
+        }
     }
 
     // send notification (could be email, in-app, etc.)

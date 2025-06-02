@@ -2,21 +2,23 @@ package config;
 
 import org.glassfish.jersey.server.ResourceConfig;
 import resource.*;
+import security.CorsFilter;
 
 public class JerseyConfig extends ResourceConfig {
 
     public JerseyConfig() {
-        // register REST resources
+        // Register REST resources
         register(AuthResource.class);
         register(UserResource.class);
         register(SystemResource.class);
         register(VulnerabilityResource.class);
         register(NotificationResource.class);
+        register(HealthResource.class);  // Make sure HealthResource is registered
 
-        // register filters
-        // TODO: register authentication filter
+        // Register filters
+        register(CorsFilter.class);
 
-        // register exception mappers
-        // TODO: register exception mappers
+        // Register Jackson JSON provider
+        packages("com.fasterxml.jackson.jaxrs.json");
     }
 }
