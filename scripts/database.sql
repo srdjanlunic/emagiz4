@@ -1,4 +1,5 @@
--- ENUM type for assessment status
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 CREATE TYPE assessment_status AS ENUM (
   'functionality_not_used',
   'newer_version',
@@ -9,33 +10,29 @@ CREATE TYPE assessment_status AS ENUM (
   'unknown'
 );
 
--- Organization Table
 CREATE TABLE Organization (
-                              id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                              id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                               name TEXT NOT NULL,
                               created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Department Table
 CREATE TABLE Department (
-                            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                             name TEXT NOT NULL,
                             description TEXT,
                             organization_id UUID REFERENCES Organization(id) ON DELETE CASCADE,
                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Role Table
 CREATE TABLE Role (
-                      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                       name TEXT NOT NULL,
                       description TEXT,
                       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- UserAccount Table
 CREATE TABLE UserAccount (
-                             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                              username TEXT UNIQUE NOT NULL,
                              password TEXT NOT NULL,
                              email TEXT UNIQUE NOT NULL,
@@ -47,7 +44,6 @@ CREATE TABLE UserAccount (
                              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- UserDepartment Join Table
 CREATE TABLE UserDepartment (
                                 user_id UUID REFERENCES UserAccount(id) ON DELETE CASCADE,
                                 department_id UUID REFERENCES Department(id) ON DELETE CASCADE,
@@ -55,18 +51,16 @@ CREATE TABLE UserDepartment (
                                 PRIMARY KEY (user_id, department_id)
 );
 
--- ITSystem Table (changed from System to avoid conflicts)
 CREATE TABLE ITSystem (
-                          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                          id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                           name TEXT NOT NULL,
                           vendor TEXT,
                           description TEXT,
                           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- SystemImplementation Table
 CREATE TABLE SystemImplementation (
-                                      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                                      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                                       system_id UUID REFERENCES ITSystem(id) ON DELETE CASCADE,
                                       department_id UUID REFERENCES Department(id) ON DELETE CASCADE,
                                       data_classification TEXT,
@@ -80,7 +74,6 @@ CREATE TABLE SystemImplementation (
                                       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- SystemOwner Join Table
 CREATE TABLE SystemOwner (
                              user_id UUID REFERENCES UserAccount(id) ON DELETE CASCADE,
                              system_implementation_id UUID REFERENCES SystemImplementation(id) ON DELETE CASCADE,
@@ -88,9 +81,8 @@ CREATE TABLE SystemOwner (
                              PRIMARY KEY (user_id, system_implementation_id)
 );
 
--- Vulnerability Table
 CREATE TABLE Vulnerability (
-                               id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                               id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                                cve_id TEXT UNIQUE NOT NULL,
                                description TEXT,
                                severity TEXT CHECK (severity IN ('CRITICAL','HIGH','MEDIUM','LOW')),
@@ -102,9 +94,8 @@ CREATE TABLE Vulnerability (
                                imported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- VulnerabilityUpdate Table
 CREATE TABLE VulnerabilityUpdate (
-                                     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                                     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                                      vulnerability_id UUID REFERENCES Vulnerability(id) ON DELETE CASCADE,
                                      updated_on TIMESTAMP NOT NULL,
                                      update_type TEXT,
@@ -112,9 +103,8 @@ CREATE TABLE VulnerabilityUpdate (
                                      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- VulnerabilityMatch Table
 CREATE TABLE VulnerabilityMatch (
-                                    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                                    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                                     vulnerability_id UUID REFERENCES Vulnerability(id) ON DELETE CASCADE,
                                     system_implementation_id UUID REFERENCES SystemImplementation(id) ON DELETE CASCADE,
                                     matched_by_ai BOOLEAN DEFAULT FALSE,
@@ -124,9 +114,8 @@ CREATE TABLE VulnerabilityMatch (
                                     UNIQUE (vulnerability_id, system_implementation_id)
 );
 
--- VulnerabilityAssessment Table
 CREATE TABLE VulnerabilityAssessment (
-                                         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                                         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                                          match_id UUID REFERENCES VulnerabilityMatch(id) ON DELETE CASCADE,
                                          assessed_by UUID REFERENCES UserAccount(id),
                                          assessed_by_role UUID REFERENCES Role(id),
@@ -141,9 +130,8 @@ CREATE TABLE VulnerabilityAssessment (
                                          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- AssessmentHistory Table
 CREATE TABLE AssessmentHistory (
-                                   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                                   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                                    assessment_id UUID REFERENCES VulnerabilityAssessment(id) ON DELETE CASCADE,
                                    changed_by UUID REFERENCES UserAccount(id),
                                    old_status assessment_status,
@@ -152,9 +140,8 @@ CREATE TABLE AssessmentHistory (
                                    changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Notification Table
 CREATE TABLE Notification (
-                              id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                              id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                               user_id UUID REFERENCES UserAccount(id) ON DELETE CASCADE,
                               match_id UUID REFERENCES VulnerabilityMatch(id) ON DELETE CASCADE,
                               system_id UUID REFERENCES SystemImplementation(id),
@@ -167,9 +154,8 @@ CREATE TABLE Notification (
                               created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- ReportLog Table
 CREATE TABLE ReportLog (
-                           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                           id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                            generated_by UUID REFERENCES UserAccount(id),
                            type TEXT,
                            title TEXT,
@@ -180,3 +166,14 @@ CREATE TABLE ReportLog (
                            file_format TEXT,
                            generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+DO $$
+DECLARE
+test_id UUID;
+BEGIN
+INSERT INTO Vulnerability (cve_id, description, severity)
+VALUES ('TEST-UUID-GENERATION', 'Test record for UUID generation', 'LOW')
+    RETURNING id INTO test_id;
+
+DELETE FROM Vulnerability WHERE id = test_id;
+END $$;

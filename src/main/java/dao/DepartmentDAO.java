@@ -17,31 +17,57 @@ public class DepartmentDAO {
         ResultSet rs = null;
 
         try {
+            System.out.println("=== DepartmentDAO.create() ===");
+            System.out.println("Creating department: " + department.getName());
+            System.out.println("Organization ID: " + department.getOrganizationId());
+
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement(
-                    "INSERT INTO Department (name, description, organization_id, created_at) VALUES (?, ?, ?, ?) RETURNING id",
-                    Statement.RETURN_GENERATED_KEYS
-            );
 
-            stmt.setString(1, department.getName());
-            stmt.setString(2, department.getDescription());
-            stmt.setObject(3, department.getOrganizationId());
-            stmt.setTimestamp(4, department.getCreatedAt());
+            // Generate UUID if not set
+            if (department.getId() == null) {
+                department.setId(UUID.randomUUID());
+            }
 
+            // Set created timestamp if not set
+            if (department.getCreatedAt() == null) {
+                department.setCreatedAt(new Timestamp(System.currentTimeMillis()));
+            }
+
+            String sql = "INSERT INTO Department (id, name, description, organization_id, created_at) VALUES (?, ?, ?, ?, ?)";
+            System.out.println("SQL: " + sql);
+
+            stmt = conn.prepareStatement(sql);
+            stmt.setObject(1, department.getId());
+            stmt.setString(2, department.getName());
+            stmt.setString(3, department.getDescription());
+            stmt.setObject(4, department.getOrganizationId());
+            stmt.setTimestamp(5, department.getCreatedAt());
+
+            System.out.println("Executing insert...");
             int affectedRows = stmt.executeUpdate();
+            System.out.println("Affected rows: " + affectedRows);
+
             if (affectedRows > 0) {
-                rs = stmt.getGeneratedKeys();
-                if (rs.next()) {
-                    department.setId((UUID) rs.getObject(1));
-                    return department;
-                }
+                System.out.println("Department created successfully");
+                return department;
+            } else {
+                System.out.println("No rows affected");
+                return null;
             }
         } catch (SQLException e) {
+            System.out.println("SQLException in DepartmentDAO.create():");
+            System.out.println("Error Code: " + e.getErrorCode());
+            System.out.println("SQL State: " + e.getSQLState());
+            System.out.println("Message: " + e.getMessage());
             e.printStackTrace();
+            return null;
+        } catch (Exception e) {
+            System.out.println("Exception in DepartmentDAO.create(): " + e.getMessage());
+            e.printStackTrace();
+            return null;
         } finally {
             DatabaseUtil.closeResources(conn, stmt, rs);
         }
-        return null;
     }
 
     // get department by id
