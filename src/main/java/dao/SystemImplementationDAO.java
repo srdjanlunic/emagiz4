@@ -16,40 +16,93 @@ public class SystemImplementationDAO {
         ResultSet rs = null;
 
         try {
-            conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement(
-                    "INSERT INTO SystemImplementation (system_id, department_id, data_classification, " +
-                            "criticality_level, internet_facing, sensitive_customer_data, risk_score, version, " +
-                            "environment, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
-                    Statement.RETURN_GENERATED_KEYS
-            );
+            System.out.println("=== SystemImplementationDAO.create - START ===");
+            System.out.println("SystemID: " + implementation.getSystemId());
+            System.out.println("DepartmentID: " + implementation.getDepartmentId());
+            System.out.println("DataClassification: " + implementation.getDataClassification());
+            System.out.println("CriticalityLevel: " + implementation.getCriticalityLevel());
+            System.out.println("InternetFacing: " + implementation.isInternetFacing());
+            System.out.println("SensitiveCustomerData: " + implementation.isSensitiveCustomerData());
+            System.out.println("RiskScore: " + implementation.getRiskScore());
+            System.out.println("Version: " + implementation.getVersion());
+            System.out.println("Environment: " + implementation.getEnvironment());
 
-            stmt.setObject(1, implementation.getSystemId());
-            stmt.setObject(2, implementation.getDepartmentId());
-            stmt.setString(3, implementation.getDataClassification());
-            stmt.setString(4, implementation.getCriticalityLevel());
-            stmt.setBoolean(5, implementation.isInternetFacing());
-            stmt.setBoolean(6, implementation.isSensitiveCustomerData());
-            stmt.setInt(7, implementation.getRiskScore());
-            stmt.setString(8, implementation.getVersion());
-            stmt.setString(9, implementation.getEnvironment());
-            stmt.setTimestamp(10, implementation.getCreatedAt());
-            stmt.setTimestamp(11, implementation.getUpdatedAt());
+            conn = DatabaseConfig.getConnection();
+            System.out.println("Database connection established");
+
+            // First, let's check if the referenced system and department exist
+            System.out.println("Checking if system exists...");
+            PreparedStatement checkSystemStmt = conn.prepareStatement("SELECT id FROM ITSystem WHERE id = ?");
+            checkSystemStmt.setObject(1, implementation.getSystemId());
+            ResultSet systemRs = checkSystemStmt.executeQuery();
+            if (!systemRs.next()) {
+                System.out.println("❌ System with ID " + implementation.getSystemId() + " does not exist");
+                return null;
+            }
+            systemRs.close();
+            checkSystemStmt.close();
+            System.out.println("✅ System exists");
+
+            System.out.println("Checking if department exists...");
+            PreparedStatement checkDeptStmt = conn.prepareStatement("SELECT id FROM Department WHERE id = ?");
+            checkDeptStmt.setObject(1, implementation.getDepartmentId());
+            ResultSet deptRs = checkDeptStmt.executeQuery();
+            if (!deptRs.next()) {
+                System.out.println("❌ Department with ID " + implementation.getDepartmentId() + " does not exist");
+                return null;
+            }
+            deptRs.close();
+            checkDeptStmt.close();
+            System.out.println("✅ Department exists");
+
+            // Use simpler INSERT without RETURNING clause
+            String sql = "INSERT INTO SystemImplementation (id, system_id, department_id, data_classification, " +
+                    "criticality_level, internet_facing, sensitive_customer_data, risk_score, version, " +
+                    "environment, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            System.out.println("SQL: " + sql);
+
+            // Generate UUID manually
+            UUID newId = UUID.randomUUID();
+            implementation.setId(newId);
+            System.out.println("Generated ID: " + newId);
+
+            stmt = conn.prepareStatement(sql);
+
+            stmt.setObject(1, implementation.getId());
+            stmt.setObject(2, implementation.getSystemId());
+            stmt.setObject(3, implementation.getDepartmentId());
+            stmt.setString(4, implementation.getDataClassification());
+            stmt.setString(5, implementation.getCriticalityLevel());
+            stmt.setBoolean(6, implementation.isInternetFacing());
+            stmt.setBoolean(7, implementation.isSensitiveCustomerData());
+            stmt.setInt(8, implementation.getRiskScore());
+            stmt.setString(9, implementation.getVersion());
+            stmt.setString(10, implementation.getEnvironment());
+            stmt.setTimestamp(11, implementation.getCreatedAt());
+            stmt.setTimestamp(12, implementation.getUpdatedAt());
+
+            System.out.println("Statement prepared, executing...");
 
             int affectedRows = stmt.executeUpdate();
+            System.out.println("Affected rows: " + affectedRows);
+
             if (affectedRows > 0) {
-                rs = stmt.getGeneratedKeys();
-                if (rs.next()) {
-                    implementation.setId((UUID) rs.getObject(1));
-                    return implementation;
-                }
+                System.out.println("✅ Implementation created with ID: " + implementation.getId());
+                return implementation;
+            } else {
+                System.out.println("❌ No rows affected");
+                return null;
             }
         } catch (SQLException e) {
+            System.out.println("❌ SQL Exception in SystemImplementationDAO.create: " + e.getMessage());
+            System.out.println("SQL State: " + e.getSQLState());
+            System.out.println("Error Code: " + e.getErrorCode());
             e.printStackTrace();
+            return null;
         } finally {
             DatabaseUtil.closeResources(conn, stmt, rs);
+            System.out.println("=== SystemImplementationDAO.create - END ===");
         }
-        return null;
     }
 
     public SystemImplementation findById(UUID id) {
@@ -67,6 +120,7 @@ public class SystemImplementationDAO {
                 return mapResultSetToSystemImplementation(rs);
             }
         } catch (SQLException e) {
+            System.out.println("Error in findById: " + e.getMessage());
             e.printStackTrace();
         } finally {
             DatabaseUtil.closeResources(conn, stmt, rs);
@@ -89,6 +143,7 @@ public class SystemImplementationDAO {
                 implementations.add(mapResultSetToSystemImplementation(rs));
             }
         } catch (SQLException e) {
+            System.out.println("Error in findAll: " + e.getMessage());
             e.printStackTrace();
         } finally {
             DatabaseUtil.closeResources(conn, stmt, rs);
@@ -126,6 +181,7 @@ public class SystemImplementationDAO {
                 return implementation;
             }
         } catch (SQLException e) {
+            System.out.println("Error in update: " + e.getMessage());
             e.printStackTrace();
         } finally {
             DatabaseUtil.closeResources(conn, stmt, null);
@@ -144,6 +200,7 @@ public class SystemImplementationDAO {
 
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
+            System.out.println("Error in delete: " + e.getMessage());
             e.printStackTrace();
         } finally {
             DatabaseUtil.closeResources(conn, stmt, null);
@@ -167,6 +224,7 @@ public class SystemImplementationDAO {
                 implementations.add(mapResultSetToSystemImplementation(rs));
             }
         } catch (SQLException e) {
+            System.out.println("Error in findByDepartment: " + e.getMessage());
             e.printStackTrace();
         } finally {
             DatabaseUtil.closeResources(conn, stmt, rs);
@@ -190,6 +248,7 @@ public class SystemImplementationDAO {
                 implementations.add(mapResultSetToSystemImplementation(rs));
             }
         } catch (SQLException e) {
+            System.out.println("Error in findBySystem: " + e.getMessage());
             e.printStackTrace();
         } finally {
             DatabaseUtil.closeResources(conn, stmt, rs);

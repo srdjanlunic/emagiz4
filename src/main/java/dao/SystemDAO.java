@@ -14,33 +14,46 @@ public class SystemDAO {
     public ITSystem create(ITSystem system) {
         Connection conn = null;
         PreparedStatement stmt = null;
-        ResultSet rs = null;
 
         try {
+            System.out.println("Creating system: " + system.getName());
+
+            // Generate UUID in Java if not already set
+            if (system.getId() == null) {
+                system.setId(UUID.randomUUID());
+            }
+
             conn = DatabaseConfig.getConnection();
+            System.out.println("Database connection obtained");
+
             stmt = conn.prepareStatement(
-                    "INSERT INTO ITSystem (name, vendor, description, created_at) " +
-                            "VALUES (?, ?, ?, ?) RETURNING id",
-                    Statement.RETURN_GENERATED_KEYS
+                    "INSERT INTO ITSystem (id, name, vendor, description, created_at) VALUES (?, ?, ?, ?, ?)"
             );
 
-            stmt.setString(1, system.getName());
-            stmt.setString(2, system.getVendor());
-            stmt.setString(3, system.getDescription());
-            stmt.setTimestamp(4, system.getCreatedAt());
+            stmt.setObject(1, system.getId());
+            stmt.setString(2, system.getName());
+            stmt.setString(3, system.getVendor());
+            stmt.setString(4, system.getDescription());
+            stmt.setTimestamp(5, system.getCreatedAt());
 
+            System.out.println("Executing insert statement with ID: " + system.getId());
             int affectedRows = stmt.executeUpdate();
+            System.out.println("Affected rows: " + affectedRows);
+
             if (affectedRows > 0) {
-                rs = stmt.getGeneratedKeys();
-                if (rs.next()) {
-                    system.setId((UUID) rs.getObject(1));
-                    return system;
-                }
+                System.out.println("System created successfully with ID: " + system.getId());
+                return system;
+            } else {
+                System.out.println("No rows affected by insert");
             }
         } catch (SQLException e) {
+            System.out.println("SQLException in SystemDAO.create: " + e.getMessage());
+            e.printStackTrace();
+        } catch (Exception e) {
+            System.out.println("Exception in SystemDAO.create: " + e.getMessage());
             e.printStackTrace();
         } finally {
-            DatabaseUtil.closeResources(conn, stmt, rs);
+            DatabaseUtil.closeResources(conn, stmt, null);
         }
         return null;
     }

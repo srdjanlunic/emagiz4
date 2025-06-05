@@ -1,12 +1,14 @@
 package resource;
 
 import service.SystemService;
+import service.SystemImplementationService;
 import model.ITSystem;
 import model.SystemImplementation;
 import util.JsonUtil;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -16,17 +18,34 @@ import java.util.UUID;
 @Consumes(MediaType.APPLICATION_JSON)
 public class SystemResource {
     private SystemService systemService;
+    private SystemImplementationService systemImplementationService;
 
     public SystemResource() {
         this.systemService = new SystemService();
+        this.systemImplementationService = new SystemImplementationService();
     }
-
-    // ========== ITSystem endpoints ==========
 
     @POST
     public Response createSystem(String systemJson) {
         try {
+            if (systemJson == null || systemJson.trim().isEmpty()) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(JsonUtil.toJson(Map.of("error", "Request body is empty")))
+                        .build();
+            }
+
             ITSystem system = JsonUtil.fromJson(systemJson, ITSystem.class);
+
+            if (system.getName() == null || system.getName().trim().isEmpty()) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(JsonUtil.toJson(Map.of("error", "System name is required")))
+                        .build();
+            }
+
+            if (system.getCreatedAt() == null) {
+                system.setCreatedAt(new Timestamp(System.currentTimeMillis()));
+            }
+
             ITSystem createdSystem = systemService.createSystem(system);
 
             if (createdSystem != null) {
@@ -34,7 +53,7 @@ public class SystemResource {
                         .entity(JsonUtil.toJson(createdSystem))
                         .build();
             } else {
-                return Response.status(Response.Status.BAD_REQUEST)
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                         .entity(JsonUtil.toJson(Map.of("error", "Failed to create system")))
                         .build();
             }
@@ -120,14 +139,33 @@ public class SystemResource {
         }
     }
 
-    // ========== SystemImplementation endpoints ==========
-
     @POST
     @Path("/implementations")
     public Response createSystemImplementation(String implementationJson) {
         try {
             SystemImplementation implementation = JsonUtil.fromJson(implementationJson, SystemImplementation.class);
-            SystemImplementation createdImplementation = systemService.createSystemImplementation(implementation);
+
+            if (implementation.getSystemId() == null) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(JsonUtil.toJson(Map.of("error", "System ID is required")))
+                        .build();
+            }
+
+            if (implementation.getDepartmentId() == null) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(JsonUtil.toJson(Map.of("error", "Department ID is required")))
+                        .build();
+            }
+
+            String criticalityLevel = implementation.getCriticalityLevel();
+            if (criticalityLevel != null && !criticalityLevel.equals("HIGH") &&
+                    !criticalityLevel.equals("MEDIUM") && !criticalityLevel.equals("LOW")) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(JsonUtil.toJson(Map.of("error", "Invalid criticality level. Must be HIGH, MEDIUM, or LOW")))
+                        .build();
+            }
+
+            SystemImplementation createdImplementation = systemImplementationService.createSystemImplementation(implementation);
 
             if (createdImplementation != null) {
                 return Response.status(Response.Status.CREATED)
@@ -149,7 +187,7 @@ public class SystemResource {
     @Path("/implementations")
     public Response getAllSystemImplementations() {
         try {
-            List<SystemImplementation> implementations = systemService.getAllSystemImplementations();
+            List<SystemImplementation> implementations = systemImplementationService.getAllSystemImplementations();
             return Response.ok(JsonUtil.toJson(implementations)).build();
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -163,7 +201,7 @@ public class SystemResource {
     public Response getSystemImplementationById(@PathParam("id") String idStr) {
         try {
             UUID id = UUID.fromString(idStr);
-            SystemImplementation implementation = systemService.getSystemImplementationById(id);
+            SystemImplementation implementation = systemImplementationService.getSystemImplementationById(id);
             if (implementation != null) {
                 return Response.ok(JsonUtil.toJson(implementation)).build();
             } else {
@@ -185,7 +223,7 @@ public class SystemResource {
             UUID id = UUID.fromString(idStr);
             SystemImplementation implementation = JsonUtil.fromJson(implementationJson, SystemImplementation.class);
             implementation.setId(id);
-            SystemImplementation updatedImplementation = systemService.updateSystemImplementation(implementation);
+            SystemImplementation updatedImplementation = systemImplementationService.updateSystemImplementation(implementation);
 
             if (updatedImplementation != null) {
                 return Response.ok(JsonUtil.toJson(updatedImplementation)).build();
@@ -206,7 +244,7 @@ public class SystemResource {
     public Response deleteSystemImplementation(@PathParam("id") String idStr) {
         try {
             UUID id = UUID.fromString(idStr);
-            boolean deleted = systemService.deleteSystemImplementation(id);
+            boolean deleted = systemImplementationService.deleteSystemImplementation(id);
             if (deleted) {
                 return Response.ok(JsonUtil.toJson(Map.of("message", "System implementation deleted successfully"))).build();
             } else {
@@ -226,7 +264,7 @@ public class SystemResource {
     public Response getSystemImplementationsByDepartment(@PathParam("departmentId") String departmentIdStr) {
         try {
             UUID departmentId = UUID.fromString(departmentIdStr);
-            List<SystemImplementation> implementations = systemService.getSystemImplementationsByDepartment(departmentId);
+            List<SystemImplementation> implementations = systemImplementationService.getSystemImplementationsByDepartment(departmentId);
             return Response.ok(JsonUtil.toJson(implementations)).build();
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -240,7 +278,7 @@ public class SystemResource {
     public Response getSystemImplementationsBySystem(@PathParam("systemId") String systemIdStr) {
         try {
             UUID systemId = UUID.fromString(systemIdStr);
-            List<SystemImplementation> implementations = systemService.getSystemImplementationsBySystem(systemId);
+            List<SystemImplementation> implementations = systemImplementationService.getSystemImplementationsBySystem(systemId);
             return Response.ok(JsonUtil.toJson(implementations)).build();
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
