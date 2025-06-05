@@ -73,7 +73,6 @@ public class DatabaseConfig {
         }
     }
 
-    // Test method to verify connection
     public static void main(String[] args) {
         System.out.println("Testing database connection...");
         testConnection();

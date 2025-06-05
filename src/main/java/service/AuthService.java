@@ -17,7 +17,7 @@ public class AuthService {
     // authenticate user with username and password
     public User authenticate(String username, String password) {
         User user = userDAO.findByUsername(username);
-        if (user != null && verifyPassword(password, user.getPassword())) {
+        if (user != null && (verifyPassword(password, user.getPassword()) || verifySimplePassword(password, user.getPassword()))) {
             return user;
         }
         return null;
@@ -91,5 +91,17 @@ public class AuthService {
             }
         }
         return null;
+    }
+
+    // Temporary method for demo - add this to AuthService class
+    public boolean verifySimplePassword(String password, String storedPassword) {
+        // For demo purposes - handle base64 encoded passwords
+        try {
+            String decoded = new String(Base64.getDecoder().decode(storedPassword));
+            return password.equals(decoded);
+        } catch (Exception e) {
+            // Fallback to regular verification
+            return verifyPassword(password, storedPassword);
+        }
     }
 }
