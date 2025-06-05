@@ -13,19 +13,11 @@ public class SystemService {
         this.systemDAO = new SystemDAO();
     }
 
-    // Create new system
     public ITSystem createSystem(ITSystem system) {
-        System.out.println("=== SystemService.createSystem called ===");
-        System.out.println("Input system: " + system.getName());
-
         try {
             system.setCreatedAt(new Timestamp(System.currentTimeMillis()));
-            System.out.println("About to call systemDAO.create...");
-            ITSystem result = systemDAO.create(system);
-            System.out.println("systemDAO.create returned: " + (result != null ? "SUCCESS with ID " + result.getId() : "NULL"));
-            return result;
+            return systemDAO.create(system);
         } catch (Exception e) {
-            System.out.println("❌ Exception in SystemService.createSystem: " + e.getMessage());
             e.printStackTrace();
             return null;
         }

@@ -25,78 +25,39 @@ public class SystemResource {
         this.systemImplementationService = new SystemImplementationService();
     }
 
-    // ========== ITSystem endpoints ==========
-
     @POST
     public Response createSystem(String systemJson) {
-        System.out.println("=== SystemResource.createSystem - ENTRY POINT ===");
-        System.out.println("Method called at: " + new java.util.Date());
-        System.out.println("Thread: " + Thread.currentThread().getName());
-
         try {
-            System.out.println("=== SystemResource.createSystem called ===");
-            System.out.println("Received JSON: " + systemJson);
-            System.out.println("JSON length: " + (systemJson != null ? systemJson.length() : "null"));
-
-            // Validate input
             if (systemJson == null || systemJson.trim().isEmpty()) {
-                System.out.println("ERROR: Empty or null JSON received");
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(JsonUtil.toJson(Map.of("error", "Request body is empty")))
                         .build();
             }
 
-            // Parse JSON to ITSystem object
-            ITSystem system;
-            try {
-                System.out.println("About to parse JSON with JsonUtil.fromJson...");
-                system = JsonUtil.fromJson(systemJson, ITSystem.class);
-                System.out.println("JSON parsed successfully");
-                System.out.println("System name: " + system.getName());
-                System.out.println("System vendor: " + system.getVendor());
-                System.out.println("System description: " + system.getDescription());
-            } catch (Exception jsonException) {
-                System.out.println("ERROR: JSON parsing failed: " + jsonException.getMessage());
-                jsonException.printStackTrace();
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(JsonUtil.toJson(Map.of("error", "Invalid JSON format: " + jsonException.getMessage())))
-                        .build();
-            }
+            ITSystem system = JsonUtil.fromJson(systemJson, ITSystem.class);
 
-            // Validate required fields
             if (system.getName() == null || system.getName().trim().isEmpty()) {
-                System.out.println("ERROR: System name is required");
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(JsonUtil.toJson(Map.of("error", "System name is required")))
                         .build();
             }
 
-            // Set timestamp if not provided
             if (system.getCreatedAt() == null) {
                 system.setCreatedAt(new Timestamp(System.currentTimeMillis()));
-                System.out.println("Set createdAt timestamp: " + system.getCreatedAt());
             }
 
-            System.out.println("About to call systemService.createSystem...");
             ITSystem createdSystem = systemService.createSystem(system);
-            System.out.println("systemService.createSystem returned: " + (createdSystem != null ? "SUCCESS" : "NULL"));
 
             if (createdSystem != null) {
-                System.out.println("✅ System created successfully with ID: " + createdSystem.getId());
-                String responseJson = JsonUtil.toJson(createdSystem);
-                System.out.println("Response JSON: " + responseJson);
                 return Response.status(Response.Status.CREATED)
-                        .entity(responseJson)
+                        .entity(JsonUtil.toJson(createdSystem))
                         .build();
             } else {
-                System.out.println("❌ SystemService.createSystem returned null");
                 return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                        .entity(JsonUtil.toJson(Map.of("error", "Failed to create system - database operation failed")))
+                        .entity(JsonUtil.toJson(Map.of("error", "Failed to create system")))
                         .build();
             }
         } catch (Exception e) {
-            System.out.println("❌ Exception in SystemResource.createSystem: " + e.getMessage());
-            e.printStackTrace();
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(JsonUtil.toJson(Map.of("error", "System creation failed: " + e.getMessage())))
                     .build();
@@ -178,81 +139,44 @@ public class SystemResource {
         }
     }
 
-    // ========== SystemImplementation endpoints ==========
-
     @POST
     @Path("/implementations")
     public Response createSystemImplementation(String implementationJson) {
         try {
-            System.out.println("=== SystemResource.createSystemImplementation - ENTRY POINT ===");
-            System.out.println("Method called at: " + new java.util.Date());
-            System.out.println("Thread: " + Thread.currentThread().getName());
-            System.out.println("Received JSON: " + implementationJson);
-            System.out.println("JSON length: " + (implementationJson != null ? implementationJson.length() : "null"));
+            SystemImplementation implementation = JsonUtil.fromJson(implementationJson, SystemImplementation.class);
 
-            // Parse JSON to SystemImplementation object
-            SystemImplementation implementation;
-            try {
-                System.out.println("About to parse JSON with JsonUtil.fromJson...");
-                implementation = JsonUtil.fromJson(implementationJson, SystemImplementation.class);
-                System.out.println("JSON parsed successfully");
-                System.out.println("SystemID: " + implementation.getSystemId());
-                System.out.println("DepartmentID: " + implementation.getDepartmentId());
-                System.out.println("CriticalityLevel: " + implementation.getCriticalityLevel());
-            } catch (Exception jsonException) {
-                System.out.println("ERROR: JSON parsing failed: " + jsonException.getMessage());
-                jsonException.printStackTrace();
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(JsonUtil.toJson(Map.of("error", "Invalid JSON format: " + jsonException.getMessage())))
-                        .build();
-            }
-
-            // Validate required fields
             if (implementation.getSystemId() == null) {
-                System.out.println("ERROR: System ID is required");
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(JsonUtil.toJson(Map.of("error", "System ID is required")))
                         .build();
             }
 
             if (implementation.getDepartmentId() == null) {
-                System.out.println("ERROR: Department ID is required");
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(JsonUtil.toJson(Map.of("error", "Department ID is required")))
                         .build();
             }
 
-            // Check if criticality level is valid
             String criticalityLevel = implementation.getCriticalityLevel();
             if (criticalityLevel != null && !criticalityLevel.equals("HIGH") &&
                     !criticalityLevel.equals("MEDIUM") && !criticalityLevel.equals("LOW")) {
-                System.out.println("ERROR: Invalid criticality level: " + criticalityLevel);
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(JsonUtil.toJson(Map.of("error", "Invalid criticality level. Must be HIGH, MEDIUM, or LOW")))
                         .build();
             }
 
-            System.out.println("About to call systemImplementationService.createSystemImplementation...");
             SystemImplementation createdImplementation = systemImplementationService.createSystemImplementation(implementation);
-            System.out.println("systemImplementationService.createSystemImplementation returned: " +
-                    (createdImplementation != null ? "SUCCESS" : "NULL"));
 
             if (createdImplementation != null) {
-                System.out.println("✅ System implementation created successfully with ID: " + createdImplementation.getId());
-                String responseJson = JsonUtil.toJson(createdImplementation);
-                System.out.println("Response JSON: " + responseJson);
                 return Response.status(Response.Status.CREATED)
-                        .entity(responseJson)
+                        .entity(JsonUtil.toJson(createdImplementation))
                         .build();
             } else {
-                System.out.println("❌ SystemImplementationService.createSystemImplementation returned null");
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(JsonUtil.toJson(Map.of("error", "Failed to create system implementation")))
                         .build();
             }
         } catch (Exception e) {
-            System.out.println("❌ Exception in SystemResource.createSystemImplementation: " + e.getMessage());
-            e.printStackTrace();
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(JsonUtil.toJson(Map.of("error", "System implementation creation failed: " + e.getMessage())))
                     .build();
