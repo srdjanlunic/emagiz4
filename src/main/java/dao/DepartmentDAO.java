@@ -10,7 +10,7 @@ import java.util.UUID;
 
 public class DepartmentDAO {
 
-    // create new department
+    // Create new department
     public Department create(Department department) {
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -18,33 +18,45 @@ public class DepartmentDAO {
 
         try {
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement(
-                    "INSERT INTO Department (name, description, organization_id, created_at) VALUES (?, ?, ?, ?) RETURNING id",
-                    Statement.RETURN_GENERATED_KEYS
-            );
 
-            stmt.setString(1, department.getName());
-            stmt.setString(2, department.getDescription());
-            stmt.setObject(3, department.getOrganizationId());
-            stmt.setTimestamp(4, department.getCreatedAt());
+            // Generate UUID if not set
+            if (department.getId() == null) {
+                department.setId(UUID.randomUUID());
+            }
+
+            // Set created timestamp if not set
+            if (department.getCreatedAt() == null) {
+                department.setCreatedAt(new Timestamp(System.currentTimeMillis()));
+            }
+
+            String sql = "INSERT INTO Department (id, name, description, organization_id, created_at) VALUES (?, ?, ?, ?, ?)";
+
+            stmt = conn.prepareStatement(sql);
+            stmt.setObject(1, department.getId());
+            stmt.setString(2, department.getName());
+            stmt.setString(3, department.getDescription());
+            stmt.setObject(4, department.getOrganizationId());
+            stmt.setTimestamp(5, department.getCreatedAt());
 
             int affectedRows = stmt.executeUpdate();
+
             if (affectedRows > 0) {
-                rs = stmt.getGeneratedKeys();
-                if (rs.next()) {
-                    department.setId((UUID) rs.getObject(1));
-                    return department;
-                }
+                return department;
+            } else {
+                return null;
             }
         } catch (SQLException e) {
             e.printStackTrace();
+            return null;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         } finally {
             DatabaseUtil.closeResources(conn, stmt, rs);
         }
-        return null;
     }
 
-    // get department by id
+    // Get department by id
     public Department findById(UUID id) {
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -67,7 +79,7 @@ public class DepartmentDAO {
         return null;
     }
 
-    // get all departments
+    // Get all departments
     public List<Department> findAll() {
         List<Department> departments = new ArrayList<>();
         Connection conn = null;
@@ -90,7 +102,7 @@ public class DepartmentDAO {
         return departments;
     }
 
-    // update department
+    // Update department
     public Department update(Department department) {
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -118,7 +130,7 @@ public class DepartmentDAO {
         return null;
     }
 
-    // delete department
+    // Delete department
     public boolean delete(UUID id) {
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -137,7 +149,7 @@ public class DepartmentDAO {
         return false;
     }
 
-    // find departments by organization
+    // Find departments by organization
     public List<Department> findByOrganization(UUID organizationId) {
         List<Department> departments = new ArrayList<>();
         Connection conn = null;

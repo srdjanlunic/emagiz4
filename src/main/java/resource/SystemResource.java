@@ -59,7 +59,7 @@ public class SystemResource {
             }
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(JsonUtil.toJson(Map.of("error", "System creation failed: " + e.getMessage())))
+                    .entity(JsonUtil.toJson(Map.of("error", "System creation failed")))
                     .build();
         }
     }
@@ -71,7 +71,7 @@ public class SystemResource {
             return Response.ok(JsonUtil.toJson(systems)).build();
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve systems: " + e.getMessage())))
+                    .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve systems")))
                     .build();
         }
     }
@@ -91,7 +91,7 @@ public class SystemResource {
             }
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve system: " + e.getMessage())))
+                    .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve system")))
                     .build();
         }
     }
@@ -114,7 +114,7 @@ public class SystemResource {
             }
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(JsonUtil.toJson(Map.of("error", "System update failed: " + e.getMessage())))
+                    .entity(JsonUtil.toJson(Map.of("error", "System update failed")))
                     .build();
         }
     }
@@ -134,7 +134,7 @@ public class SystemResource {
             }
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(JsonUtil.toJson(Map.of("error", "System deletion failed: " + e.getMessage())))
+                    .entity(JsonUtil.toJson(Map.of("error", "System deletion failed")))
                     .build();
         }
     }
@@ -178,7 +178,7 @@ public class SystemResource {
             }
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(JsonUtil.toJson(Map.of("error", "System implementation creation failed: " + e.getMessage())))
+                    .entity(JsonUtil.toJson(Map.of("error", "System implementation creation failed")))
                     .build();
         }
     }
@@ -191,7 +191,7 @@ public class SystemResource {
             return Response.ok(JsonUtil.toJson(implementations)).build();
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve system implementations: " + e.getMessage())))
+                    .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve system implementations")))
                     .build();
         }
     }
@@ -211,7 +211,7 @@ public class SystemResource {
             }
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve system implementation: " + e.getMessage())))
+                    .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve system implementation")))
                     .build();
         }
     }
@@ -234,7 +234,7 @@ public class SystemResource {
             }
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(JsonUtil.toJson(Map.of("error", "System implementation update failed: " + e.getMessage())))
+                    .entity(JsonUtil.toJson(Map.of("error", "System implementation update failed")))
                     .build();
         }
     }
@@ -254,7 +254,7 @@ public class SystemResource {
             }
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(JsonUtil.toJson(Map.of("error", "System implementation deletion failed: " + e.getMessage())))
+                    .entity(JsonUtil.toJson(Map.of("error", "System implementation deletion failed")))
                     .build();
         }
     }
@@ -268,7 +268,7 @@ public class SystemResource {
             return Response.ok(JsonUtil.toJson(implementations)).build();
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve system implementations by department: " + e.getMessage())))
+                    .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve system implementations by department")))
                     .build();
         }
     }
@@ -282,7 +282,7 @@ public class SystemResource {
             return Response.ok(JsonUtil.toJson(implementations)).build();
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve system implementations by system: " + e.getMessage())))
+                    .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve system implementations by system")))
                     .build();
         }
     }

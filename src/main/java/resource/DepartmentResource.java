@@ -55,7 +55,7 @@ public class DepartmentResource {
             }
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(JsonUtil.toJson(Map.of("error", "Department creation failed: " + e.getMessage())))
+                    .entity(JsonUtil.toJson(Map.of("error", "Department creation failed")))
                     .build();
         }
     }
@@ -67,7 +67,7 @@ public class DepartmentResource {
             return Response.ok(JsonUtil.toJson(departments)).build();
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve departments: " + e.getMessage())))
+                    .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve departments")))
                     .build();
         }
     }
@@ -87,7 +87,7 @@ public class DepartmentResource {
             }
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve department: " + e.getMessage())))
+                    .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve department")))
                     .build();
         }
     }
@@ -110,7 +110,7 @@ public class DepartmentResource {
             }
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(JsonUtil.toJson(Map.of("error", "Department update failed: " + e.getMessage())))
+                    .entity(JsonUtil.toJson(Map.of("error", "Department update failed")))
                     .build();
         }
     }
@@ -130,7 +130,7 @@ public class DepartmentResource {
             }
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(JsonUtil.toJson(Map.of("error", "Department deletion failed: " + e.getMessage())))
+                    .entity(JsonUtil.toJson(Map.of("error", "Department deletion failed")))
                     .build();
         }
     }
@@ -144,7 +144,7 @@ public class DepartmentResource {
             return Response.ok(JsonUtil.toJson(departments)).build();
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve departments by organization: " + e.getMessage())))
+                    .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve departments by organization")))
                     .build();
         }
     }
