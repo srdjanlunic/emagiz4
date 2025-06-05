@@ -34,7 +34,6 @@ public class DepartmentService {
 
             return departmentDAO.create(department);
         } catch (Exception e) {
-            System.out.println("Error in DepartmentService.createDepartment: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Failed to create department: " + e.getMessage(), e);
         }
@@ -44,7 +43,6 @@ public class DepartmentService {
         try {
             return departmentDAO.findAll();
         } catch (Exception e) {
-            System.out.println("Error in DepartmentService.getAllDepartments: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Failed to retrieve departments: " + e.getMessage(), e);
         }
@@ -54,7 +52,6 @@ public class DepartmentService {
         try {
             return departmentDAO.findById(id);
         } catch (Exception e) {
-            System.out.println("Error in DepartmentService.getDepartmentById: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Failed to retrieve department: " + e.getMessage(), e);
         }
@@ -64,7 +61,6 @@ public class DepartmentService {
         try {
             return departmentDAO.update(department);
         } catch (Exception e) {
-            System.out.println("Error in DepartmentService.updateDepartment: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Failed to update department: " + e.getMessage(), e);
         }
@@ -74,7 +70,6 @@ public class DepartmentService {
         try {
             return departmentDAO.delete(id);
         } catch (Exception e) {
-            System.out.println("Error in DepartmentService.deleteDepartment: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Failed to delete department: " + e.getMessage(), e);
         }
@@ -84,7 +79,6 @@ public class DepartmentService {
         try {
             return departmentDAO.findByOrganization(organizationId);
         } catch (Exception e) {
-            System.out.println("Error in DepartmentService.getDepartmentsByOrganization: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Failed to retrieve departments by organization: " + e.getMessage(), e);
         }

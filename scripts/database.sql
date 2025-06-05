@@ -167,13 +167,3 @@ CREATE TABLE ReportLog (
                            generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-DO $$
-DECLARE
-test_id UUID;
-BEGIN
-INSERT INTO Vulnerability (cve_id, description, severity)
-VALUES ('TEST-UUID-GENERATION', 'Test record for UUID generation', 'LOW')
-    RETURNING id INTO test_id;
-
-DELETE FROM Vulnerability WHERE id = test_id;
-END $$;
