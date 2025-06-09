@@ -1,26 +1,12 @@
 import { defineStore } from 'pinia'
+import { useAuthStore } from './auth'
 
 export const useAdminStore = defineStore('admin', {
   state: () => ({
-    users: JSON.parse(localStorage.getItem('users')) || [
-      {
-        id: 1,
-        username: 'admin',
-        email: 'admin@example.com',
-        role: 'admin',
-        department: 'IT Security',
-        createdAt: new Date().toISOString()
-      }
-    ],
-    departments: JSON.parse(localStorage.getItem('departments')) || [
-      {
-        id: 1,
-        name: 'IT Security',
-        createdAt: new Date().toISOString(),
-        userIds: [1]
-      }
-    ],
-    loading: false
+    users: [],
+    departments: [],
+    loading: false,
+    error: null,
   }),
   getters: {
     getUserById: (state) => (id) => state.users.find(u => u.id === id),
@@ -37,112 +23,203 @@ export const useAdminStore = defineStore('admin', {
     }
   },
   actions: {
+    // User Management
+    async fetchUsers() {
+      const authStore = useAuthStore();
+      this.loading = true;
+      this.error = null;
+      try {
+        const data = await authStore.apiCall('/users');
+        this.users = data;
+      } catch (error) {
+        this.error = error.message;
+        console.error('Error fetching users:', error);
+      } finally {
+        this.loading = false;
+      }
+    },
+
     async createUser(user) {
+      const authStore = useAuthStore();
       this.loading = true;
+      this.error = null;
       try {
-        const newUser = {
-          ...user,
-          id: Date.now(),
-          createdAt: new Date().toISOString()
-        };
-        
+        const newUser = await authStore.apiCall('/users', {
+          method: 'POST',
+          body: JSON.stringify(user),
+        });
         this.users.push(newUser);
-        localStorage.setItem('users', JSON.stringify(this.users));
-        
-        return Promise.resolve(newUser);
+        return newUser;
       } catch (error) {
-        return Promise.reject(error);
+        this.error = error.message;
+        throw error;
       } finally {
         this.loading = false;
       }
     },
+
     async updateUser(id, updates) {
-      const userIndex = this.users.findIndex(u => u.id === id);
-      if (userIndex === -1) return Promise.reject('User not found');
-      
-      const updatedUser = { ...this.users[userIndex], ...updates };
-      this.users[userIndex] = updatedUser;
-      localStorage.setItem('users', JSON.stringify(this.users));
-      
-      return Promise.resolve(updatedUser);
-    },
-    async deleteUser(id) {
-      const userIndex = this.users.findIndex(u => u.id === id);
-      if (userIndex === -1) return Promise.reject('User not found');
-      
-      this.users.splice(userIndex, 1);
-      
-      // Also remove user from departments
-      this.departments.forEach(dept => {
-        const userIdIndex = dept.userIds.indexOf(id);
-        if (userIdIndex !== -1) {
-          dept.userIds.splice(userIdIndex, 1);
-        }
-      });
-      
-      localStorage.setItem('users', JSON.stringify(this.users));
-      localStorage.setItem('departments', JSON.stringify(this.departments));
-      
-      return Promise.resolve();
-    },
-    async createDepartment(department) {
+      const authStore = useAuthStore();
       this.loading = true;
+      this.error = null;
       try {
-        const newDepartment = {
-          ...department,
-          id: Date.now(),
-          createdAt: new Date().toISOString(),
-          userIds: department.userIds || []
-        };
-        
-        this.departments.push(newDepartment);
-        localStorage.setItem('departments', JSON.stringify(this.departments));
-        
-        return Promise.resolve(newDepartment);
+        const updatedUser = await authStore.apiCall(`/users/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify(updates),
+        });
+        const index = this.users.findIndex(u => u.id === id);
+        if (index !== -1) {
+          this.users[index] = updatedUser;
+        }
+        return updatedUser;
       } catch (error) {
-        return Promise.reject(error);
+        this.error = error.message;
+        throw error;
       } finally {
         this.loading = false;
       }
     },
+
+    async deleteUser(id) {
+      const authStore = useAuthStore();
+      this.loading = true;
+      this.error = null;
+      try {
+        await authStore.apiCall(`/users/${id}`, {
+          method: 'DELETE',
+        });
+        this.users = this.users.filter(u => u.id !== id);
+      } catch (error) {
+        this.error = error.message;
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    // Department Management
+    async fetchDepartments() {
+      const authStore = useAuthStore();
+      this.loading = true;
+      this.error = null;
+      try {
+        const data = await authStore.apiCall('/departments');
+        this.departments = data;
+      } catch (error) {
+        this.error = error.message;
+        console.error('Error fetching departments:', error);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async createDepartment(department) {
+      const authStore = useAuthStore();
+      this.loading = true;
+      this.error = null;
+      try {
+        const newDepartment = await authStore.apiCall('/departments', {
+          method: 'POST',
+          body: JSON.stringify(department),
+        });
+        this.departments.push(newDepartment);
+        return newDepartment;
+      } catch (error) {
+        this.error = error.message;
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
     async updateDepartment(id, updates) {
-      const deptIndex = this.departments.findIndex(d => d.id === id);
-      if (deptIndex === -1) return Promise.reject('Department not found');
-      
-      const updatedDept = { ...this.departments[deptIndex], ...updates };
-      this.departments[deptIndex] = updatedDept;
-      localStorage.setItem('departments', JSON.stringify(this.departments));
-      
-      return Promise.resolve(updatedDept);
+      const authStore = useAuthStore();
+      this.loading = true;
+      this.error = null;
+      try {
+        const updatedDept = await authStore.apiCall(`/departments/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify(updates),
+        });
+        const index = this.departments.findIndex(d => d.id === id);
+        if (index !== -1) {
+          this.departments[index] = updatedDept;
+        }
+        return updatedDept;
+      } catch (error) {
+        this.error = error.message;
+        throw error;
+      } finally {
+        this.loading = false;
+      }
     },
+
     async deleteDepartment(id) {
-      const deptIndex = this.departments.findIndex(d => d.id === id);
-      if (deptIndex === -1) return Promise.reject('Department not found');
-      
-      this.departments.splice(deptIndex, 1);
-      localStorage.setItem('departments', JSON.stringify(this.departments));
-      
-      return Promise.resolve();
+      const authStore = useAuthStore();
+      this.loading = true;
+      this.error = null;
+      try {
+        await authStore.apiCall(`/departments/${id}`, {
+          method: 'DELETE',
+        });
+        this.departments = this.departments.filter(d => d.id !== id);
+      } catch (error) {
+        this.error = error.message;
+        throw error;
+      } finally {
+        this.loading = false;
+      }
     },
+
+    // Department-User Management
     async assignUsersToDepartment(departmentId, userIds) {
-      const department = this.departments.find(d => d.id === departmentId);
-      if (!department) return Promise.reject('Department not found');
-      
-      // Update the department's user list
-      department.userIds = [...new Set([...department.userIds, ...userIds])];
-      localStorage.setItem('departments', JSON.stringify(this.departments));
-      
-      return Promise.resolve(department);
+      const authStore = useAuthStore();
+      this.loading = true;
+      this.error = null;
+      try {
+        const updatedDepartment = await authStore.apiCall(
+          `/departments/${departmentId}/users`,
+          {
+            method: 'POST',
+            body: JSON.stringify(userIds),
+          }
+        );
+        const index = this.departments.findIndex(d => d.id === departmentId);
+        if (index !== -1) {
+          this.departments[index] = updatedDepartment;
+        }
+        return updatedDepartment;
+      } catch (error) {
+        this.error = error.message;
+        throw error;
+      } finally {
+        this.loading = false;
+      }
     },
+
     async removeUsersFromDepartment(departmentId, userIds) {
-      const department = this.departments.find(d => d.id === departmentId);
-      if (!department) return Promise.reject('Department not found');
-      
-      // Remove users from department
-      department.userIds = department.userIds.filter(id => !userIds.includes(id));
-      localStorage.setItem('departments', JSON.stringify(this.departments));
-      
-      return Promise.resolve(department);
-    }
-  }
+      const authStore = useAuthStore();
+      this.loading = true;
+      this.error = null;
+      try {
+        const updatedDepartment = await authStore.apiCall(
+          `/departments/${departmentId}/users`,
+          {
+            method: 'DELETE',
+            body: JSON.stringify(userIds),
+          }
+        );
+        const index = this.departments.findIndex(d => d.id === departmentId);
+        if (index !== -1) {
+          this.departments[index] = updatedDepartment;
+        }
+        return updatedDepartment;
+      } catch (error) {
+        this.error = error.message;
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+  },
 }); 

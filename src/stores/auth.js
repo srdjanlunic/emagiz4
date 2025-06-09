@@ -1,11 +1,11 @@
 import { defineStore } from 'pinia'
 
-const API_BASE_URL = 'http://localhost:8080/emagiz4/api'
+const API_BASE_URL = 'https://emagiz4.paas.hosted-by-previder.com/api'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: JSON.parse(localStorage.getItem('user')) || null,
-    token: localStorage.getItem('token') || null,
+    token: localStorage.getItem('token') || null, 
     loading: false,
     error: null
   }),

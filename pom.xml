@@ -85,6 +85,13 @@
             <artifactId>jakarta.ws.rs-api</artifactId>
             <version>3.1.0</version>
         </dependency>
+
+        <!-- Jetty Servlets for CORS Filter -->
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-servlets</artifactId>
+            <version>11.0.15</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -105,6 +112,19 @@
                 <version>3.2.3</version>
                 <configuration>
                     <failOnMissingWebXml>false</failOnMissingWebXml>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-maven-plugin</artifactId>
+                <version>11.0.15</version>
+                <configuration>
+                    <webApp>
+                        <contextPath>/vulnerability-management-system</contextPath>
+                    </webApp>
+                    <httpConnector>
+                        <port>8088</port>
+                    </httpConnector>
                 </configuration>
             </plugin>
         </plugins>
