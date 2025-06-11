@@ -49,12 +49,12 @@ const routes = [
     meta: { requiresAuth: true },
     children: [
       {
-        path: '/dashboard',
+        path: 'dashboard',
         name: 'Dashboard',
         component: DashboardView
       },
       {
-        path: '/systems',
+        path: 'systems',
         name: 'Systems',
         component: Systems,
         meta: { 
@@ -62,15 +62,15 @@ const routes = [
         }
       },
       {
-        path: '/systems/add',
+        path: 'systems/add',
         name: 'AddSystem',
         component: AddSystem,
         meta: { 
-          roles: ['ADMIN', 'SYSTEM_OWNER'] 
+          roles: ['ADMIN', 'SYSTEM_OWNER', 'SECURITY_OFFICER'] 
         }
       },
       {
-        path: '/cve',
+        path: 'cve',
         name: 'CVEList',
         component: CVEList,
         meta: { 
@@ -78,7 +78,7 @@ const routes = [
         }
       },
       {
-        path: '/cve/:id',
+        path: 'cve/:id',
         name: 'CVEDetails',
         component: CVEDetails,
         meta: { 
@@ -86,7 +86,7 @@ const routes = [
         }
       },
       {
-        path: '/notifications',
+        path: 'notifications',
         name: 'Notifications',
         component: NotificationsView,
         meta: { 
@@ -94,7 +94,7 @@ const routes = [
         }
       },
       {
-        path: '/admin/users',
+        path: 'admin/users',
         name: 'UserManagement',
         component: UserManagement,
         meta: { 
@@ -102,7 +102,7 @@ const routes = [
         }
       },
       {
-        path: '/admin/departments',
+        path: 'admin/departments',
         name: 'Departments',
         component: Departments,
         meta: { 
@@ -132,25 +132,25 @@ router.beforeEach(async (to, from, next) => {
   // Check if route requires authentication
   if (to.meta.requiresAuth) {
     if (!authStore.isAuthenticated) {
-      return next('/auth/login')
+      return next({ name: 'Login' })
     }
 
-    // Validate token
+    // Validate token if needed (can be intensive)
     const isValid = await authStore.validateToken()
     if (!isValid) {
-      return next('/auth/login')
+      return next({ name: 'Login' })
     }
 
     // Check role-based access
-    if (to.meta.roles && !to.meta.roles.includes(authStore.userRole)) {
-      // Redirect to dashboard if user doesn't have permission
-      return next('/dashboard')
+    const userRole = authStore.userRole
+    if (to.meta.roles && !to.meta.roles.includes(userRole)) {
+      return next({ name: 'Dashboard' }) // Redirect to a safe page
     }
   }
 
   // Redirect authenticated users away from guest-only pages
   if (to.meta.requiresGuest && authStore.isAuthenticated) {
-    return next('/dashboard')
+    return next({ name: 'Dashboard' })
   }
 
   next()

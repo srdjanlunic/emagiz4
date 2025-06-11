@@ -256,6 +256,24 @@ public class SystemImplementationDAO {
         return implementations;
     }
 
+    public List<String> findSystemIdsByVulnerabilityId(UUID vulnerabilityId) {
+        List<String> systemIds = new ArrayList<>();
+        String sql = "SELECT DISTINCT si.system_id FROM SystemImplementation si " +
+                     "JOIN VulnerabilityMatch vm ON si.id = vm.system_implementation_id " +
+                     "WHERE vm.vulnerability_id = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setObject(1, vulnerabilityId);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                systemIds.add(((UUID) rs.getObject("system_id")).toString());
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return systemIds;
+    }
+
     private SystemImplementation mapResultSetToSystemImplementation(ResultSet rs) throws SQLException {
         SystemImplementation implementation = new SystemImplementation();
         implementation.setId((UUID) rs.getObject("id"));

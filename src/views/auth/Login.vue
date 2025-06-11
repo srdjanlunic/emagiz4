@@ -33,6 +33,16 @@ const handleSubmit = async () => {
   }
 };
 
+const handleDemoLogin = async (role) => {
+  error.value = '';
+  try {
+    await authStore.demoLogin(role);
+    router.push('/');
+  } catch (err) {
+    error.value = `Demo login failed: ${err.message}`;
+  }
+};
+
 // Demo helper function to pre-fill credentials
 const fillDemo = (role) => {
   if (role === 'admin') {
@@ -96,14 +106,17 @@ const fillDemo = (role) => {
       <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
         <p style="font-size: 14px; color: #6b7280; margin-bottom: 12px; text-align: center;">Demo Accounts</p>
         <div style="display: grid; gap: 8px;">
-          <button @click="fillDemo('admin')" style="width: 100%; padding: 8px 16px; background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+          <button @click="handleDemoLogin('ADMIN')" style="width: 100%; padding: 8px 16px; background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
             Admin (admin / admin123)
           </button>
-          <button @click="fillDemo('security')" style="width: 100%; padding: 8px 16px; background-color: #f8fafc; color: #475569; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+          <button @click="handleDemoLogin('SECURITY_OFFICER')" style="width: 100%; padding: 8px 16px; background-color: #f8fafc; color: #475569; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
             Security Officer (security / security123)
           </button>
-          <button @click="fillDemo('owner')" style="width: 100%; padding: 8px 16px; background-color: #f9fafb; color: #374151; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+          <button @click="handleDemoLogin('SYSTEM_OWNER')" style="width: 100%; padding: 8px 16px; background-color: #f9fafb; color: #374151; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
             System Owner (system_owner / owner123)
+          </button>
+          <button @click="handleDemoLogin('TECHNICAL_EXPERT')" style="width: 100%; padding: 8px 16px; background-color: #f9fafb; color: #374151; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+            Technical Expert (technical_expert / expert123)
           </button>
         </div>
       </div>
@@ -151,5 +164,39 @@ button[style*="background-color: #f8fafc"]:hover {
 
 button[style*="background-color: #f9fafb"]:hover {
   background-color: #f3f4f6 !important;
+}
+
+.demo-login-container {
+  margin-top: 32px;
+  text-align: center;
+  width: 100%;
+}
+
+.demo-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #4b5563;
+  margin-bottom: 16px;
+}
+
+.demo-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.demo-button {
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background-color: #f9fafb;
+  color: #374151;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.demo-button:hover {
+  background-color: #f3f4f6;
 }
 </style> 

@@ -102,10 +102,10 @@ const deleteUser = async (userId) => {
               <td style="padding: 16px 24px; color: #6b7280;">{{ user.email }}</td>
               <td style="padding: 16px 24px;">
                 <span style="display: inline-block; padding: 4px 12px; border-radius: 9999px; font-size: 13px; font-weight: 500; background-color: #f3f4f6; color: #374151;">
-                  {{ user.role.replace('_', ' ') }}
+                  {{ user.roleName ? user.roleName.replace('_', ' ') : 'N/A' }}
                 </span>
               </td>
-              <td style="padding: 16px 24px; color: #6b7280;">{{ user.department }}</td>
+              <td style="padding: 16px 24px; color: #6b7280;">{{ user.department || 'N/A' }}</td>
               <td style="padding: 16px 24px; text-align: right;">
                 <button v-if="user.id !== 1" @click="deleteUser(user.id)" style="color: #2563eb; font-weight: 500; text-decoration: none; transition: color 0.2s; :hover { color: #1d4ed8; }">Delete</button>
               </td>

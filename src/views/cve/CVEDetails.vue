@@ -138,13 +138,20 @@ onMounted(() => {
         <div style="display: grid; gap: 16px; margin-bottom: 24px;">
           <div>
             <label for="status" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">New Status</label>
-            <select id="status" v-model="newStatus" style="width: 100%; border-radius: 6px; border: 1px solid #D1D5DB; padding: 10px 12px; font-size: 14px; line-height: 1.5; color: #111827; background-color: white; transition: border-color 0.2s; box-sizing: border-box; appearance: none; background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTYgOEwxMCAxMkwxNCA4IiBzdHJva2U9IiM2QjcyODAiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+'); background-position: right 12px center; background-repeat: no-repeat; background-size: 16px 16px; padding-right: 40px;">
-              <option value="">Select a status</option>
-              <option value="open">Open</option>
-              <option value="in_progress">In Progress</option>
-              <option value="resolved">Resolved</option>
-              <option value="accepted_risk">Accepted Risk</option>
-            </select>
+            <div style="position: relative;">
+              <select id="status" v-model="newStatus" style="width: 100%; border-radius: 6px; border: 1px solid #D1D5DB; padding: 10px 40px 10px 12px; font-size: 14px; line-height: 1.5; color: #111827; background-color: white; transition: border-color 0.2s; box-sizing: border-box; appearance: none;">
+                <option value="">Select a status</option>
+                <option value="open">Open</option>
+                <option value="in_progress">In Progress</option>
+                <option value="resolved">Resolved</option>
+                <option value="accepted_risk">Accepted Risk</option>
+              </select>
+              <div style="pointer-events: none; position: absolute; top: 0; right: 0; bottom: 0; display: flex; align-items: center; padding: 0 12px; color: #6b7280;">
+                <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+                </svg>
+                             </div>
+             </div>
           </div>
           
           <div>

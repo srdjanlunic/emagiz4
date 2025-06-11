@@ -2,9 +2,12 @@ package service;
 
 import dao.UserDAO;
 import model.User;
+import model.Role;
+import dto.UserDTO;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.UUID;
+import java.util.ArrayList;
 
 public class UserService {
     private UserDAO userDAO;
@@ -41,6 +44,16 @@ public class UserService {
     // get all users
     public List<User> getAllUsers() {
         return userDAO.findAll();
+    }
+
+    public List<UserDTO> getAllUsersAsDTO() {
+        List<User> users = userDAO.findAll();
+        List<UserDTO> userDTOs = new ArrayList<>();
+
+        for (User user : users) {
+            userDTOs.add(new UserDTO(user.getId(), user.getUsername(), user.getEmail(), user.getRoleName()));
+        }
+        return userDTOs;
     }
 
     // update user

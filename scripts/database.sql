@@ -91,7 +91,8 @@ CREATE TABLE Vulnerability (
                                vendor TEXT,
                                published_date TIMESTAMP,
                                last_modified TIMESTAMP,
-                               imported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                               imported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                               status VARCHAR(50) DEFAULT 'open'
 );
 
 CREATE TABLE VulnerabilityUpdate (
@@ -165,5 +166,14 @@ CREATE TABLE ReportLog (
                            file_path TEXT,
                            file_format TEXT,
                            generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Junction table for many-to-many relationship between System and Vulnerability
+CREATE TABLE SystemVulnerability (
+    system_id UUID NOT NULL,
+    vulnerability_id UUID NOT NULL,
+    PRIMARY KEY (system_id, vulnerability_id),
+    FOREIGN KEY (system_id) REFERENCES ITSystem(id) ON DELETE CASCADE,
+    FOREIGN KEY (vulnerability_id) REFERENCES Vulnerability(id) ON DELETE CASCADE
 );
 

@@ -106,10 +106,11 @@ public class UserDAO {
         Connection conn = null;
         PreparedStatement stmt = null;
         ResultSet rs = null;
+        String sql = "SELECT u.*, r.name as role_name FROM UserAccount u LEFT JOIN Role r ON u.role_id = r.id ORDER BY u.created_at DESC";
 
         try {
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("SELECT * FROM UserAccount ORDER BY created_at DESC");
+            stmt = conn.prepareStatement(sql);
             rs = stmt.executeQuery();
 
             while (rs.next()) {
@@ -227,6 +228,28 @@ public class UserDAO {
         return users;
     }
 
+    public User findFirstByRoleId(UUID roleId) {
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DatabaseConfig.getConnection();
+            stmt = conn.prepareStatement("SELECT * FROM UserAccount WHERE role_id = ? AND is_active = true LIMIT 1");
+            stmt.setObject(1, roleId);
+            rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return mapResultSetToUser(rs);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            DatabaseUtil.closeResources(conn, stmt, rs);
+        }
+        return null;
+    }
+
     private User mapResultSetToUser(ResultSet rs) throws SQLException {
         User user = new User();
         user.setId((UUID) rs.getObject("id"));
@@ -239,6 +262,22 @@ public class UserDAO {
         user.setOrganizationId((UUID) rs.getObject("organization_id"));
         user.setActive(rs.getBoolean("is_active"));
         user.setCreatedAt(rs.getTimestamp("created_at"));
+        
+        if (hasColumn(rs, "role_name")) {
+            user.setRoleName(rs.getString("role_name"));
+        }
+        
         return user;
+    }
+
+    private boolean hasColumn(ResultSet rs, String columnName) throws SQLException {
+        ResultSetMetaData rsmd = rs.getMetaData();
+        int columns = rsmd.getColumnCount();
+        for (int x = 1; x <= columns; x++) {
+            if (columnName.equalsIgnoreCase(rsmd.getColumnName(x))) {
+                return true;
+            }
+        }
+        return false;
     }
 }

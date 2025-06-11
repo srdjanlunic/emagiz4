@@ -9,6 +9,7 @@ import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import dto.UserDTO;
 
 @Path("/users")
 @Produces(MediaType.APPLICATION_JSON)
@@ -30,15 +31,18 @@ public class UserResource {
             if (createdUser != null) {
                 return Response.status(Response.Status.CREATED)
                         .entity(JsonUtil.toJson(createdUser))
+                        .header("Cache-Control", "no-store")
                         .build();
             } else {
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(JsonUtil.toJson(Map.of("error", "Failed to create user")))
+                        .header("Cache-Control", "no-store")
                         .build();
             }
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(JsonUtil.toJson(Map.of("error", "User creation failed: " + e.getMessage())))
+                    .header("Cache-Control", "no-store")
                     .build();
         }
     }
@@ -47,11 +51,12 @@ public class UserResource {
     @GET
     public Response getAllUsers() {
         try {
-            List<User> users = userService.getAllUsers();
-            return Response.ok(JsonUtil.toJson(users)).build();
+            List<UserDTO> users = userService.getAllUsersAsDTO();
+            return Response.ok(JsonUtil.toJson(users)).header("Cache-Control", "no-store").build();
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve users: " + e.getMessage())))
+                    .header("Cache-Control", "no-store")
                     .build();
         }
     }
@@ -64,15 +69,17 @@ public class UserResource {
             UUID id = UUID.fromString(idStr);
             User user = userService.getUserById(id);
             if (user != null) {
-                return Response.ok(JsonUtil.toJson(user)).build();
+                return Response.ok(JsonUtil.toJson(user)).header("Cache-Control", "no-store").build();
             } else {
                 return Response.status(Response.Status.NOT_FOUND)
                         .entity(JsonUtil.toJson(Map.of("error", "User not found")))
+                        .header("Cache-Control", "no-store")
                         .build();
             }
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve user: " + e.getMessage())))
+                    .header("Cache-Control", "no-store")
                     .build();
         }
     }
@@ -88,15 +95,17 @@ public class UserResource {
             User updatedUser = userService.updateUser(user);
 
             if (updatedUser != null) {
-                return Response.ok(JsonUtil.toJson(updatedUser)).build();
+                return Response.ok(JsonUtil.toJson(updatedUser)).header("Cache-Control", "no-store").build();
             } else {
                 return Response.status(Response.Status.NOT_FOUND)
                         .entity(JsonUtil.toJson(Map.of("error", "User not found")))
+                        .header("Cache-Control", "no-store")
                         .build();
             }
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(JsonUtil.toJson(Map.of("error", "User update failed: " + e.getMessage())))
+                    .header("Cache-Control", "no-store")
                     .build();
         }
     }
@@ -109,15 +118,17 @@ public class UserResource {
             UUID id = UUID.fromString(idStr);
             boolean deleted = userService.deleteUser(id);
             if (deleted) {
-                return Response.ok(JsonUtil.toJson(Map.of("message", "User deleted successfully"))).build();
+                return Response.ok(JsonUtil.toJson(Map.of("message", "User deleted successfully"))).header("Cache-Control", "no-store").build();
             } else {
                 return Response.status(Response.Status.NOT_FOUND)
                         .entity(JsonUtil.toJson(Map.of("error", "User not found")))
+                        .header("Cache-Control", "no-store")
                         .build();
             }
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(JsonUtil.toJson(Map.of("error", "User deletion failed: " + e.getMessage())))
+                    .header("Cache-Control", "no-store")
                     .build();
         }
     }
@@ -129,10 +140,11 @@ public class UserResource {
         try {
             UUID departmentId = UUID.fromString(departmentIdStr);
             List<User> users = userService.getUsersByDepartment(departmentId);
-            return Response.ok(JsonUtil.toJson(users)).build();
+            return Response.ok(JsonUtil.toJson(users)).header("Cache-Control", "no-store").build();
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve users by department: " + e.getMessage())))
+                    .header("Cache-Control", "no-store")
                     .build();
         }
     }

@@ -42,70 +42,54 @@ public class RoleDAO {
         return null;
     }
 
-    public Role findById(UUID id) {
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-
-        try {
-            conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("SELECT * FROM Role WHERE id = ?");
-            stmt.setObject(1, id);
-            rs = stmt.executeQuery();
-
-            if (rs.next()) {
-                return mapResultSetToRole(rs);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
-            DatabaseUtil.closeResources(conn, stmt, rs);
-        }
-        return null;
-    }
-
-    public Role findByName(String name) {
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-
-        try {
-            conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("SELECT * FROM Role WHERE name = ?");
-            stmt.setString(1, name);
-            rs = stmt.executeQuery();
-
-            if (rs.next()) {
-                return mapResultSetToRole(rs);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
-            DatabaseUtil.closeResources(conn, stmt, rs);
-        }
-        return null;
-    }
-
     public List<Role> findAll() {
         List<Role> roles = new ArrayList<>();
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-
-        try {
-            conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("SELECT * FROM Role ORDER BY name");
-            rs = stmt.executeQuery();
+        String sql = "SELECT * FROM Role ORDER BY name";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
                 roles.add(mapResultSetToRole(rs));
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            DatabaseUtil.closeResources(conn, stmt, rs);
         }
         return roles;
+    }
+
+    public Role findByName(String name) {
+        Role role = null;
+        String sql = "SELECT * FROM Role WHERE LOWER(name) = LOWER(?)";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, name);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    role = mapResultSetToRole(rs);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return role;
+    }
+
+    public Role findById(UUID id) {
+        Role role = null;
+        String sql = "SELECT * FROM Role WHERE id = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setObject(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    role = mapResultSetToRole(rs);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return role;
     }
 
     public Role update(Role role) {

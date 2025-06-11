@@ -139,7 +139,7 @@ const handlePrimaryAction = () => {
             </div>
             <div>
               <p style="font-size: 14px; font-weight: 500; color: white; margin: 0;">{{ user?.username }}</p>
-              <p style="font-size: 12px; color: #9ca3af; margin: 0; text-transform: capitalize;">{{ user?.role?.replace('_', ' ').toLowerCase() }}</p>
+              <p style="font-size: 12px; color: #9ca3af; margin: 0; text-transform: capitalize;">{{ user?.roleName?.replace('_', ' ').toLowerCase() }}</p>
             </div>
           </div>
           <button @click="logout" style="padding: 8px; background: none; border: none; color: #9ca3af; cursor: pointer; border-radius: 4px; transition: color 0.2s;">

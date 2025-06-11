@@ -1,22 +1,23 @@
 import { defineStore } from 'pinia'
 
-const API_BASE_URL = 'https://emagiz4.paas.hosted-by-previder.com/api'
+const API_BASE_URL = 'http://localhost:8088/vulnerability-management-system/api'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: JSON.parse(localStorage.getItem('user')) || null,
     token: localStorage.getItem('token') || null, 
     loading: false,
-    error: null
+    error: null,
+    apiUrl: 'http://localhost:8088/vulnerability-management-system', // Base API URL
   }),
   
   getters: {
     isAuthenticated: (state) => !!state.token && !!state.user,
-    isAdmin: (state) => state.user?.role === 'ADMIN',
-    isSecurityOfficer: (state) => state.user?.role === 'SECURITY_OFFICER',
-    isSystemOwner: (state) => state.user?.role === 'SYSTEM_OWNER',
-    isTechnicalExpert: (state) => state.user?.role === 'TECHNICAL_EXPERT',
-    userRole: (state) => state.user?.role || null
+    isAdmin: (state) => state.user?.roleName?.toUpperCase() === 'ADMIN',
+    isSecurityOfficer: (state) => state.user?.roleName?.toUpperCase() === 'SECURITY_OFFICER',
+    isSystemOwner: (state) => state.user?.roleName?.toUpperCase() === 'SYSTEM_OWNER',
+    isTechnicalExpert: (state) => state.user?.roleName?.toUpperCase() === 'TECHNICAL_EXPERT',
+    userRole: (state) => state.user?.roleName?.toUpperCase() || null
   },
   
   actions: {
@@ -42,6 +43,9 @@ export const useAuthStore = defineStore('auth', {
         
         this.token = data.token;
         this.user = data.user;
+        
+        console.log("User logged in:", this.user);
+        console.log("User role:", this.user?.roleName);
         
         // Store in localStorage
         localStorage.setItem('token', data.token);
@@ -117,19 +121,17 @@ export const useAuthStore = defineStore('auth', {
     
     // Helper method to make authenticated API calls
     async apiCall(endpoint, options = {}) {
-      if (!this.token) {
-        throw new Error('No authentication token');
-      }
+      const url = `${API_BASE_URL}${endpoint}`;
       
-      const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.token}`,
+        ...options.headers
+      }
       
       const response = await fetch(url, {
         ...options,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.token}`,
-          ...options.headers
-        }
+        headers: headers
       });
       
       if (response.status === 401) {
@@ -143,6 +145,23 @@ export const useAuthStore = defineStore('auth', {
       }
       
       return response.json();
-    }
+    },
+
+    async demoLogin(roleName) {
+      this.loading = true
+      this.error = null
+      try {
+        const response = await this.apiCall('/auth/demo-login', {
+          method: 'POST',
+          body: JSON.stringify({ roleName }),
+        })
+        this.setAuth(response.token, response.user)
+      } catch (error) {
+        this.error = error.message
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
   }
 }) 

@@ -84,7 +84,7 @@ const addSystem = () => {
 
 // Check if user can add systems
 const canAddSystem = computed(() => {
-  return isAdmin.value || isSystemOwner.value;
+  return isAdmin.value || isSystemOwner.value || isSecurityOfficer.value;
 });
 
 // Fetch data on mount
@@ -171,35 +171,32 @@ onMounted(async () => {
             </thead>
             <tbody>
               <tr v-for="system in filteredSystems" :key="system.id">
-                <td class="system-name">
-                  <div class="name">{{ system.name }}</div>
-                  <div class="os">{{ system.version || 'N/A' }}</div>
+                <td style="padding: 16px 24px; border-bottom: 1px solid #e5e7eb;">
+                  <div style="font-weight: 500; color: #111827; margin-bottom: 4px;">{{ system.name }}</div>
+                  <div v-if="system.version" style="font-size: 13px; color: #6b7280;">v{{ system.version }}</div>
+                  <div v-if="system.vendor" style="font-size: 12px; color: #9ca3af; margin-top: 2px;">{{ system.vendor }}</div>
                 </td>
-                <td>
-                  <div class="risk-score" :class="{
-                    'high': calculateRiskScore(system) > 60,
-                    'medium': calculateRiskScore(system) > 30 && calculateRiskScore(system) <= 60,
-                    'low': calculateRiskScore(system) <= 30
-                  }">
+                <td style="padding: 16px 24px; border-bottom: 1px solid #e5e7eb;">
+                  <div style="font-weight: 500;" :style="calculateRiskScore(system) > 60 ? 'color: #dc2626;' : calculateRiskScore(system) > 30 ? 'color: #d97706;' : 'color: #059669;'">
                     {{ calculateRiskScore(system) }}
                   </div>
                 </td>
-                <td>
-                  <span class="criticality-badge" :class="getCriticalityClass(system.criticalityLevel)">
+                <td style="padding: 16px 24px; border-bottom: 1px solid #e5e7eb;">
+                  <span style="display: inline-block; padding: 4px 12px; border-radius: 9999px; font-size: 13px; font-weight: 500;" :style="getCriticalityClass(system.criticalityLevel) === 'badge-red' ? 'background-color: #fee2e2; color: #991b1b;' : getCriticalityClass(system.criticalityLevel) === 'badge-yellow' ? 'background-color: #fef3c7; color: #92400e;' : 'background-color: #d1fae5; color: #065f46;'">
                     {{ system.criticalityLevel?.charAt(0).toUpperCase() + system.criticalityLevel?.slice(1).toLowerCase() || 'Unknown' }}
                   </span>
                 </td>
-                <td>
-                  <div class="cve-count">
-                    <span class="open">{{ getOpenCVEsCount(system.id) }}</span> open, 
-                    <span class="resolved">{{ getResolvedCVEsCount(system.id) }}</span> resolved
+                <td style="padding: 16px 24px; border-bottom: 1px solid #e5e7eb;">
+                  <div style="font-size: 14px; color: #374151;">
+                    <span style="color: #dc2626; font-weight: 500;">{{ getOpenCVEsCount(system.id) }}</span> open, 
+                    <span style="color: #059669; font-weight: 500;">{{ getResolvedCVEsCount(system.id) }}</span> resolved
                   </div>
                 </td>
-                <td class="date">
+                <td style="padding: 16px 24px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">
                   {{ formatDate(system.createdAt) }}
                 </td>
-                <td class="actions">
-                  <router-link :to="`/cve?system=${system.id}`" class="view-link">
+                <td style="padding: 16px 24px; border-bottom: 1px solid #e5e7eb; text-align: right;">
+                  <router-link :to="`/cve?system=${system.id}`" style="color: #2563eb; font-weight: 500; text-decoration: none; transition: color 0.2s;">
                     View CVEs
                   </router-link>
                 </td>
@@ -321,82 +318,7 @@ tr:last-child td {
   border-bottom: none;
 }
 
-.system-name .name {
-  font-weight: 500;
-  color: #111827;
-  margin-bottom: 4px;
-}
 
-.system-name .os {
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.risk-score {
-  font-weight: 500;
-}
-
-.risk-score.high { color: #dc2626; }
-.risk-score.medium { color: #d97706; }
-.risk-score.low { color: #059669; }
-
-.criticality-badge {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 9999px;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.badge-red {
-  background-color: #fee2e2;
-  color: #991b1b;
-}
-
-.badge-yellow {
-  background-color: #fef3c7;
-  color: #92400e;
-}
-
-.badge-green {
-  background-color: #d1fae5;
-  color: #065f46;
-}
-
-.cve-count {
-  font-size: 14px;
-  color: #374151;
-}
-
-.cve-count .open {
-  color: #dc2626;
-  font-weight: 500;
-}
-
-.cve-count .resolved {
-  color: #059669;
-  font-weight: 500;
-}
-
-.date {
-  color: #6b7280;
-  font-size: 14px;
-}
-
-.view-link {
-  color: #2563eb;
-  font-weight: 500;
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-.view-link:hover {
-  color: #1d4ed8;
-}
-
-.actions {
-  text-align: right;
-}
 
 @media (max-width: 768px) {
   .page-header {

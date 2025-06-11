@@ -32,7 +32,7 @@ public class AuthFilter implements Filter {
 
         // Skip authentication for login and public endpoints
         String path = httpRequest.getRequestURI();
-        if (path.contains("/auth/login") || path.contains("/auth/validate") || path.contains("/health")) {
+        if (path.endsWith("/auth/login") || path.endsWith("/health") || path.endsWith("/auth/demo-login")) {
             chain.doFilter(request, response);
             return;
         }
