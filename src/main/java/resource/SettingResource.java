@@ -1,5 +1,6 @@
 package resource;
 
+import jakarta.annotation.security.RolesAllowed;
 import service.SettingService;
 import util.JsonUtil;
 
@@ -22,6 +23,7 @@ public class SettingResource {
 
     @GET
     @Path("/{key}")
+    @RolesAllowed({"security_officer", "technical_expert", "admin"})
     public Response getSetting(@PathParam("key") String key) {
         String value = settingService.getSetting(key);
         if (value != null) {

@@ -1,5 +1,6 @@
 package resource;
 
+import jakarta.annotation.security.RolesAllowed;
 import service.UserService;
 import model.User;
 import util.JsonUtil;
@@ -45,6 +46,7 @@ public class UserResource {
     }
 
     @GET
+    @RolesAllowed({"security_officer", "admin"})
     public Response getAllUsers() {
         try {
             List<UserDto> users = userService.getAllUsers();
@@ -59,6 +61,7 @@ public class UserResource {
     // get user by id
     @GET
     @Path("/{id}")
+    @RolesAllowed({"security_officer", "admin"})
     public Response getUserById(@PathParam("id") String idStr) {
         try {
             UUID id = UUID.fromString(idStr);
@@ -82,6 +85,7 @@ public class UserResource {
     // update user
     @PUT
     @Path("/{id}")
+    @RolesAllowed({"security_officer", "admin"})
     public Response updateUser(@PathParam("id") String idStr, String userJson) {
         try {
             UUID id = UUID.fromString(idStr);
@@ -108,6 +112,7 @@ public class UserResource {
     // delete user
     @DELETE
     @Path("/{id}")
+    @RolesAllowed({"security_officer", "admin"})
     public Response deleteUser(@PathParam("id") String idStr) {
         try {
             UUID id = UUID.fromString(idStr);
@@ -131,6 +136,7 @@ public class UserResource {
     // get users by department
     @GET
     @Path("/department/{departmentId}")
+    @RolesAllowed({"security_officer", "admin"})
     public Response getUsersByDepartment(@PathParam("departmentId") String departmentIdStr) {
         try {
             UUID departmentId = UUID.fromString(departmentIdStr);

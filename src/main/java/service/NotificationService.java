@@ -30,6 +30,7 @@ public class NotificationService {
     // create notification for user
     public NotificationDto createNotification(UUID userId, String type, String message, UUID entityId) {
         Notification notification = new Notification();
+        notification.setId(UUID.randomUUID());
         notification.setUserId(userId);
         notification.setMessage(message);
         notification.setType(type);

@@ -1,5 +1,6 @@
 package resource;
 
+import jakarta.annotation.security.RolesAllowed;
 import service.AuthService;
 import model.User;
 import security.JWTUtil;

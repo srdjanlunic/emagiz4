@@ -12,7 +12,7 @@ public class NotificationDAO {
 
     // create new notification
     public Notification create(Notification notification) {
-        String sql = "INSERT INTO Notification (user_id, match_id, system_id, vulnerability_id, message, type, priority, is_read, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id";
+        String sql = "INSERT INTO Notification (id, user_id, match_id, system_id, vulnerability_id, message, type, priority, is_read, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id";
 
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -21,16 +21,17 @@ public class NotificationDAO {
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement(sql);
-
-            stmt.setObject(1, notification.getUserId());
-            stmt.setObject(2, notification.getMatchId());
-            stmt.setObject(3, notification.getSystemId());
-            stmt.setObject(4, notification.getVulnerabilityId());
-            stmt.setString(5, notification.getMessage());
-            stmt.setString(6, notification.getType());
-            stmt.setString(7, notification.getPriority());
-            stmt.setBoolean(8, notification.isRead());
-            stmt.setTimestamp(9, notification.getCreatedAt());
+            
+            stmt.setObject(1, UUID.randomUUID());
+            stmt.setObject(2, notification.getUserId());
+            stmt.setObject(3, notification.getMatchId());
+            stmt.setObject(4, notification.getSystemId());
+            stmt.setObject(5, notification.getVulnerabilityId());
+            stmt.setString(6, notification.getMessage());
+            stmt.setString(7, notification.getType());
+            stmt.setString(8, notification.getPriority());
+            stmt.setBoolean(9, notification.isRead());
+            stmt.setTimestamp(10, notification.getCreatedAt());
 
             rs = stmt.executeQuery();
             if (rs.next()) {

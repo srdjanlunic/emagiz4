@@ -1,5 +1,6 @@
 package resource;
 
+import jakarta.annotation.security.RolesAllowed;
 import model.ITSystem;
 import model.SystemImplementation;
 import service.SystemImplementationService;
@@ -34,6 +35,7 @@ public class SystemResource {
     }
 
     @POST
+    @RolesAllowed({"security_officer", "system_owner", "admin"})
     public Response createSystem(String systemJson) {
         logger.info("Received request to create system with JSON: {}", systemJson);
         try {
@@ -76,6 +78,7 @@ public class SystemResource {
 
     @PUT
     @Path("/{id}")
+    @RolesAllowed({"security_officer", "system_owner", "admin"})
     public Response updateSystem(@PathParam("id") String idStr, String systemJson) {
         try {
             UUID id = UUID.fromString(idStr);
@@ -93,6 +96,7 @@ public class SystemResource {
 
     @DELETE
     @Path("/{id}")
+    @RolesAllowed({"security_officer", "system_owner", "admin"})
     public Response deleteSystem(@PathParam("id") String idStr) {
         try {
             UUID id = UUID.fromString(idStr);
@@ -113,6 +117,7 @@ public class SystemResource {
 
     @POST
     @Path("/implementations")
+    @RolesAllowed({"security_officer", "system_owner", "admin"})
     public Response createSystemImplementation(String implJson) {
         try {
             SystemImplementationDto implDto = JsonUtil.fromJson(implJson, SystemImplementationDto.class);
@@ -158,6 +163,7 @@ public class SystemResource {
 
     @PUT
     @Path("/implementations/{id}")
+    @RolesAllowed({"security_officer", "system_owner", "admin"})
     public Response updateSystemImplementation(@PathParam("id") String idStr, String implJson) {
         try {
             UUID id = UUID.fromString(idStr);
@@ -175,6 +181,7 @@ public class SystemResource {
 
     @DELETE
     @Path("/implementations/{id}")
+    @RolesAllowed({"security_officer", "system_owner", "admin"})
     public Response deleteSystemImplementation(@PathParam("id") String idStr) {
         try {
             UUID id = UUID.fromString(idStr);

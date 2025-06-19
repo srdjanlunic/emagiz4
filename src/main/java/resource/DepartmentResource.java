@@ -1,5 +1,6 @@
 package resource;
 
+import jakarta.annotation.security.RolesAllowed;
 import service.DepartmentService;
 import model.Department;
 import util.JsonUtil;
@@ -20,8 +21,10 @@ public class DepartmentResource {
     public DepartmentResource() {
         this.departmentService = new DepartmentService();
     }
-
+    
+    
     @POST
+    @RolesAllowed({"security_officer", "admin"})
     public Response createDepartment(String departmentJson) {
         try {
             Department department = JsonUtil.fromJson(departmentJson, Department.class);
@@ -63,6 +66,7 @@ public class DepartmentResource {
     }
 
     @GET
+    @RolesAllowed({"security_officer", "admin"})
     public Response getAllDepartments() {
         try {
             List<Department> departments = departmentService.getAllDepartments();
@@ -76,6 +80,7 @@ public class DepartmentResource {
 
     @GET
     @Path("/{id}")
+    @RolesAllowed({"security_officer", "admin"})
     public Response getDepartmentById(@PathParam("id") String idStr) {
         try {
             UUID id = UUID.fromString(idStr);
@@ -96,6 +101,7 @@ public class DepartmentResource {
 
     @PUT
     @Path("/{id}")
+    @RolesAllowed({"security_officer", "admin"})
     public Response updateDepartment(@PathParam("id") String idStr, String departmentJson) {
         try {
             UUID id = UUID.fromString(idStr);
@@ -119,6 +125,7 @@ public class DepartmentResource {
 
     @DELETE
     @Path("/{id}")
+    @RolesAllowed({"security_officer", "admin"})
     public Response deleteDepartment(@PathParam("id") String idStr) {
         try {
             UUID id = UUID.fromString(idStr);

@@ -20,7 +20,7 @@ public class UserDAO {
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement(
-                    "SELECT * FROM UserAccount WHERE username = ?"
+                    "SELECT * FROM UserAccount WHERE username = ? AND is_active = true"
             );
             stmt.setString(1, username);
             rs = stmt.executeQuery();
@@ -88,7 +88,7 @@ public class UserDAO {
     public List<UserDto> findAll() {
         String sql = "SELECT u.id, u.username, u.email, r.name as role_name " +
                      "FROM useraccount u " +
-                     "LEFT JOIN role r ON u.role_id = r.id";
+                     "LEFT JOIN role r ON u.role_id = r.id WHERE is_active = true";
         List<UserDto> users = new ArrayList<>();
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
@@ -235,7 +235,7 @@ public class UserDAO {
         return null;
     }
 
-    private User mapResultSetToUser(ResultSet rs) throws SQLException {
+    public User mapResultSetToUser(ResultSet rs) throws SQLException {
         User user = new User();
         user.setId((UUID) rs.getObject("id"));
         user.setUsername(rs.getString("username"));
