@@ -26,7 +26,7 @@ public class ReportResource {
      */
     @POST
     @Path("/dashboard")
-    ////@RolesAllowed({"security_officer", "admin"})
+    @RolesAllowed({"security_officer", "admin"})
     public Response dashboard() {
         // svc.generateDashboard() returns Map<UUID, Map<String,Long>>
         return Response.ok(svc.generateDashboard()).build();

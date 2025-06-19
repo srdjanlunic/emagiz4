@@ -23,7 +23,7 @@ public class ReportLogResource {
      */
     @GET
     @Path("/last-import")
-    ////@RolesAllowed({"security_officer", "admin"})
+    @RolesAllowed({"security_officer", "admin"})
     public Response lastImport(@QueryParam("type") String type) {
         if (type == null || type.isBlank()) {
             return Response.status(Response.Status.BAD_REQUEST)
@@ -38,7 +38,7 @@ public class ReportLogResource {
      * GET /report-logs
      */
     @GET
-    ////@RolesAllowed({"security_officer", "admin"})
+    @RolesAllowed({"security_officer", "admin"})
     public Response list() {
         return Response.ok(svc.listAllReportLogs()).build();
     }
@@ -48,7 +48,7 @@ public class ReportLogResource {
      * Body is a full ReportLog JSON; returns created record with id.
      */
     @POST
-    ////@RolesAllowed({"security_officer", "admin"})
+    @RolesAllowed({"security_officer", "admin"})
     public Response create(ReportLog rl) {
         ReportLog created = svc.logReport(rl);
         return Response.status(Response.Status.CREATED).entity(created).build();
