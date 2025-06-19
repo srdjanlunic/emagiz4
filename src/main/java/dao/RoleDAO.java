@@ -58,21 +58,29 @@ public class RoleDAO {
         return roles;
     }
 
-    public Role findByName(String name) {
-        Role role = null;
-        String sql = "SELECT * FROM Role WHERE LOWER(name) = LOWER(?)";
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, name);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    role = mapResultSetToRole(rs);
-                }
+    public Role findByName(String roleName) {
+        String sql = "SELECT * FROM role WHERE LOWER(name) = LOWER(?)";
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        try {
+            conn = DatabaseConfig.getConnection();
+            stmt = conn.prepareStatement(sql);
+            stmt.setString(1, roleName);
+            rs = stmt.executeQuery();
+            if (rs.next()) {
+                Role role = new Role();
+                role.setId((UUID) rs.getObject("id"));
+                role.setName(rs.getString("name"));
+                role.setDescription(rs.getString("description"));
+                return role;
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            DatabaseUtil.closeResources(conn, stmt, rs);
         }
-        return role;
+        return null;
     }
 
     public Role findById(UUID id) {

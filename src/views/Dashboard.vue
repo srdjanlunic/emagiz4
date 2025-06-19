@@ -5,12 +5,14 @@ import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Toolti
 import { useSystemsStore } from '../stores/systems';
 import { useCVEsStore } from '../stores/cves';
 import { useAuthStore } from '../stores/auth';
+import { useNotificationsStore } from '../stores/notifications';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 const systemsStore = useSystemsStore();
 const cvesStore = useCVEsStore();
 const authStore = useAuthStore();
+const notificationStore = useNotificationsStore();
 
 const systems = computed(() => systemsStore.systems);
 const isAdmin = computed(() => authStore.isAdmin);
@@ -74,10 +76,18 @@ const importNewCVEs = async () => {
   
   try {
     loading.value = true;
-    const newCVEs = await cvesStore.importCVEs();
-    alert(`Successfully imported ${newCVEs.length} new CVEs`);
+    const result = await cvesStore.importCVEs();
+    notificationStore.addNotification({
+      message: result.message,
+      type: 'success',
+      timeout: 5000
+    });
   } catch (error) {
-    alert('Error importing CVEs');
+    notificationStore.addNotification({
+      message: 'Error importing CVEs',
+      type: 'error',
+      timeout: 5000
+    });
   } finally {
     loading.value = false;
   }

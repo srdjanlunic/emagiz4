@@ -3,100 +3,94 @@ package service;
 import dao.UserDAO;
 import model.User;
 import model.Role;
-import dto.UserDTO;
+import dto.UserDto;
+import dto.UserCreationRequestDto;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.UUID;
-import java.util.ArrayList;
 
 public class UserService {
     private UserDAO userDAO;
     private AuthService authService;
+    private RoleService roleService;
 
     public UserService() {
         this.userDAO = new UserDAO();
         this.authService = new AuthService();
+        this.roleService = new RoleService();
     }
 
-    // create new user (admin only)
-    public User createUser(User user) {
-        // Hash password before saving
-        if (user.getPassword() != null) {
-            String hashedPassword = authService.hashPassword(user.getPassword());
-            user.setPassword(hashedPassword);
+    public User createUser(UserCreationRequestDto userRequest) {
+        User user = new User();
+        user.setUsername(userRequest.getUsername());
+        user.setEmail(userRequest.getEmail());
+        
+        if (userRequest.getPassword() != null && !userRequest.getPassword().isEmpty()) {
+            user.setPassword(authService.hashPassword(userRequest.getPassword()));
+        } else {
+            String tempPassword = UUID.randomUUID().toString().substring(0, 8);
+            user.setPassword(authService.hashPassword(tempPassword));
         }
 
-        // Set creation timestamp
-        user.setCreatedAt(new Timestamp(System.currentTimeMillis()));
+        Role role = roleService.getRoleByName(userRequest.getRole());
+        if (role != null) {
+            user.setRoleId(role.getId());
+        } else {
+            Role defaultRole = roleService.getRoleByName("SYSTEM_OWNER");
+            if (defaultRole != null) {
+                user.setRoleId(defaultRole.getId());
+            } else {
+                System.err.println("Default role 'SYSTEM_OWNER' not found.");
+                return null;
+            }
+        }
 
-        // Validate user data
+        user.setCreatedAt(new Timestamp(System.currentTimeMillis()));
+        user.setFirstName("");
+        user.setLastName("");
+
         if (validateUserData(user)) {
             return userDAO.create(user);
         }
         return null;
     }
 
-    // get user by id
     public User getUserById(UUID id) {
         return userDAO.findById(id);
     }
 
-    // get all users
-    public List<User> getAllUsers() {
+    public List<UserDto> getAllUsers() {
         return userDAO.findAll();
     }
 
-    public List<UserDTO> getAllUsersAsDTO() {
-        List<User> users = userDAO.findAll();
-        List<UserDTO> userDTOs = new ArrayList<>();
-
-        for (User user : users) {
-            userDTOs.add(new UserDTO(user.getId(), user.getUsername(), user.getEmail(), user.getRoleName()));
-        }
-        return userDTOs;
-    }
-
-    // update user
     public User updateUser(User user) {
-        // Validate user data
         if (validateUserData(user)) {
             return userDAO.update(user);
         }
         return null;
     }
 
-    // delete user (admin only)
     public boolean deleteUser(UUID id) {
         return userDAO.delete(id);
     }
 
-    // get users by department
     public List<User> getUsersByDepartment(UUID departmentId) {
         return userDAO.findByDepartment(departmentId);
     }
 
-    // get users by role
     public List<User> getUsersByRole(UUID roleId) {
         return userDAO.findByRole(roleId);
     }
 
-    // get user by username
     public User getUserByUsername(String username) {
         return userDAO.findByUsername(username);
     }
 
-    // validate user data
     private boolean validateUserData(User user) {
         if (user.getUsername() == null || user.getUsername().trim().isEmpty()) {
             return false;
         }
         if (user.getEmail() == null || user.getEmail().trim().isEmpty()) {
-            return false;
-        }
-        if (user.getFirstName() == null || user.getFirstName().trim().isEmpty()) {
-            return false;
-        }
-        if (user.getLastName() == null || user.getLastName().trim().isEmpty()) {
             return false;
         }
         return true;

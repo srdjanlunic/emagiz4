@@ -66,14 +66,23 @@ const updateCVEStatus = async () => {
     return;
   }
   
+  if (!cve.value.affectedSystems || cve.value.affectedSystems.length === 0) {
+    alert('This CVE is not associated with any system.');
+    return;
+  }
+
+  // For simplicity, we'll update the status for the first affected system.
+  // A more advanced implementation would let the user choose.
+  const systemIdToUpdate = cve.value.affectedSystems[0];
+
   loading.value = true;
   
   try {
     await cvesStore.updateCVEStatus(
       cveId.value,
+      systemIdToUpdate,
       newStatus.value,
-      statusNote.value,
-      user.value.id
+      statusNote.value
     );
     
     showUpdateForm.value = false;

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { useAuthStore } from './auth'
+import { useNotificationsStore } from './notifications'
 
 export const useAdminStore = defineStore('admin', {
   state: () => ({
@@ -39,19 +40,22 @@ export const useAdminStore = defineStore('admin', {
       }
     },
 
-    async createUser(user) {
-      const authStore = useAuthStore();
-      this.loading = true;
-      this.error = null;
+    async createUser(userData) {
+      const authStore = useAuthStore()
+      const notificationsStore = useNotificationsStore()
+      this.loading = true
+      this.error = null
       try {
         const newUser = await authStore.apiCall('/users', {
           method: 'POST',
-          body: JSON.stringify(user),
+          body: JSON.stringify(userData),
         });
         this.users.push(newUser);
+        notificationsStore.addNotification('User created successfully', 'success')
         return newUser;
       } catch (error) {
         this.error = error.message;
+        notificationsStore.addNotification(error.message || 'Failed to create user', 'error')
         throw error;
       } finally {
         this.loading = false;
@@ -89,8 +93,10 @@ export const useAdminStore = defineStore('admin', {
           method: 'DELETE',
         });
         this.users = this.users.filter(u => u.id !== id);
+        notificationsStore.addNotification('User deleted successfully', 'success');
       } catch (error) {
         this.error = error.message;
+        notificationsStore.addNotification(error.message || 'Failed to delete user', 'error');
         throw error;
       } finally {
         this.loading = false;
@@ -113,19 +119,24 @@ export const useAdminStore = defineStore('admin', {
       }
     },
 
-    async createDepartment(department) {
-      const authStore = useAuthStore();
-      this.loading = true;
-      this.error = null;
+    async createDepartment(departmentName) {
+      const authStore = useAuthStore()
+      const notificationsStore = useNotificationsStore()
+      this.loading = true
+      this.error = null
       try {
+        // In a real app with multi-tenancy, you would get the organizationId from the current user's session
+        const tempOrganizationId = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
         const newDepartment = await authStore.apiCall('/departments', {
           method: 'POST',
-          body: JSON.stringify(department),
+          body: JSON.stringify({ name: departmentName, organizationId: tempOrganizationId }),
         });
         this.departments.push(newDepartment);
+        notificationsStore.addNotification('Department created successfully', 'success')
         return newDepartment;
       } catch (error) {
         this.error = error.message;
+        notificationsStore.addNotification(error.message || 'Failed to create department', 'error')
         throw error;
       } finally {
         this.loading = false;
@@ -163,8 +174,10 @@ export const useAdminStore = defineStore('admin', {
           method: 'DELETE',
         });
         this.departments = this.departments.filter(d => d.id !== id);
+        notificationsStore.addNotification('Department deleted successfully', 'success');
       } catch (error) {
         this.error = error.message;
+        notificationsStore.addNotification(error.message || 'Failed to delete department', 'error');
         throw error;
       } finally {
         this.loading = false;

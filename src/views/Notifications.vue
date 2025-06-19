@@ -1,31 +1,19 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useCVEsStore } from '../stores/cves';
+import { useNotificationsStore } from '../stores/notifications';
 import { useAuthStore } from '../stores/auth';
 
 const router = useRouter();
-const cvesStore = useCVEsStore();
+const notificationsStore = useNotificationsStore();
 const authStore = useAuthStore();
 
 const userId = computed(() => authStore.user?.id);
 
-// Get all notifications for current user
-const notifications = computed(() => {
-  if (!userId.value) return [];
-  
-  return cvesStore.cves
-    .filter(cve => cve.notifications.some(n => n.userId === userId.value))
-    .map(cve => ({
-      ...cve,
-      notification: cve.notifications.find(n => n.userId === userId.value)
-    }))
-    .sort((a, b) => {
-      // Sort by read status (unread first) then by date (newest first)
-      if (!a.notification.read && b.notification.read) return -1;
-      if (a.notification.read && !b.notification.read) return 1;
-      return new Date(b.notification.createdAt) - new Date(a.notification.createdAt);
-    });
+const notifications = computed(() => notificationsStore.notifications);
+
+onMounted(() => {
+  notificationsStore.fetchNotifications();
 });
 
 // Format date
@@ -49,17 +37,16 @@ const formatDate = (dateString) => {
 };
 
 // Navigate to CVE details
-const viewCVE = (cveId) => {
-  router.push(`/cve/${cveId}`);
+const viewItem = (notification) => {
+  // This could be more sophisticated, routing to different pages based on notification type
+  if (notification.type === 'VULNERABILITY_MATCH') {
+    router.push(`/cve/${notification.vulnerabilityId}`);
+  }
 };
 
 // Mark a notification as read
-const markAsRead = async (cveId) => {
-  try {
-    await cvesStore.markNotificationRead(cveId, userId.value);
-  } catch (error) {
-    console.error('Error marking notification as read:', error);
-  }
+const markAsRead = async (notificationId) => {
+  await notificationsStore.markNotificationAsRead(notificationId);
 };
 </script>
 
@@ -84,16 +71,16 @@ const markAsRead = async (cveId) => {
           v-for="item in notifications" 
           :key="item.id"
           class="notification-item"
-          :class="{ 'unread': !item.notification.read }"
-          @click="viewCVE(item.id)"
+          :class="{ 'unread': !item.isRead }"
+          @click="viewItem(item)"
         >
           <div class="notification-content">
             <div class="notification-header">
               <div class="notification-title">
-                <div v-if="!item.notification.read" class="unread-dot"></div>
-                <h3>{{ item.id }}</h3>
+                <div v-if="!item.isRead" class="unread-dot"></div>
+                <h3>{{ item.type }}</h3>
               </div>
-              <div v-if="!item.notification.read" class="mark-read">
+              <div v-if="!item.isRead" class="mark-read">
                 <button 
                   @click.stop="markAsRead(item.id)"
                   class="mark-read-button"
@@ -102,8 +89,8 @@ const markAsRead = async (cveId) => {
                 </button>
               </div>
             </div>
-            <p class="notification-message">{{ item.notification.message }}</p>
-            <p class="notification-time">{{ formatDate(item.notification.createdAt) }}</p>
+            <p class="notification-message">{{ item.message }}</p>
+            <p class="notification-time">{{ formatDate(item.createdAt) }}</p>
           </div>
         </div>
       </div>

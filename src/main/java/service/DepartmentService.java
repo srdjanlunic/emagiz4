@@ -13,74 +13,27 @@ public class DepartmentService {
     }
 
     public Department createDepartment(Department department) {
-        try {
-            // Validate required fields
-            if (department.getName() == null || department.getName().trim().isEmpty()) {
-                throw new IllegalArgumentException("Department name is required");
-            }
-
-            if (department.getOrganizationId() == null) {
-                throw new IllegalArgumentException("Organization ID is required");
-            }
-
-            // Set default values if not provided
-            if (department.getId() == null) {
-                department.setId(UUID.randomUUID());
-            }
-
-            if (department.getCreatedAt() == null) {
-                department.setCreatedAt(new java.sql.Timestamp(System.currentTimeMillis()));
-            }
-
-            return departmentDAO.create(department);
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Failed to create department: " + e.getMessage(), e);
-        }
+        // Add any business logic here before creating the department
+        return departmentDAO.create(department);
     }
 
     public List<Department> getAllDepartments() {
-        try {
-            return departmentDAO.findAll();
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Failed to retrieve departments: " + e.getMessage(), e);
-        }
+        return departmentDAO.findAll();
     }
 
     public Department getDepartmentById(UUID id) {
-        try {
-            return departmentDAO.findById(id);
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Failed to retrieve department: " + e.getMessage(), e);
-        }
+        return departmentDAO.findById(id);
     }
 
     public Department updateDepartment(Department department) {
-        try {
-            return departmentDAO.update(department);
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Failed to update department: " + e.getMessage(), e);
-        }
+        return departmentDAO.update(department);
     }
 
     public boolean deleteDepartment(UUID id) {
-        try {
-            return departmentDAO.delete(id);
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Failed to delete department: " + e.getMessage(), e);
-        }
+        return departmentDAO.delete(id);
     }
 
     public List<Department> getDepartmentsByOrganization(UUID organizationId) {
-        try {
-            return departmentDAO.findByOrganization(organizationId);
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Failed to retrieve departments by organization: " + e.getMessage(), e);
-        }
+        return departmentDAO.findByOrganization(organizationId);
     }
 }

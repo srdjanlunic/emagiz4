@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { useAuthStore } from './auth'
+import { useNotificationsStore } from './notifications'
 
 export const useCVEsStore = defineStore('cves', {
   state: () => ({
@@ -42,7 +43,25 @@ export const useCVEsStore = defineStore('cves', {
   },
   
   actions: {
+    async fetchLastImportDate() {
+      const authStore = useAuthStore();
+      try {
+        const data = await authStore.apiCall('/settings/last_cve_import_time');
+        this.lastImportDate = data.value;
+      } catch (error) {
+        // Not a critical error, so just log it
+        console.error('Could not fetch last CVE import date.', error);
+      }
+    },
+
     async fetchCVEs() {
+      const now = new Date();
+      const fiveMinutes = 5 * 60 * 1000;
+
+      if (this.lastFetchTime && (now - new Date(this.lastFetchTime)) < fiveMinutes) {
+        return;
+      }
+
       const authStore = useAuthStore();
       this.loading = true;
       this.error = null;
@@ -60,6 +79,11 @@ export const useCVEsStore = defineStore('cves', {
     },
     
     async fetchCVEById(cveId) {
+      const existingCVE = this.cves.find(c => c.cveId === cveId);
+      if (existingCVE) {
+        return existingCVE;
+      }
+
       const authStore = useAuthStore();
       this.loading = true;
       this.error = null;
@@ -133,23 +157,24 @@ export const useCVEsStore = defineStore('cves', {
     },
     
     async importCVEs() {
-      const authStore = useAuthStore();
-      this.loading = true;
-      this.error = null;
+      const authStore = useAuthStore()
+      const notificationsStore = useNotificationsStore()
+      this.loading = true
+      this.error = null
       
       try {
-        await authStore.apiCall('/vulnerabilities/import', {
+        const result = await authStore.apiCall('/vulnerabilities/import', {
           method: 'POST'
         });
         
-        this.lastImportDate = new Date().toISOString();
-        
-        // Refresh CVEs after import
         await this.fetchCVEs();
         
+        notificationsStore.addNotification(result.message || 'CVEs imported successfully.', 'success');
+        await this.fetchLastImportDate();
         return { message: 'CVE import completed successfully' };
       } catch (error) {
         this.error = error.message;
+        notificationsStore.addNotification(error.message || 'Error importing CVEs.', 'error');
         console.error('Error importing CVEs:', error);
         throw error;
       } finally {
@@ -157,21 +182,29 @@ export const useCVEsStore = defineStore('cves', {
       }
     },
     
-    async updateCVEStatus(cveId, status, systemId) {
+    async updateCVEStatus(cveId, systemId, status, explanation) {
       const authStore = useAuthStore();
+      const notificationsStore = useNotificationsStore();
       this.loading = true;
       this.error = null;
       try {
-        const updatedCVE = await authStore.apiCall(`/vulnerabilities/${cveId}/status`, {
-          method: 'PUT',
-          body: JSON.stringify({ status, systemId }),
-        });
-        const index = this.cves.findIndex(c => c.cveId === cveId);
-        if (index !== -1) {
-          this.cves[index] = { ...this.cves[index], ...this.transformCVEData(updatedCVE) };
+        if (!systemId) {
+            notificationsStore.addNotification('Could not determine the system for this CVE status update.', 'error');
+            throw new Error('Could not determine the system for this CVE status update.');
         }
+        
+        const updatedCVE = await authStore.apiCall(`/vulnerabilities/system/${systemId}/vulnerability/${cveId}`, {
+          method: 'PUT',
+          body: JSON.stringify({ status, notes: explanation }),
+        });
+        
+        // After updating, we should probably refetch the data for that system to get the new status
+        await this.fetchCVEsBySystem(systemId);
+
+        notificationsStore.addNotification(`CVE ${cveId} status updated to ${status}.`, 'success');
       } catch (error) {
         this.error = error.message;
+        notificationsStore.addNotification(error.message || `Failed to update CVE ${cveId} status.`, 'error');
         throw error;
       } finally {
         this.loading = false;
@@ -200,7 +233,7 @@ export const useCVEsStore = defineStore('cves', {
     // Transform backend CVE data to match frontend expectations
     transformCVEData(backendCVE) {
       return {
-        id: backendCVE.cveId,
+        id: backendCVE.id,
         cveId: backendCVE.cveId,
         description: backendCVE.description,
         severity: this.mapSeverity(backendCVE.severity),
@@ -212,19 +245,9 @@ export const useCVEsStore = defineStore('cves', {
         affectedProducts: backendCVE.affectedProducts,
         vendor: backendCVE.vendor,
         affectedSystems: backendCVE.affectedSystemIds || [],
-        externalLinks: [
-          { title: 'MITRE', url: `https://cve.mitre.org/cgi-bin/cvename.cgi?name=${backendCVE.cveId}` },
-          { title: 'NVD', url: `https://nvd.nist.gov/vuln/detail/${backendCVE.cveId}` }
-        ],
-        statusHistory: backendCVE.statusHistory || [
-          { 
-            status: 'open', 
-            note: 'Imported from external source.', 
-            userId: 1, 
-            timestamp: backendCVE.importedAt || new Date().toISOString() 
-          }
-        ],
-        notifications: backendCVE.notifications || []
+        externalLinks: backendCVE.externalLinks || [],
+        statusHistory: backendCVE.statusHistory || [],
+        notifications: backendCVE.notifications || [],
       };
     },
     
@@ -237,6 +260,10 @@ export const useCVEsStore = defineStore('cves', {
       if (severity.includes('high')) return 'high';
       if (severity.includes('medium')) return 'medium';
       return 'low';
+    },
+
+    async getCVEHistory(cveId) {
+      // Implementation of getCVEHistory method
     }
   }
 }) 

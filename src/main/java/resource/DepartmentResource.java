@@ -1,6 +1,6 @@
 package resource;
 
-import dao.DepartmentDAO;
+import service.DepartmentService;
 import model.Department;
 import util.JsonUtil;
 import jakarta.ws.rs.*;
@@ -15,10 +15,10 @@ import java.util.UUID;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class DepartmentResource {
-    private DepartmentDAO departmentDAO;
+    private DepartmentService departmentService;
 
     public DepartmentResource() {
-        this.departmentDAO = new DepartmentDAO();
+        this.departmentService = new DepartmentService();
     }
 
     @POST
@@ -32,17 +32,19 @@ public class DepartmentResource {
                         .build();
             }
 
+            /*
             if (department.getOrganizationId() == null) {
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(JsonUtil.toJson(Map.of("error", "Organization ID is required")))
                         .build();
             }
+            */
 
             if (department.getCreatedAt() == null) {
                 department.setCreatedAt(new Timestamp(System.currentTimeMillis()));
             }
 
-            Department createdDepartment = departmentDAO.create(department);
+            Department createdDepartment = departmentService.createDepartment(department);
 
             if (createdDepartment != null) {
                 return Response.status(Response.Status.CREATED)
@@ -63,7 +65,7 @@ public class DepartmentResource {
     @GET
     public Response getAllDepartments() {
         try {
-            List<Department> departments = departmentDAO.findAll();
+            List<Department> departments = departmentService.getAllDepartments();
             return Response.ok(JsonUtil.toJson(departments)).build();
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -77,7 +79,7 @@ public class DepartmentResource {
     public Response getDepartmentById(@PathParam("id") String idStr) {
         try {
             UUID id = UUID.fromString(idStr);
-            Department department = departmentDAO.findById(id);
+            Department department = departmentService.getDepartmentById(id);
             if (department != null) {
                 return Response.ok(JsonUtil.toJson(department)).build();
             } else {
@@ -99,7 +101,7 @@ public class DepartmentResource {
             UUID id = UUID.fromString(idStr);
             Department department = JsonUtil.fromJson(departmentJson, Department.class);
             department.setId(id);
-            Department updatedDepartment = departmentDAO.update(department);
+            Department updatedDepartment = departmentService.updateDepartment(department);
 
             if (updatedDepartment != null) {
                 return Response.ok(JsonUtil.toJson(updatedDepartment)).build();
@@ -120,7 +122,7 @@ public class DepartmentResource {
     public Response deleteDepartment(@PathParam("id") String idStr) {
         try {
             UUID id = UUID.fromString(idStr);
-            boolean deleted = departmentDAO.delete(id);
+            boolean deleted = departmentService.deleteDepartment(id);
             if (deleted) {
                 return Response.ok(JsonUtil.toJson(Map.of("message", "Department deleted successfully"))).build();
             } else {
@@ -131,20 +133,6 @@ public class DepartmentResource {
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(JsonUtil.toJson(Map.of("error", "Department deletion failed")))
-                    .build();
-        }
-    }
-
-    @GET
-    @Path("/organization/{organizationId}")
-    public Response getDepartmentsByOrganization(@PathParam("organizationId") String organizationIdStr) {
-        try {
-            UUID organizationId = UUID.fromString(organizationIdStr);
-            List<Department> departments = departmentDAO.findByOrganization(organizationId);
-            return Response.ok(JsonUtil.toJson(departments)).build();
-        } catch (Exception e) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve departments by organization")))
                     .build();
         }
     }

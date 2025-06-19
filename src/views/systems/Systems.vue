@@ -49,26 +49,6 @@ const getCriticalityClass = (criticality) => {
   return 'badge-green';
 };
 
-// Calculate risk score based on criticality
-const calculateRiskScore = (system) => {
-  if (!system) return 0;
-  
-  const baseScore = {
-    'CRITICAL': 90,
-    'HIGH': 70,
-    'MEDIUM': 40,
-    'LOW': 20
-  }[system.criticalityLevel?.toUpperCase()] || 20;
-  
-  // Add factors for internet facing and data classification
-  let score = baseScore;
-  if (system.internetFacing) score += 10;
-  if (system.dataClassification === 'SENSITIVE') score += 10;
-  
-  // Add random variance for demo
-  return Math.min(100, score + Math.floor(Math.random() * 10));
-};
-
 // Format date
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A';
@@ -177,8 +157,8 @@ onMounted(async () => {
                   <div v-if="system.vendor" style="font-size: 12px; color: #9ca3af; margin-top: 2px;">{{ system.vendor }}</div>
                 </td>
                 <td style="padding: 16px 24px; border-bottom: 1px solid #e5e7eb;">
-                  <div style="font-weight: 500;" :style="calculateRiskScore(system) > 60 ? 'color: #dc2626;' : calculateRiskScore(system) > 30 ? 'color: #d97706;' : 'color: #059669;'">
-                    {{ calculateRiskScore(system) }}
+                  <div style="font-weight: 500;" :style="system.riskScore > 60 ? 'color: #dc2626;' : system.riskScore > 30 ? 'color: #d97706;' : 'color: #059669;'">
+                    {{ system.riskScore }}
                   </div>
                 </td>
                 <td style="padding: 16px 24px; border-bottom: 1px solid #e5e7eb;">
@@ -196,8 +176,11 @@ onMounted(async () => {
                   {{ formatDate(system.createdAt) }}
                 </td>
                 <td style="padding: 16px 24px; border-bottom: 1px solid #e5e7eb; text-align: right;">
-                  <router-link :to="`/cve?system=${system.id}`" style="color: #2563eb; font-weight: 500; text-decoration: none; transition: color 0.2s;">
+                  <router-link :to="`/cve?system=${system.id}`" style="color: #2563eb; font-weight: 500; text-decoration: none; transition: color 0.2s; margin-right: 16px;">
                     View CVEs
+                  </router-link>
+                  <router-link :to="`/systems/${system.id}/edit`" style="color: #2563eb; font-weight: 500; text-decoration: none; transition: color 0.2s;">
+                    Edit
                   </router-link>
                 </td>
               </tr>
@@ -317,8 +300,6 @@ td {
 tr:last-child td {
   border-bottom: none;
 }
-
-
 
 @media (max-width: 768px) {
   .page-header {

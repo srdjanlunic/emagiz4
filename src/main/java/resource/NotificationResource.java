@@ -1,7 +1,7 @@
 package resource;
 
 import service.NotificationService;
-import model.Notification;
+import dto.NotificationDto;
 import util.JsonUtil;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -14,7 +14,7 @@ import java.util.UUID;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class NotificationResource {
-    private NotificationService notificationService;
+    private final NotificationService notificationService;
 
     public NotificationResource() {
         this.notificationService = new NotificationService();
@@ -25,7 +25,7 @@ public class NotificationResource {
     public Response getNotificationsForUser(@PathParam("userId") String userIdStr) {
         try {
             UUID userId = UUID.fromString(userIdStr);
-            List<Notification> notifications = notificationService.getNotificationsForUser(userId);
+            List<NotificationDto> notifications = notificationService.getNotificationsForUser(userId);
             return Response.ok(JsonUtil.toJson(notifications)).build();
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -39,7 +39,7 @@ public class NotificationResource {
     public Response getUnreadNotificationsForUser(@PathParam("userId") String userIdStr) {
         try {
             UUID userId = UUID.fromString(userIdStr);
-            List<Notification> notifications = notificationService.getUnreadNotificationsForUser(userId);
+            List<NotificationDto> notifications = notificationService.getUnreadNotificationsForUser(userId);
             return Response.ok(JsonUtil.toJson(notifications)).build();
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -53,13 +53,11 @@ public class NotificationResource {
     public Response markNotificationAsRead(@PathParam("notificationId") String notificationIdStr) {
         try {
             UUID notificationId = UUID.fromString(notificationIdStr);
-            boolean marked = notificationService.markNotificationAsRead(notificationId);
-            if (marked) {
-                return Response.ok(JsonUtil.toJson(Map.of("message", "Notification marked as read"))).build();
+            boolean success = notificationService.markNotificationAsRead(notificationId);
+            if (success) {
+                return Response.ok().build();
             } else {
-                return Response.status(Response.Status.NOT_FOUND)
-                        .entity(JsonUtil.toJson(Map.of("error", "Notification not found")))
-                        .build();
+                return Response.status(Response.Status.NOT_FOUND).build();
             }
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -72,10 +70,11 @@ public class NotificationResource {
     public Response createNotification(String notificationJson) {
         try {
             CreateNotificationRequest request = JsonUtil.fromJson(notificationJson, CreateNotificationRequest.class);
-            Notification notification = notificationService.createNotification(
+            NotificationDto notification = notificationService.createNotification(
                     UUID.fromString(request.userId),
+                    request.type,
                     request.message,
-                    request.type
+                    request.vulnerabilityId != null ? UUID.fromString(request.vulnerabilityId) : null
             );
 
             if (notification != null) {
@@ -98,5 +97,6 @@ public class NotificationResource {
         public String userId;
         public String message;
         public String type;
+        public String vulnerabilityId;
     }
 }

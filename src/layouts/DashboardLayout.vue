@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
+import Notification from '../components/Notification.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -87,6 +88,7 @@ const handlePrimaryAction = () => {
 
 <template>
   <div style="min-height: 100vh; background-color: #f5f5f7;">
+    <Notification />
     <!-- Navigation Sidebar -->
     <div style="position: fixed; top: 0; left: 0; bottom: 0; width: 256px; background-color: #1f2937; color: white; overflow-y: auto; z-index: 40;">
       <!-- Header -->

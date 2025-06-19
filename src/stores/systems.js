@@ -10,7 +10,7 @@ export const useSystemsStore = defineStore('systems', {
   }),
   
   getters: {
-    getSystemById: (state) => (id) => state.systems.find(system => system.id === parseInt(id)),
+    getSystemById: (state) => (id) => state.systems.find(system => system.id === id),
     
     // Get systems owned by current user
     userSystems: (state) => {
@@ -27,6 +27,13 @@ export const useSystemsStore = defineStore('systems', {
   
   actions: {
     async fetchSystems() {
+      const now = new Date();
+      const fiveMinutes = 5 * 60 * 1000;
+
+      if (this.lastFetchTime && (now - new Date(this.lastFetchTime)) < fiveMinutes) {
+        return;
+      }
+
       const authStore = useAuthStore();
       this.loading = true;
       this.error = null;
@@ -44,6 +51,11 @@ export const useSystemsStore = defineStore('systems', {
     },
     
     async fetchSystemById(id) {
+      const existingSystem = this.systems.find(s => s.id === id);
+      if (existingSystem) {
+        return existingSystem;
+      }
+
       const authStore = useAuthStore();
       this.loading = true;
       this.error = null;
@@ -172,20 +184,41 @@ export const useSystemsStore = defineStore('systems', {
     
     // Calculate risk score based on vulnerabilities and system criticality
     calculateRiskScore(systemId) {
-      // This would typically involve CVE data
-      // For now, return a placeholder based on criticality
       const system = this.getSystemById(systemId);
       if (!system) return 0;
       
       const baseScore = {
         'LOW': 10,
-        'MEDIUM': 30,
-        'HIGH': 50,
-        'CRITICAL': 70
+        'MEDIUM': 40,
+        'HIGH': 70,
+        'CRITICAL': 90
       }[system.criticalityLevel] || 0;
       
-      // Add random variance for demo
-      return baseScore + Math.floor(Math.random() * 20);
+      // A more stable calculation than pure random
+      const hash = (s) => s.split('').reduce((a,b) => (((a << 5) - a) + b.charCodeAt(0))|0, 0);
+      const variance = Math.abs(hash(system.id)) % 10;
+      
+      return Math.min(100, baseScore + variance);
+    },
+    
+    async fetchImplementationsForSystem(systemId) {
+        const authStore = useAuthStore();
+        this.loading = true;
+        this.error = null;
+        try {
+            const data = await authStore.apiCall(`/systems/${systemId}/implementations`);
+            const system = this.getSystemById(systemId);
+            if (system) {
+                system.implementations = data;
+            }
+            return data;
+        } catch (error) {
+            this.error = error.message;
+            console.error('Error fetching implementations for system:', error);
+            throw error;
+        } finally {
+            this.loading = false;
+        }
     }
   }
 }) 

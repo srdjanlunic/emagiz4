@@ -1,0 +1,16 @@
+DELETE FROM SystemVulnerability;
+DELETE FROM ReportLog;
+DELETE FROM Notification;
+DELETE FROM AssessmentHistory;
+DELETE FROM VulnerabilityAssessment;
+DELETE FROM VulnerabilityMatch;
+DELETE FROM VulnerabilityUpdate;
+DELETE FROM Vulnerability;
+DELETE FROM SystemOwner;
+DELETE FROM SystemImplementation;
+DELETE FROM ITSystem;
+DELETE FROM UserDepartment;
+DELETE FROM UserAccount;
+DELETE FROM Department;
+DELETE FROM Role;
+DELETE FROM Organization; 

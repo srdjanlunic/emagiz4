@@ -20,6 +20,8 @@ public class User {
     private boolean isActive;
     private Timestamp createdAt;
     private String roleName;
+    private Timestamp updatedAt;
+    private String rawNvdData;
 
     public User() {
         this.isActive = true;
@@ -74,6 +76,12 @@ public class User {
 
     public String getRoleName() { return roleName; }
     public void setRoleName(String roleName) { this.roleName = roleName; }
+
+    public Timestamp getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(Timestamp updatedAt) { this.updatedAt = updatedAt; }
+
+    public String getRawNvdData() { return rawNvdData; }
+    public void setRawNvdData(String rawNvdData) { this.rawNvdData = rawNvdData; }
 
     @JsonIgnore
     public String getFullName() {

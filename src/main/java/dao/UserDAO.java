@@ -1,6 +1,7 @@
 package dao;
 
 import config.DatabaseConfig;
+import dto.UserDto;
 import model.User;
 import util.DatabaseUtil;
 import java.sql.*;
@@ -19,7 +20,7 @@ public class UserDAO {
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement(
-                    "SELECT * FROM UserAccount WHERE username = ? AND is_active = true"
+                    "SELECT * FROM UserAccount WHERE username = ?"
             );
             stmt.setString(1, username);
             rs = stmt.executeQuery();
@@ -37,23 +38,11 @@ public class UserDAO {
 
     // create new user
     public User create(User user) {
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
+        String sql = "INSERT INTO useraccount (id, username, password, email, first_name, last_name, role_id, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-        try {
-            conn = DatabaseConfig.getConnection();
-
-            // Generate UUID in Java if not set
-            if (user.getId() == null) {
-                user.setId(UUID.randomUUID());
-            }
-
-            stmt = conn.prepareStatement(
-                    "INSERT INTO UserAccount (id, username, password, email, first_name, last_name, role_id, organization_id, is_active, created_at) " +
-                            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-            );
-
+            user.setId(UUID.randomUUID());
             stmt.setObject(1, user.getId());
             stmt.setString(2, user.getUsername());
             stmt.setString(3, user.getPassword());
@@ -61,20 +50,15 @@ public class UserDAO {
             stmt.setString(5, user.getFirstName());
             stmt.setString(6, user.getLastName());
             stmt.setObject(7, user.getRoleId());
-            stmt.setObject(8, user.getOrganizationId());
-            stmt.setBoolean(9, user.isActive());
-            stmt.setTimestamp(10, user.getCreatedAt());
+            stmt.setBoolean(8, user.isActive());
+            stmt.setTimestamp(9, new Timestamp(System.currentTimeMillis()));
 
-            int affectedRows = stmt.executeUpdate();
-            if (affectedRows > 0) {
-                return user;
-            }
+            stmt.executeUpdate();
+            return user;
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            DatabaseUtil.closeResources(conn, stmt, rs);
+            return null;
         }
-        return null;
     }
 
     // get user by id
@@ -85,7 +69,7 @@ public class UserDAO {
 
         try {
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("SELECT * FROM UserAccount WHERE id = ?");
+            stmt = conn.prepareStatement("SELECT u.*, r.name as role_name FROM UserAccount u LEFT JOIN Role r ON u.role_id = r.id WHERE u.id = ?");
             stmt.setObject(1, id);
             rs = stmt.executeQuery();
 
@@ -101,25 +85,26 @@ public class UserDAO {
     }
 
     // get all users
-    public List<User> findAll() {
-        List<User> users = new ArrayList<>();
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-        String sql = "SELECT u.*, r.name as role_name FROM UserAccount u LEFT JOIN Role r ON u.role_id = r.id ORDER BY u.created_at DESC";
-
-        try {
-            conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement(sql);
-            rs = stmt.executeQuery();
+    public List<UserDto> findAll() {
+        String sql = "SELECT u.id, u.username, u.email, r.name as role_name " +
+                     "FROM useraccount u " +
+                     "LEFT JOIN role r ON u.role_id = r.id";
+        List<UserDto> users = new ArrayList<>();
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-                users.add(mapResultSetToUser(rs));
+                users.add(new UserDto(
+                        (UUID) rs.getObject("id"),
+                        rs.getString("username"),
+                        rs.getString("email"),
+                        rs.getString("role_name"),
+                        null // Department name will be fetched separately
+                ));
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            DatabaseUtil.closeResources(conn, stmt, rs);
         }
         return users;
     }
@@ -258,15 +243,20 @@ public class UserDAO {
         user.setEmail(rs.getString("email"));
         user.setFirstName(rs.getString("first_name"));
         user.setLastName(rs.getString("last_name"));
-        user.setRoleId((UUID) rs.getObject("role_id"));
-        user.setOrganizationId((UUID) rs.getObject("organization_id"));
+        if (hasColumn(rs, "role_id")) {
+            user.setRoleId((UUID) rs.getObject("role_id"));
+        }
+        if (hasColumn(rs, "organization_id")) {
+            user.setOrganizationId((UUID) rs.getObject("organization_id"));
+        }
         user.setActive(rs.getBoolean("is_active"));
         user.setCreatedAt(rs.getTimestamp("created_at"));
-        
+        if (hasColumn(rs, "updated_at")) {
+            user.setUpdatedAt(rs.getTimestamp("updated_at"));
+        }
         if (hasColumn(rs, "role_name")) {
             user.setRoleName(rs.getString("role_name"));
         }
-        
         return user;
     }
 
@@ -274,7 +264,7 @@ public class UserDAO {
         ResultSetMetaData rsmd = rs.getMetaData();
         int columns = rsmd.getColumnCount();
         for (int x = 1; x <= columns; x++) {
-            if (columnName.equalsIgnoreCase(rsmd.getColumnName(x))) {
+            if (columnName.equals(rsmd.getColumnName(x))) {
                 return true;
             }
         }

@@ -9,7 +9,8 @@ import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import dto.UserDTO;
+import dto.UserDto;
+import dto.UserCreationRequestDto;
 
 @Path("/users")
 @Produces(MediaType.APPLICATION_JSON)
@@ -21,42 +22,36 @@ public class UserResource {
         this.userService = new UserService();
     }
 
-    // create user (admin only)
     @POST
     public Response createUser(String userJson) {
         try {
-            User user = JsonUtil.fromJson(userJson, User.class);
-            User createdUser = userService.createUser(user);
+            UserCreationRequestDto request = JsonUtil.fromJson(userJson, UserCreationRequestDto.class);
+            User createdUser = userService.createUser(request);
 
             if (createdUser != null) {
                 return Response.status(Response.Status.CREATED)
                         .entity(JsonUtil.toJson(createdUser))
-                        .header("Cache-Control", "no-store")
                         .build();
             } else {
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(JsonUtil.toJson(Map.of("error", "Failed to create user")))
-                        .header("Cache-Control", "no-store")
                         .build();
             }
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(JsonUtil.toJson(Map.of("error", "User creation failed: " + e.getMessage())))
-                    .header("Cache-Control", "no-store")
                     .build();
         }
     }
 
-    // get all users
     @GET
     public Response getAllUsers() {
         try {
-            List<UserDTO> users = userService.getAllUsersAsDTO();
-            return Response.ok(JsonUtil.toJson(users)).header("Cache-Control", "no-store").build();
+            List<UserDto> users = userService.getAllUsers();
+            return Response.ok(JsonUtil.toJson(users)).build();
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(JsonUtil.toJson(Map.of("error", "Failed to retrieve users: " + e.getMessage())))
-                    .header("Cache-Control", "no-store")
                     .build();
         }
     }

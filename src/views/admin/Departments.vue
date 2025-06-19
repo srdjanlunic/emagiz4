@@ -7,13 +7,7 @@ const departments = computed(() => adminStore.departments);
 const users = computed(() => adminStore.users);
 const loading = ref(false);
 const showAddDepartmentModal = ref(false);
-
-// Placeholder for creating a new department
-const newDepartment = ref({
-  name: '',
-  description: '',
-  manager: ''
-});
+const newDepartmentName = ref('');
 
 // Selected department for assigning users
 const selectedDepartment = ref(null);
@@ -27,26 +21,21 @@ const openAddDepartmentModal = () => {
 // Close add department modal
 const closeAddDepartmentModal = () => {
   showAddDepartmentModal.value = false;
-  newDepartment.value = {
-    name: '',
-    description: '',
-    manager: ''
-  };
+  newDepartmentName.value = '';
 };
 
 // Add a department (demo purposes)
 const addDepartment = async () => {
-  if (!newDepartment.value.name) {
-    alert('Department name is required');
+  if (!newDepartmentName.value.trim()) {
     return;
   }
-  
   loading.value = true;
   try {
-    await adminStore.createDepartment(newDepartment.value);
+    await adminStore.createDepartment(newDepartmentName.value);
     closeAddDepartmentModal();
+    adminStore.fetchDepartments();
   } catch (error) {
-    console.error(error);
+    console.error('Failed to add department:', error);
   } finally {
     loading.value = false;
   }
@@ -115,7 +104,7 @@ const toggleUserSelection = (userId) => {
     <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
       <div class="header-content">
         <h1 style="font-size: 24px; font-weight: bold; color: #111827; margin-bottom: 4px;">Departments</h1>
-        <p style="color: #6b7280; font-size: 14px;">Manage organizational departments and their managers</p>
+        <p style="color: #6b7280; font-size: 14px;">Manage departments in your organization</p>
       </div>
       <button @click="openAddDepartmentModal" style="display: inline-flex; align-items: center; padding: 10px 20px; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
         <svg style="width: 16px; height: 16px; margin-right: 8px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -162,24 +151,10 @@ const toggleUserSelection = (userId) => {
     <div v-if="showAddDepartmentModal" style="position: fixed; inset: 0; background-color: rgba(107, 114, 128, 0.75); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50;">
       <div style="background-color: white; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); padding: 24px; max-width: 500px; width: 100%;">
         <h3 style="font-size: 20px; font-weight: 600; color: #111827; margin-bottom: 24px;">Add New Department</h3>
-        
-        <div style="display: grid; gap: 16px; margin-bottom: 24px;">
-          <div>
-            <label for="modal-dept-name" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">Department Name <span style="color: #EF4444;">*</span></label>
-            <input id="modal-dept-name" v-model="newDepartment.name" type="text" style="width: 100%; border-radius: 6px; border: 1px solid #D1D5DB; padding: 10px 12px; font-size: 14px; line-height: 1.5; color: #111827; background-color: white; transition: border-color 0.2s; box-sizing: border-box;" placeholder="Enter department name"/>
-          </div>
-          
-          <div>
-            <label for="modal-dept-description" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">Description</label>
-            <textarea id="modal-dept-description" v-model="newDepartment.description" rows="3" style="width: 100%; border-radius: 6px; border: 1px solid #D1D5DB; padding: 10px 12px; font-size: 14px; line-height: 1.5; color: #111827; background-color: white; transition: border-color 0.2s; box-sizing: border-box; resize: vertical; min-height: 80px;" placeholder="Enter department description"></textarea>
-          </div>
-          
-          <div>
-            <label for="modal-dept-manager" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">Manager</label>
-            <input id="modal-dept-manager" v-model="newDepartment.manager" type="text" style="width: 100%; border-radius: 6px; border: 1px solid #D1D5DB; padding: 10px 12px; font-size: 14px; line-height: 1.5; color: #111827; background-color: white; transition: border-color 0.2s; box-sizing: border-box;" placeholder="Enter manager name"/>
-          </div>
+        <div style="margin-bottom: 24px;">
+          <label for="dept-name" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">Department Name</label>
+          <input id="dept-name" v-model="newDepartmentName" type="text" style="width: 100%; border-radius: 6px; border: 1px solid #D1D5DB; padding: 10px 12px; font-size: 14px; line-height: 1.5; color: #111827; background-color: white; transition: border-color 0.2s; box-sizing: border-box;" placeholder="Enter department name" />
         </div>
-        
         <div style="display: flex; justify-content: flex-end; gap: 12px;">
           <button @click="closeAddDepartmentModal" style="padding: 10px 20px; background-color: #F3F4F6; color: #374151; border-radius: 6px; font-weight: 500; border: none; cursor: pointer; transition: background-color 0.2s;">Cancel</button>
           <button @click="addDepartment" :disabled="loading" style="padding: 10px 20px; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color: white; border-radius: 6px; font-weight: 500; border: none; cursor: pointer; transition: all 0.2s;" :style="loading ? 'opacity: 0.7; cursor: not-allowed;' : ''">

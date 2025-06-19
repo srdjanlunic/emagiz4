@@ -2,21 +2,22 @@ package dto;
 
 import java.util.UUID;
 
-public class UserDTO {
+public class UserDto {
     private UUID id;
     private String username;
     private String email;
     private String roleName;
-    // departmentName can be added here later if needed
+    private String departmentName;
 
-    public UserDTO(UUID id, String username, String email, String roleName) {
+    public UserDto(UUID id, String username, String email, String roleName, String departmentName) {
         this.id = id;
         this.username = username;
         this.email = email;
         this.roleName = roleName;
+        this.departmentName = departmentName;
     }
 
-    // Getters and Setters
+    // Getters and setters
     public UUID getId() {
         return id;
     }
@@ -47,5 +48,13 @@ public class UserDTO {
 
     public void setRoleName(String roleName) {
         this.roleName = roleName;
+    }
+
+    public String getDepartmentName() {
+        return departmentName;
+    }
+
+    public void setDepartmentName(String departmentName) {
+        this.departmentName = departmentName;
     }
 } 

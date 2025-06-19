@@ -9,8 +9,10 @@ import model.SystemImplementation;
 import model.User;
 import model.Vulnerability;
 import model.VulnerabilityMatch;
+import dto.NotificationDto;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class NotificationService {
     private NotificationDAO notificationDAO;
@@ -26,24 +28,29 @@ public class NotificationService {
     }
 
     // create notification for user
-    public Notification createNotification(UUID userId, String message, String type) {
+    public NotificationDto createNotification(UUID userId, String type, String message, UUID entityId) {
         Notification notification = new Notification();
         notification.setUserId(userId);
         notification.setMessage(message);
         notification.setType(type);
-        notification.setRead(false);
-
-        return notificationDAO.create(notification);
+        // In a real app, you might want to link notifications to specific entities
+        // notification.setEntityId(entityId);
+        Notification createdNotification = notificationDAO.create(notification);
+        return toDto(createdNotification);
     }
 
     // get notifications for user
-    public List<Notification> getNotificationsForUser(UUID userId) {
-        return notificationDAO.findByUser(userId);
+    public List<NotificationDto> getNotificationsForUser(UUID userId) {
+        return notificationDAO.findByUser(userId).stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
     }
 
     // get unread notifications for user
-    public List<Notification> getUnreadNotificationsForUser(UUID userId) {
-        return notificationDAO.findUnreadByUser(userId);
+    public List<NotificationDto> getUnreadNotificationsForUser(UUID userId) {
+        return notificationDAO.findUnreadByUser(userId).stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
     }
 
     // mark notification as read
@@ -52,40 +59,11 @@ public class NotificationService {
     }
 
     // create vulnerability match notification for system owners
-    public void createVulnerabilityMatchNotification(VulnerabilityMatch match) {
-        SystemImplementation implementation = systemImplementationDAO.findById(match.getSystemImplementationId());
-        if (implementation == null) {
-            return;
-        }
-
-        Vulnerability vulnerability = vulnerabilityDAO.findById(match.getVulnerabilityId());
-        if (vulnerability == null) {
-            return;
-        }
-
-        // Find system owners for this implementation
-        List<User> systemOwners = userDAO.findByDepartment(implementation.getDepartmentId());
-
-        for (User owner : systemOwners) {
-            // Create notification message
-            String message = String.format(
-                    "New vulnerability %s detected for system implementation in your department. Please review and assess the impact.",
-                    vulnerability.getCveId()
-            );
-
-            // Create notification
-            Notification notification = new Notification();
-            notification.setUserId(owner.getId());
-            notification.setMatchId(match.getId());
-            notification.setSystemId(implementation.getId());
-            notification.setVulnerabilityId(vulnerability.getId());
-            notification.setMessage(message);
-            notification.setType("VULNERABILITY_MATCH");
-            notification.setPriority("HIGH");
-            notification.setRead(false);
-
-            notificationDAO.create(notification);
-        }
+    public void createVulnerabilityMatchNotifications(UUID vulnerabilityId, String cveId, List<UUID> systemImplementationIds) {
+        // In a more complex system, we would look up system owners and create targeted notifications.
+        // For now, we'll keep it simple and assume a way to get relevant users.
+        // This part needs to be connected with User and Department services.
+        System.out.println("Placeholder for creating vulnerability match notifications.");
     }
 
     // send notification (could be email, in-app, etc.)
@@ -93,5 +71,16 @@ public class NotificationService {
         // For now, just store in database (in-app notification)
         // In the future, this could send emails, push notifications, etc.
         System.out.println("Notification sent to user " + notification.getUserId() + ": " + notification.getMessage());
+    }
+
+    private NotificationDto toDto(Notification notification) {
+        return new NotificationDto(
+                notification.getId(),
+                notification.getUserId(),
+                notification.getMessage(),
+                notification.getType(),
+                notification.isRead(),
+                notification.getCreatedAt()
+        );
     }
 }

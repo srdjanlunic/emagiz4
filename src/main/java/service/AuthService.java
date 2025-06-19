@@ -9,6 +9,7 @@ import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.UUID;
+import org.mindrot.jbcrypt.BCrypt;
 
 public class AuthService {
     private UserDAO userDAO;
@@ -20,17 +21,9 @@ public class AuthService {
     // Authenticate user with username and password
     public User authenticate(String username, String password) {
         User user = userDAO.findByUsername(username);
-        if (user == null || user.getPassword() == null) {
-            return null;
-        }
-        
-        // Check all possible password formats
-        if (verifyPassword(password, user.getPassword()) || 
-            verifySimplePassword(password, user.getPassword()) || 
-            verifyLegacyPassword(password, user.getPassword())) {
+        if (user != null && user.getPassword() != null && user.getPassword().equals(password)) {
             return user;
         }
-        
         return null;
     }
 
@@ -54,57 +47,22 @@ public class AuthService {
 
     // Hash password for storage using SHA-256
     public String hashPassword(String password) {
-        try {
-            SecureRandom random = new SecureRandom();
-            byte[] salt = new byte[16];
-            random.nextBytes(salt);
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            md.update(salt);
-            byte[] hashedPassword = md.digest(password.getBytes("UTF-8"));
-            byte[] combined = new byte[salt.length + hashedPassword.length];
-            System.arraycopy(salt, 0, combined, 0, salt.length);
-            System.arraycopy(hashedPassword, 0, combined, salt.length, hashedPassword.length);
-            return Base64.getEncoder().encodeToString(combined);
-        } catch (Exception e) {
-            throw new RuntimeException("Error hashing password", e);
-        }
+        return password;
     }
 
     // Verify password against salted hash
     public boolean verifyPassword(String password, String storedHash) {
-        if (storedHash == null) return false;
-        try {
-            byte[] combined = Base64.getDecoder().decode(storedHash);
-            if (combined.length < 16) return false;
-            byte[] salt = new byte[16];
-            System.arraycopy(combined, 0, salt, 0, 16);
-            byte[] storedPasswordHash = new byte[combined.length - 16];
-            System.arraycopy(combined, 16, storedPasswordHash, 0, storedPasswordHash.length);
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            md.update(salt);
-            byte[] providedPasswordHash = md.digest(password.getBytes("UTF-8"));
-            return MessageDigest.isEqual(storedPasswordHash, providedPasswordHash);
-        } catch (Exception e) {
-            return false;
-        }
+        return false;
     }
 
     // Verify simple Base64 encoded passwords
     public boolean verifySimplePassword(String password, String storedPassword) {
-        if (storedPassword == null) return false;
-        try {
-            byte[] decodedBytes = Base64.getDecoder().decode(storedPassword);
-            String decodedPassword = new String(decodedBytes, "UTF-8");
-            return password.equals(decodedPassword);
-        } catch (Exception e) {
-            return false;
-        }
+        return false;
     }
 
     // Verify legacy "hashed-" prefix passwords
     public boolean verifyLegacyPassword(String password, String storedPassword) {
-        if (storedPassword == null) return false;
-        return storedPassword.equals("hashed-" + password);
+        return false;
     }
 
     // generate JWT token for user

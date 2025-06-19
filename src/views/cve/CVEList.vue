@@ -4,12 +4,14 @@ import { useRoute, useRouter } from 'vue-router';
 import { useCVEsStore } from '../../stores/cves';
 import { useSystemsStore } from '../../stores/systems';
 import { useAuthStore } from '../../stores/auth';
+import { useNotificationsStore } from '../../stores/notifications';
 
 const route = useRoute();
 const router = useRouter();
 const cvesStore = useCVEsStore();
 const systemsStore = useSystemsStore();
 const authStore = useAuthStore();
+const notificationStore = useNotificationsStore();
 
 const loading = ref(false);
 const error = ref(null);
@@ -120,44 +122,28 @@ const getStatusClass = (status) => {
   return 'background-color: #f3f4f6; color: #374151;';
 };
 
-const handleStatusUpdate = async (cve, newStatus) => {
-  if (!isSecurityOfficer.value && !isAdmin.value) return;
-
-  // Determine the system context for the update
-  let systemIdForUpdate = null;
-  if (systemFilter.value) {
-    systemIdForUpdate = systemFilter.value;
-  } else if (cve.affectedSystems && cve.affectedSystems.length > 0) {
-    // If not filtering by a system, default to the first affected system.
-    // A more complex UI might ask the user to specify which system context.
-    systemIdForUpdate = cve.affectedSystems[0];
-  }
-
-  if (!systemIdForUpdate) {
-    error.value = 'Could not determine the system for this CVE status update.';
-    return;
-  }
-
-  try {
-    await cvesStore.updateCVEStatus(cve.cveId, newStatus, systemIdForUpdate);
-    // Optionally, you can show a success notification here
-  } catch (err) {
-    error.value = `Failed to update status: ${err.message}`;
-  }
-};
-
 // Import CVEs (Security Officer only)
 const importCVEs = async () => {
   if (!isSecurityOfficer.value && !isAdmin.value) return;
   
   importing.value = true;
   try {
-    await cvesStore.importCVEs();
+    const response = await cvesStore.importCVEs();
     showImportModal.value = false;
+    notificationStore.addNotification({
+      message: response.message || 'CVEs imported successfully.',
+      type: 'success',
+      timeout: 5000,
+    });
     // Refresh data
     await loadData();
   } catch (err) {
     error.value = err.message;
+    notificationStore.addNotification({
+      message: err.message || 'Failed to import CVEs.',
+      type: 'error',
+      timeout: 5000,
+    });
   } finally {
     importing.value = false;
   }
@@ -204,6 +190,18 @@ watch(() => route.query.system, () => {
 onMounted(() => {
   loadData();
 });
+
+const handleImport = async () => {
+  try {
+    await cvesStore.importCVEs()
+  } catch (error) {
+    // The store now handles notifications
+  }
+}
+
+const updateStatus = (cveId, systemId, status, explanation) => {
+  cvesStore.updateCVEStatus(cveId, systemId, status, explanation)
+}
 </script>
 
 <template>
@@ -377,26 +375,10 @@ onMounted(() => {
                     {{ cve.severity?.charAt(0).toUpperCase() + cve.severity?.slice(1) }}
                   </span>
                 </td>
-                <td style="padding: 16px 24px; color: #6b7280; min-width: 150px;">
-                  <div style="position: relative;">
-                    <select
-                      :value="cve.status"
-                      @change="handleStatusUpdate(cve, $event.target.value)"
-                      :disabled="!isSecurityOfficer && !isAdmin"
-                      style="width: 100%; padding: 6px 32px 6px 12px; font-size: 12px; font-weight: 500; border-radius: 6px; border: 1px solid #d1d5db; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); outline: none; appearance: none; background-color: white;"
-                      :style="(!isSecurityOfficer && !isAdmin) ? 'cursor: not-allowed; background-color: #f3f4f6;' : ''"
-                    >
-                      <option value="open">Open</option>
-                      <option value="in_progress">In Progress</option>
-                      <option value="resolved">Resolved</option>
-                      <option value="accepted_risk">Accepted Risk</option>
-                    </select>
-                    <div style="pointer-events: none; position: absolute; top: 0; right: 0; bottom: 0; display: flex; align-items: center; padding: 0 8px; color: #6b7280;">
-                      <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
-                      </svg>
-                    </div>
-                  </div>
+                <td style="padding: 16px 24px;">
+                  <span style="display: inline-block; padding: 4px 12px; border-radius: 9999px; font-size: 13px; font-weight: 500;" :style="getStatusClass(cve.status)">
+                    {{ cve.status.replace('_', ' ').charAt(0).toUpperCase() + cve.status.replace('_', ' ').slice(1) }}
+                  </span>
                 </td>
                 <td style="padding: 16px 24px; color: #6b7280;">
                   <div v-if="cve.affectedSystems && cve.affectedSystems.length > 0">
