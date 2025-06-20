@@ -13,15 +13,17 @@ import org.mindrot.jbcrypt.BCrypt;
 
 public class AuthService {
     private UserDAO userDAO;
+    private RoleDAO roleDAO;
 
     public AuthService() {
         this.userDAO = new UserDAO();
+        this.roleDAO = new RoleDAO();
     }
 
     // Authenticate user with username and password
     public User authenticate(String username, String password) {
         User user = userDAO.findByUsername(username);
-        if (user != null && user.getPassword() != null && user.getPassword().equals(password)) {
+        if (user != null && verifyPassword(password, user.getPassword())) {
             return user;
         }
         return null;
@@ -32,12 +34,11 @@ public class AuthService {
         if (user == null || user.getRoleId() == null) {
             return null;
         }
-        return new RoleDAO().findById(user.getRoleId());
+        return roleDAO.findById(user.getRoleId());
     }
 
     // Find a user by role name for demo login
     public User findUserByRole(String roleName) {
-        RoleDAO roleDAO = new RoleDAO();
         Role role = roleDAO.findByName(roleName);
         if (role != null) {
             return userDAO.findFirstByRoleId(role.getId());
@@ -45,14 +46,17 @@ public class AuthService {
         return null;
     }
 
-    // Hash password for storage using SHA-256
+    // Hash password for storage using BCrypt
     public String hashPassword(String password) {
-        return password;
+        return BCrypt.hashpw(password, BCrypt.gensalt());
     }
 
-    // Verify password against salted hash
+    // Verify password against stored hash
     public boolean verifyPassword(String password, String storedHash) {
-        return false;
+        if (password == null || storedHash == null) {
+            return false;
+        }
+        return BCrypt.checkpw(password, storedHash);
     }
 
     // Verify simple Base64 encoded passwords

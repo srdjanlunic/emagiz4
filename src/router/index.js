@@ -37,16 +37,16 @@ const routes = [
     component: DashboardLayout,
     meta: { requiresAuth: true },
     children: [
-      { path: '/dashboard', name: 'Dashboard', component: Dashboard },
-      { path: '/systems', name: 'systems', component: Systems },
-      { path: '/systems/add', name: 'add-system', component: AddSystem },
-      { path: '/systems/:id/edit', name: 'edit-system', component: EditSystem },
-      { path: '/systems/:id', name: 'system-detail', component: SystemDetail },
-      { path: '/cve', name: 'cve', component: CVEList },
-      { path: '/cve/:id', name: 'cve-detail', component: CveDetail },
-      { path: '/admin/users', name: 'user-management', component: UserManagement, meta: { requiresAdmin: true } },
-      { path: '/admin/departments', name: 'departments', component: Departments, meta: { requiresAdmin: true } },
-      { path: '/notifications', name: 'notifications', component: Notifications }
+      { path: '/dashboard', name: 'Dashboard', component: Dashboard, meta: { roles: ['admin', 'security_officer', 'system_owner', 'technical_expert'] } },
+      { path: '/systems', name: 'systems', component: Systems, meta: { roles: ['admin', 'security_officer', 'system_owner'] } },
+      { path: '/systems/add', name: 'add-system', component: AddSystem, meta: { roles: ['admin', 'security_officer', 'system_owner'] } },
+      { path: '/systems/:id/edit', name: 'edit-system', component: EditSystem, meta: { roles: ['admin', 'security_officer', 'system_owner'] } },
+      { path: '/systems/:id', name: 'system-detail', component: SystemDetail, meta: { roles: ['admin', 'security_officer', 'system_owner'] } },
+      { path: '/cve', name: 'cve', component: CVEList, meta: { roles: ['admin', 'security_officer', 'system_owner'] } },
+      { path: '/cve/:id', name: 'cve-detail', component: CveDetail, meta: { roles: ['admin', 'security_officer', 'system_owner'] } },
+      { path: '/admin/users', name: 'user-management', component: UserManagement, meta: { roles: ['admin', 'security_officer'] } },
+      { path: '/admin/departments', name: 'departments', component: Departments, meta: { roles: ['admin', 'security_officer'] } },
+      { path: '/notifications', name: 'notifications', component: Notifications, meta: { roles: ['admin', 'security_officer', 'system_owner', 'technical_expert'] } }
     ]
   },
   {
@@ -90,20 +90,15 @@ router.beforeEach(async (to, from, next) => {
     return next({ name: 'Login' })
   }
 
-  // Role-based access
-  if (to.meta.roles) {
-    const userRole = authStore.userRole
-    if (!to.meta.roles.includes(userRole)) {
+  // Role-based access check
+  if (to.meta.roles && to.meta.roles.length > 0) {
+    const userRole = authStore.userRole; // This is in uppercase
+    if (!userRole || !to.meta.roles.includes(userRole.toLowerCase())) {
       // Redirect to a default page if the user doesn't have access
-      return next({ name: 'Dashboard' }) 
+      return next({ name: 'Dashboard' }); // Or a dedicated "access denied" page
     }
   }
   
-  // Admin-only pages
-  if (to.meta.requiresAdmin && !authStore.isAdmin) {
-    return next({ name: 'Dashboard' }) // Or a dedicated "access denied" page
-  }
-
   next()
 })
 

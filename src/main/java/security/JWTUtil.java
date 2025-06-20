@@ -8,11 +8,14 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import dao.RoleDAO;
+import model.Role;
 
 public class JWTUtil {
     private static final String SECRET_KEY = "mySecretKeyForJWTTokenGenerationThatIsLongEnough";
     private static final long EXPIRATION_TIME = 86400000; // 24 hours
     private static final ObjectMapper mapper = new ObjectMapper();
+    private static final RoleDAO roleDAO = new RoleDAO();
 
     // generate JWT token for user
     public static String generateToken(User user) {
@@ -27,6 +30,15 @@ public class JWTUtil {
             payload.put("sub", user.getUsername());
             payload.put("userId", user.getId().toString());
             payload.put("roleId", user.getRoleId() != null ? user.getRoleId().toString() : "");
+            
+            // Add role name to the token payload
+            if (user.getRoleId() != null) {
+                Role role = roleDAO.findById(user.getRoleId());
+                if (role != null) {
+                    payload.put("role", role.getName());
+                }
+            }
+            
             payload.put("iat", System.currentTimeMillis() / 1000);
             payload.put("exp", (System.currentTimeMillis() + EXPIRATION_TIME) / 1000);
 
@@ -88,6 +100,19 @@ public class JWTUtil {
                     Base64.getUrlDecoder().decode(parts[1])
             );
             return UUID.fromString(payload.get("userId").asText());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    // extract role from token
+    public static String getRoleFromToken(String token) {
+        try {
+            String[] parts = token.split("\\.");
+            ObjectNode payload = (ObjectNode) mapper.readTree(
+                    Base64.getUrlDecoder().decode(parts[1])
+            );
+            return payload.has("role") ? payload.get("role").asText() : null;
         } catch (Exception e) {
             return null;
         }

@@ -18,8 +18,8 @@ public class CveImportScheduler implements ServletContextListener {
     public void contextInitialized(ServletContextEvent sce) {
         timer = new Timer(true);
         // schedule first run at 2:00 AM
-        Date firstRun = computeNextRun(21, 34);
-        long period = 30; //1000L * 60 * 60 * 24; // 24h
+        Date firstRun = computeNextRun(2, 0);
+        long period = 1000L * 60 * 60 * 24; // 24h
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
