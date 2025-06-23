@@ -274,7 +274,7 @@ public class SystemImplementationDAO {
         return systemIds;
     }
 
-    private SystemImplementation mapResultSetToSystemImplementation(ResultSet rs) throws SQLException {
+    public SystemImplementation mapResultSetToSystemImplementation(ResultSet rs) throws SQLException {
         SystemImplementation implementation = new SystemImplementation();
         implementation.setId((UUID) rs.getObject("id"));
         implementation.setSystemId((UUID) rs.getObject("system_id"));

@@ -34,7 +34,7 @@ public class SystemResource {
         this.systemImplementationDAO = new SystemImplementationDAO();
     }
     
-    //TODO: implement linking systems to system owners
+    //TODO: FRONTEND implement linking systems to system owners
     
     @POST
     @RolesAllowed({"system_owner", "admin"})
