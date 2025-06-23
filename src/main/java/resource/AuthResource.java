@@ -1,5 +1,6 @@
 package resource;
 
+import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import service.AuthService;
 import model.User;
@@ -25,6 +26,7 @@ public class AuthResource {
     // login endpoint
     @POST
     @Path("/login")
+    @PermitAll
     public Response login(LoginRequest loginRequest) {
         try {
             if (loginRequest.username == null || loginRequest.password == null) {

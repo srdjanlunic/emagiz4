@@ -1,5 +1,6 @@
 package resource;
 
+import jakarta.annotation.security.RolesAllowed;
 import service.NotificationService;
 import dto.NotificationDto;
 import util.JsonUtil;
@@ -22,6 +23,7 @@ public class NotificationResource {
 
     @GET
     @Path("/user/{userId}")
+    @RolesAllowed({"system_owner", "admin"})
     public Response getNotificationsForUser(@PathParam("userId") String userIdStr) {
         try {
             UUID userId = UUID.fromString(userIdStr);
@@ -36,6 +38,7 @@ public class NotificationResource {
 
     @GET
     @Path("/user/{userId}/unread")
+    @RolesAllowed({"system_owner", "admin"})
     public Response getUnreadNotificationsForUser(@PathParam("userId") String userIdStr) {
         try {
             UUID userId = UUID.fromString(userIdStr);
@@ -50,6 +53,7 @@ public class NotificationResource {
 
     @PUT
     @Path("/{notificationId}/read")
+    @RolesAllowed({"system_owner", "admin"})
     public Response markNotificationAsRead(@PathParam("notificationId") String notificationIdStr) {
         try {
             UUID notificationId = UUID.fromString(notificationIdStr);
@@ -67,6 +71,7 @@ public class NotificationResource {
     }
 
     @POST
+    //TODO: check role based access
     public Response createNotification(String notificationJson) {
         try {
             CreateNotificationRequest request = JsonUtil.fromJson(notificationJson, CreateNotificationRequest.class);

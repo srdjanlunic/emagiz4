@@ -17,13 +17,15 @@ import java.util.UUID;
 @Consumes(MediaType.APPLICATION_JSON)
 public class ReportLogResource {
     private final ReportLogService svc = new ReportLogService();
-
+    
+    //TODO: implement report logs
+    //TODO: implement per system owner report logs
+    
     /**
      * GET /report-logs/last-import?type=CVE_IMPORT
      */
     @GET
     @Path("/last-import")
-    @RolesAllowed({"security_officer", "admin"})
     public Response lastImport(@QueryParam("type") String type) {
         if (type == null || type.isBlank()) {
             return Response.status(Response.Status.BAD_REQUEST)
@@ -48,7 +50,6 @@ public class ReportLogResource {
      * Body is a full ReportLog JSON; returns created record with id.
      */
     @POST
-    @RolesAllowed({"security_officer", "admin"})
     public Response create(ReportLog rl) {
         ReportLog created = svc.logReport(rl);
         return Response.status(Response.Status.CREATED).entity(created).build();

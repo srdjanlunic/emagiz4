@@ -33,9 +33,11 @@ public class SystemResource {
         this.systemImplementationService = new SystemImplementationService();
         this.systemImplementationDAO = new SystemImplementationDAO();
     }
-
+    
+    //TODO: implement linking systems to system owners
+    
     @POST
-    @RolesAllowed({"security_officer", "system_owner", "admin"})
+    @RolesAllowed({"system_owner", "admin"})
     public Response createSystem(String systemJson) {
         logger.info("Received request to create system with JSON: {}", systemJson);
         try {
@@ -51,6 +53,7 @@ public class SystemResource {
     }
 
     @GET
+    @RolesAllowed({"security_officer", "system_owner", "admin"})
     public Response getAllSystems() {
         try {
             List<SystemDto> systems = systemService.getAllSystems();
@@ -62,6 +65,7 @@ public class SystemResource {
 
     @GET
     @Path("/{id}")
+    @RolesAllowed({"security_officer", "system_owner", "admin"})
     public Response getSystemById(@PathParam("id") String idStr) {
         try {
             UUID id = UUID.fromString(idStr);
@@ -78,7 +82,7 @@ public class SystemResource {
 
     @PUT
     @Path("/{id}")
-    @RolesAllowed({"security_officer", "system_owner", "admin"})
+    @RolesAllowed({"system_owner", "admin"})
     public Response updateSystem(@PathParam("id") String idStr, String systemJson) {
         try {
             UUID id = UUID.fromString(idStr);
@@ -96,7 +100,7 @@ public class SystemResource {
 
     @DELETE
     @Path("/{id}")
-    @RolesAllowed({"security_officer", "system_owner", "admin"})
+    @RolesAllowed({"system_owner", "admin"})
     public Response deleteSystem(@PathParam("id") String idStr) {
         try {
             UUID id = UUID.fromString(idStr);
@@ -117,7 +121,7 @@ public class SystemResource {
 
     @POST
     @Path("/implementations")
-    @RolesAllowed({"security_officer", "system_owner", "admin"})
+    @RolesAllowed({"system_owner", "admin"})
     public Response createSystemImplementation(String implJson) {
         try {
             SystemImplementationDto implDto = JsonUtil.fromJson(implJson, SystemImplementationDto.class);
@@ -130,6 +134,7 @@ public class SystemResource {
 
     @GET
     @Path("/implementations")
+    @RolesAllowed({"security_officer", "system_owner", "admin"})
     public Response getAllSystemImplementations() {
         try {
             List<SystemImplementationDto> implementations = systemImplementationService.getAllSystemImplementations();
@@ -143,6 +148,7 @@ public class SystemResource {
 
     @GET
     @Path("/implementations/{id}")
+    @RolesAllowed({"security_officer", "system_owner", "admin"})
     public Response getSystemImplementationById(@PathParam("id") String idStr) {
         try {
             UUID id = UUID.fromString(idStr);
@@ -163,7 +169,7 @@ public class SystemResource {
 
     @PUT
     @Path("/implementations/{id}")
-    @RolesAllowed({"security_officer", "system_owner", "admin"})
+    @RolesAllowed({"system_owner", "admin"})
     public Response updateSystemImplementation(@PathParam("id") String idStr, String implJson) {
         try {
             UUID id = UUID.fromString(idStr);
@@ -181,7 +187,7 @@ public class SystemResource {
 
     @DELETE
     @Path("/implementations/{id}")
-    @RolesAllowed({"security_officer", "system_owner", "admin"})
+    @RolesAllowed({"system_owner", "admin"})
     public Response deleteSystemImplementation(@PathParam("id") String idStr) {
         try {
             UUID id = UUID.fromString(idStr);
@@ -202,6 +208,7 @@ public class SystemResource {
 
     @GET
     @Path("/implementations/department/{departmentId}")
+    @RolesAllowed({"security_officer", "system_owner", "admin"})
     public Response getSystemImplementationsByDepartment(@PathParam("departmentId") String departmentIdStr) {
         try {
             UUID departmentId = UUID.fromString(departmentIdStr);
@@ -216,6 +223,7 @@ public class SystemResource {
 
     @GET
     @Path("/{systemId}/implementations")
+    @RolesAllowed({"security_officer", "system_owner", "admin"})
     public Response getSystemImplementationsBySystem(@PathParam("systemId") String systemIdStr) {
         try {
             UUID systemId = UUID.fromString(systemIdStr);

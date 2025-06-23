@@ -17,9 +17,11 @@ import jakarta.ws.rs.core.*;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class ReportResource {
-
+    
+    //TODO: filter by assigned systems
+    
     private final ReportService svc = new ReportService();
-
+    
     /**
      * Generates the dashboard summary.
      * Only security officers may call this.

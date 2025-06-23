@@ -21,5 +21,7 @@ public class JerseyConfig extends ResourceConfig {
         // Register filters
         register(AuthFilter.class);
         register(CorsFilter.class);
+        
+        register(org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature.class);
     }
 }
