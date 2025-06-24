@@ -5,6 +5,8 @@ public enum AssessmentStatus {
     NEWER_VERSION("newer_version"),
     ATTACK_VECTOR_NOT_AVAILABLE("attack_vector_not_available"),
     ACCEPTED_RISK("accepted_risk"),
+    RESOLVED("resolved"),
+    
     UPDATE_PLANNED("update_planned"),
     CHANGE_PLANNED("change_planned"),
     UNKNOWN("unknown");
