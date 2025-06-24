@@ -1,6 +1,7 @@
 package service;
 
 import dao.RoleDAO;
+import java.util.UUID;
 import model.Role;
 
 public class RoleService {
@@ -13,5 +14,8 @@ public class RoleService {
 
     public Role getRoleByName(String roleName) {
         return roleDAO.findByName(roleName);
+    }
+    public Role getRoleById(UUID roleId) {
+        return roleDAO.findById(roleId);
     }
 } 
