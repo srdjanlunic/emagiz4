@@ -26,7 +26,7 @@ public class DepartmentService {
      * @param name the department name to validate
      * @return true if valid; false otherwise
      */
-    private boolean isValidDepartmentName(String name) {
+    boolean isValidDepartmentName(String name) {
         if (name == null || name.isBlank()) return false;
         return name.matches("[a-zA-Z0-9 ._-]+");
     }
