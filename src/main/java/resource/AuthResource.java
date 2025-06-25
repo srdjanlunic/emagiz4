@@ -1,29 +1,40 @@
 package resource;
 
 import jakarta.annotation.security.PermitAll;
-import jakarta.annotation.security.RolesAllowed;
-import service.AuthService;
-import model.User;
-import security.JWTUtil;
-import util.JsonUtil;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import model.Role;
+import model.User;
+import service.AuthService;
+import security.JWTUtil;
+import util.JsonUtil;
+
 import java.util.HashMap;
 import java.util.Map;
-import model.Role;
 
+/**
+ * REST resource for authentication operations.
+ */
 @Path("/auth")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class AuthResource {
     private AuthService authService;
-
+    
+    /**
+     * Default constructor initializes AuthService.
+     */
     public AuthResource() {
         this.authService = new AuthService();
     }
-
-    // login endpoint
+    
+    /**
+     * Endpoint to log in a user.
+     *
+     * @param loginRequest the login request containing username and password
+     * @return JSON response containing JWT token and user details or error message
+     */
     @POST
     @Path("/login")
     @PermitAll
@@ -35,14 +46,14 @@ public class AuthResource {
                         .header("Cache-Control", "no-store")
                         .build();
             }
-
+            
             User user = authService.authenticate(loginRequest.username, loginRequest.password);
             if (user != null) {
                 String token = JWTUtil.generateToken(user);
                 Role role = authService.getRoleByUser(user);
-
+                
                 System.out.println("User '" + user.getUsername() + "' logged in with role: " + role.getName().toUpperCase());
-
+                
                 Map<String, Object> response = new HashMap<>();
                 response.put("token", token);
                 response.put("user", Map.of(
@@ -52,7 +63,7 @@ public class AuthResource {
                         "roleName", role.getName().toUpperCase(),
                         "organizationId", user.getOrganizationId() != null ? user.getOrganizationId().toString() : ""
                 ));
-
+                
                 return Response.ok(JsonUtil.toJson(response)).header("Cache-Control", "no-store").build();
             } else {
                 return Response.status(Response.Status.UNAUTHORIZED)
@@ -67,16 +78,28 @@ public class AuthResource {
                     .build();
         }
     }
-
-    // logout endpoint
+    
+    /**
+     * Endpoint to log out a user.
+     *
+     * Note: For JWT, logout is handled client-side by removing the token.
+     *
+     * @return JSON response confirming logout
+     */
     @POST
     @Path("/logout")
     public Response logout() {
-        // For JWT, logout is handled client-side by removing the token
-        return Response.ok(JsonUtil.toJson(Map.of("message", "Logged out successfully"))).header("Cache-Control", "no-store").build();
+        return Response.ok(JsonUtil.toJson(Map.of("message", "Logged out successfully")))
+                .header("Cache-Control", "no-store")
+                .build();
     }
-
-    // validate token endpoint
+    
+    /**
+     * Endpoint to validate a JWT token.
+     *
+     * @param authHeader the Authorization header containing the Bearer token
+     * @return JSON response indicating token validity or error message
+     */
     @GET
     @Path("/validate")
     public Response validateToken(@HeaderParam("Authorization") String authHeader) {
@@ -87,21 +110,21 @@ public class AuthResource {
                         .header("Cache-Control", "no-store")
                         .build();
             }
-
+            
             String token = authHeader.substring(7);
             if (JWTUtil.validateToken(token)) {
                 String username = JWTUtil.getUsernameFromToken(token);
                 String userId = JWTUtil.getUserIdFromToken(token).toString();
                 String roleId = JWTUtil.getRoleIdFromToken(token) != null ?
                         JWTUtil.getRoleIdFromToken(token).toString() : "";
-
+                
                 Map<String, Object> response = Map.of(
                         "valid", true,
                         "username", username,
                         "userId", userId,
                         "roleId", roleId
                 );
-
+                
                 return Response.ok(JsonUtil.toJson(response)).header("Cache-Control", "no-store").build();
             } else {
                 return Response.status(Response.Status.UNAUTHORIZED)
@@ -116,7 +139,13 @@ public class AuthResource {
                     .build();
         }
     }
-
+    
+    /**
+     * Demo login endpoint to login by role name (for testing/demo purposes).
+     *
+     * @param request the demo login request containing the role name
+     * @return JSON response with token and user details or error message
+     */
     @POST
     @Path("/demo-login")
     public Response demoLogin(DemoLoginRequest request) {
@@ -125,7 +154,7 @@ public class AuthResource {
             if (user != null) {
                 String token = JWTUtil.generateToken(user);
                 Role role = authService.getRoleByUser(user);
-
+                
                 Map<String, Object> response = new HashMap<>();
                 response.put("token", token);
                 response.put("user", Map.of(
@@ -135,7 +164,7 @@ public class AuthResource {
                         "roleName", role.getName().toUpperCase(),
                         "organizationId", user.getOrganizationId() != null ? user.getOrganizationId().toString() : ""
                 ));
-
+                
                 return Response.ok(JsonUtil.toJson(response)).header("Cache-Control", "no-store").build();
             } else {
                 return Response.status(Response.Status.NOT_FOUND)
@@ -150,13 +179,18 @@ public class AuthResource {
                     .build();
         }
     }
-
-    // inner class for login request
+    
+    /**
+     * Inner class representing login request payload.
+     */
     public static class LoginRequest {
         public String username;
         public String password;
     }
-
+    
+    /**
+     * Inner class representing demo login request payload.
+     */
     public static class DemoLoginRequest {
         public String roleName;
     }

@@ -12,17 +12,22 @@ import java.sql.Timestamp;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * REST resource for managing report logs.
+ */
 @Path("/report-logs")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class ReportLogResource {
     private final ReportLogService svc = new ReportLogService();
     
-    //TODO: implement report logs
-    //TODO: implement per system owner report logs
+    // TODO: implement report logs per system owner
     
     /**
-     * GET /report-logs/last-import?type=CVE_IMPORT
+     * Returns the timestamp of the last run for a given import type.
+     *
+     * @param type The import type, e.g. "CVE_IMPORT"
+     * @return JSON containing the last import timestamp or an error if the type parameter is missing.
      */
     @GET
     @Path("/last-import")
@@ -35,19 +40,23 @@ public class ReportLogResource {
         Timestamp ts = svc.getLastRun(type);
         return Response.ok(Map.of("lastImport", ts)).build();
     }
-
+    
     /**
-     * GET /report-logs
+     * Retrieves all report logs.
+     *
+     * @return List of all ReportLog objects as JSON.
      */
     @GET
     @RolesAllowed({"security_officer", "admin"})
     public Response list() {
         return Response.ok(svc.listAllReportLogs()).build();
     }
-
+    
     /**
-     * POST /report-logs
-     * Body is a full ReportLog JSON; returns created record with id.
+     * Creates a new report log.
+     *
+     * @param rl The ReportLog object parsed from request JSON.
+     * @return The created ReportLog with generated ID and HTTP 201 status.
      */
     @POST
     public Response create(ReportLog rl) {

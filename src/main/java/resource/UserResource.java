@@ -13,22 +13,33 @@ import java.util.UUID;
 import dto.UserDto;
 import dto.UserCreationRequestDto;
 
+/**
+ * REST resource to manage user entities.
+ */
 @Path("/users")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class UserResource {
     private UserService userService;
-
+    
     public UserResource() {
         this.userService = new UserService();
     }
-
+    
+    /**
+     * Creates a new user.
+     *
+     * @param userJson JSON string representing UserCreationRequestDto
+     * @return HTTP 201 Created with created user JSON on success,
+     *         HTTP 400 Bad Request if creation failed,
+     *         HTTP 500 Internal Server Error on unexpected failure
+     */
     @POST
     public Response createUser(String userJson) {
         try {
             UserCreationRequestDto request = JsonUtil.fromJson(userJson, UserCreationRequestDto.class);
             User createdUser = userService.createUser(request);
-
+            
             if (createdUser != null) {
                 return Response.status(Response.Status.CREATED)
                         .entity(JsonUtil.toJson(createdUser))
@@ -44,7 +55,13 @@ public class UserResource {
                     .build();
         }
     }
-
+    
+    /**
+     * Retrieves all users.
+     *
+     * @return HTTP 200 OK with JSON list of UserDto,
+     *         HTTP 500 Internal Server Error on failure
+     */
     @GET
     @RolesAllowed({"security_officer", "admin"})
     public Response getAllUsers() {
@@ -57,8 +74,15 @@ public class UserResource {
                     .build();
         }
     }
-
-    // get user by id
+    
+    /**
+     * Retrieves user by id.
+     *
+     * @param idStr UUID string of user ID
+     * @return HTTP 200 OK with User JSON if found,
+     *         HTTP 404 Not Found if user not found,
+     *         HTTP 500 Internal Server Error on failure
+     */
     @GET
     @Path("/{id}")
     @RolesAllowed({"security_officer", "admin"})
@@ -81,8 +105,16 @@ public class UserResource {
                     .build();
         }
     }
-
-    // update user
+    
+    /**
+     * Updates an existing user.
+     *
+     * @param idStr UUID string of user ID
+     * @param userJson JSON string representing User
+     * @return HTTP 200 OK with updated user JSON if successful,
+     *         HTTP 404 Not Found if user does not exist,
+     *         HTTP 500 Internal Server Error on failure
+     */
     @PUT
     @Path("/{id}")
     @RolesAllowed({"security_officer", "admin"})
@@ -92,7 +124,7 @@ public class UserResource {
             User user = JsonUtil.fromJson(userJson, User.class);
             user.setId(id);
             User updatedUser = userService.updateUser(user);
-
+            
             if (updatedUser != null) {
                 return Response.ok(JsonUtil.toJson(updatedUser)).header("Cache-Control", "no-store").build();
             } else {
@@ -108,8 +140,15 @@ public class UserResource {
                     .build();
         }
     }
-
-    // delete user
+    
+    /**
+     * Deletes a user (soft delete).
+     *
+     * @param idStr UUID string of user ID
+     * @return HTTP 200 OK if deletion successful,
+     *         HTTP 404 Not Found if user does not exist,
+     *         HTTP 500 Internal Server Error on failure
+     */
     @DELETE
     @Path("/{id}")
     @RolesAllowed({"security_officer", "admin"})
@@ -132,8 +171,14 @@ public class UserResource {
                     .build();
         }
     }
-
-    // get users by department
+    
+    /**
+     * Retrieves users by department.
+     *
+     * @param departmentIdStr UUID string of department ID
+     * @return HTTP 200 OK with list of users JSON,
+     *         HTTP 500 Internal Server Error on failure
+     */
     @GET
     @Path("/department/{departmentId}")
     @RolesAllowed({"security_officer", "admin"})

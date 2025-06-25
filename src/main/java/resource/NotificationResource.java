@@ -11,16 +11,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * REST resource for managing notifications.
+ */
 @Path("/notifications")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class NotificationResource {
     private final NotificationService notificationService;
-
+    
+    /**
+     * Constructor initializes NotificationService.
+     */
     public NotificationResource() {
         this.notificationService = new NotificationService();
     }
-
+    
+    /**
+     * Retrieves all notifications for a given user.
+     *
+     * @param userIdStr The UUID string of the user.
+     * @return JSON list of notifications or error response.
+     */
     @GET
     @Path("/user/{userId}")
     @RolesAllowed({"system_owner", "admin"})
@@ -35,7 +47,13 @@ public class NotificationResource {
                     .build();
         }
     }
-
+    
+    /**
+     * Retrieves unread notifications for a given user.
+     *
+     * @param userIdStr The UUID string of the user.
+     * @return JSON list of unread notifications or error response.
+     */
     @GET
     @Path("/user/{userId}/unread")
     @RolesAllowed({"system_owner", "admin"})
@@ -50,7 +68,13 @@ public class NotificationResource {
                     .build();
         }
     }
-
+    
+    /**
+     * Marks a notification as read.
+     *
+     * @param notificationIdStr The UUID string of the notification.
+     * @return HTTP 200 if successful, 404 if not found, or 500 on error.
+     */
     @PUT
     @Path("/{notificationId}/read")
     @RolesAllowed({"system_owner", "admin"})
@@ -69,9 +93,15 @@ public class NotificationResource {
                     .build();
         }
     }
-
+    
+    /**
+     * Creates a new notification.
+     *
+     * @param notificationJson JSON string containing notification creation data.
+     * @return HTTP 201 with created notification JSON or error response.
+     */
     @POST
-    //TODO: check role based access
+    // TODO: Add role-based access control
     public Response createNotification(String notificationJson) {
         try {
             CreateNotificationRequest request = JsonUtil.fromJson(notificationJson, CreateNotificationRequest.class);
@@ -81,7 +111,7 @@ public class NotificationResource {
                     request.message,
                     request.vulnerabilityId != null ? UUID.fromString(request.vulnerabilityId) : null
             );
-
+            
             if (notification != null) {
                 return Response.status(Response.Status.CREATED)
                         .entity(JsonUtil.toJson(notification))
@@ -97,11 +127,18 @@ public class NotificationResource {
                     .build();
         }
     }
-
+    
+    /**
+     * DTO for creating notification requests.
+     */
     public static class CreateNotificationRequest {
+        /** User ID to receive the notification */
         public String userId;
+        /** Notification message content */
         public String message;
+        /** Notification type */
         public String type;
+        /** Optional vulnerability ID related to the notification */
         public String vulnerabilityId;
     }
 }

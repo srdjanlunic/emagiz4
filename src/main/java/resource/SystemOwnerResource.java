@@ -1,4 +1,3 @@
-// resource/SystemOwnerResource.java
 package resource;
 
 import model.SystemImplementation;
@@ -14,13 +13,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * REST resource for managing system owner assignments.
+ */
 @Path("/owners")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class SystemOwnerResource {
-
+    
     private final SystemOwnerService svc = new SystemOwnerService();
-
+    
+    /**
+     * Assigns a user as owner of a system implementation.
+     *
+     * @param body a map containing "userId" and "implementationId" as string UUIDs
+     * @return HTTP 201 Created with success message
+     */
     @POST
     @RolesAllowed("security_officer")
     public Response assign(Map<String,String> body) {
@@ -31,7 +39,14 @@ public class SystemOwnerResource {
                 .entity(Map.of("message","Owner assigned"))
                 .build();
     }
-
+    
+    /**
+     * Removes the owner assignment for a user and system implementation.
+     *
+     * @param u the user ID as string UUID path param
+     * @param s the implementation ID as string UUID path param
+     * @return HTTP 200 OK with success message if deleted, or HTTP 404 if assignment not found
+     */
     @DELETE
     @Path("/{userId}/{implId}")
     @RolesAllowed("security_officer")
@@ -46,7 +61,13 @@ public class SystemOwnerResource {
         }
         return Response.ok(Map.of("message","Owner unassigned")).build();
     }
-
+    
+    /**
+     * Gets all owners assigned to a specific system implementation.
+     *
+     * @param idStr the system implementation ID as string UUID path param
+     * @return HTTP 200 OK with list of User objects
+     */
     @GET
     @Path("/implementation/{id}")
     @RolesAllowed({"security_officer","system_owner"})
@@ -55,7 +76,13 @@ public class SystemOwnerResource {
         List<User> list = svc.getOwnersForImplementation(implId);
         return Response.ok(list).build();
     }
-
+    
+    /**
+     * Gets all system implementations assigned to a specific owner (user).
+     *
+     * @param idStr the user ID as string UUID path param
+     * @return HTTP 200 OK with list of SystemImplementation objects
+     */
     @GET
     @Path("/user/{id}")
     @RolesAllowed({"security_officer","system_owner"})

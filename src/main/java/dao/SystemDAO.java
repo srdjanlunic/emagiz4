@@ -8,38 +8,46 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Handles database operations for IT systems.
+ */
 public class SystemDAO {
-
-    // create new system
+    
+    /**
+     * Creates a new IT system record.
+     *
+     * @param system the system to insert
+     * @return the created system if successful, otherwise null
+     */
     public ITSystem create(ITSystem system) {
         Connection conn = null;
         PreparedStatement stmt = null;
-
+        
         try {
             System.out.println("Creating system: " + system.getName());
-
-            // Generate UUID in Java if not already set
+            
+            // Generate a UUID if none is set
             if (system.getId() == null) {
                 system.setId(UUID.randomUUID());
             }
-
+            
             conn = DatabaseConfig.getConnection();
             System.out.println("Database connection obtained");
-
+            
             stmt = conn.prepareStatement(
                     "INSERT INTO ITSystem (id, name, vendor, description, created_at) VALUES (?, ?, ?, ?, ?)"
             );
-
+            
             stmt.setObject(1, system.getId());
             stmt.setString(2, system.getName());
             stmt.setString(3, system.getVendor());
             stmt.setString(4, system.getDescription());
             stmt.setTimestamp(5, system.getCreatedAt());
-
+            
             System.out.println("Executing insert statement with ID: " + system.getId());
             int affectedRows = stmt.executeUpdate();
             System.out.println("Affected rows: " + affectedRows);
-
+            
             if (affectedRows > 0) {
                 System.out.println("System created successfully with ID: " + system.getId());
                 return system;
@@ -57,19 +65,24 @@ public class SystemDAO {
         }
         return null;
     }
-
-    // get system by id
+    
+    /**
+     * Finds a system by its ID.
+     *
+     * @param id the system ID
+     * @return the system if found, or null
+     */
     public ITSystem findById(UUID id) {
         Connection conn = null;
         PreparedStatement stmt = null;
         ResultSet rs = null;
-
+        
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement("SELECT * FROM ITSystem WHERE id = ?");
             stmt.setObject(1, id);
             rs = stmt.executeQuery();
-
+            
             if (rs.next()) {
                 return mapResultSetToSystem(rs);
             }
@@ -80,19 +93,23 @@ public class SystemDAO {
         }
         return null;
     }
-
-    // get all systems
+    
+    /**
+     * Returns all systems in the database.
+     *
+     * @return list of IT systems
+     */
     public List<ITSystem> findAll() {
         List<ITSystem> systems = new ArrayList<>();
         Connection conn = null;
         PreparedStatement stmt = null;
         ResultSet rs = null;
-
+        
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement("SELECT * FROM ITSystem ORDER BY created_at DESC");
             rs = stmt.executeQuery();
-
+            
             while (rs.next()) {
                 systems.add(mapResultSetToSystem(rs));
             }
@@ -103,23 +120,28 @@ public class SystemDAO {
         }
         return systems;
     }
-
-    // update system
+    
+    /**
+     * Updates an existing system's data.
+     *
+     * @param system the updated system
+     * @return the updated system if successful, otherwise null
+     */
     public ITSystem update(ITSystem system) {
         Connection conn = null;
         PreparedStatement stmt = null;
-
+        
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement(
                     "UPDATE ITSystem SET name = ?, vendor = ?, description = ? WHERE id = ?"
             );
-
+            
             stmt.setString(1, system.getName());
             stmt.setString(2, system.getVendor());
             stmt.setString(3, system.getDescription());
             stmt.setObject(4, system.getId());
-
+            
             int affectedRows = stmt.executeUpdate();
             if (affectedRows > 0) {
                 return system;
@@ -131,17 +153,22 @@ public class SystemDAO {
         }
         return null;
     }
-
-    // delete system
+    
+    /**
+     * Deletes a system by its ID.
+     *
+     * @param id the system ID
+     * @return true if deleted successfully
+     */
     public boolean delete(UUID id) {
         Connection conn = null;
         PreparedStatement stmt = null;
-
+        
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement("DELETE FROM ITSystem WHERE id = ?");
             stmt.setObject(1, id);
-
+            
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -150,7 +177,14 @@ public class SystemDAO {
         }
         return false;
     }
-
+    
+    /**
+     * Maps a result set row to an ITSystem object.
+     *
+     * @param rs the result set
+     * @return the mapped system
+     * @throws SQLException if data read fails
+     */
     private ITSystem mapResultSetToSystem(ResultSet rs) throws SQLException {
         ITSystem system = new ITSystem();
         system.setId((UUID) rs.getObject("id"));

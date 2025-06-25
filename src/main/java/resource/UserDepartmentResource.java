@@ -1,4 +1,3 @@
-// resource/UserDepartmentResource.java
 package resource;
 
 import model.Department;
@@ -14,16 +13,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * REST resource for managing assignments between users and departments.
+ */
 @Path("/user-departments")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class UserDepartmentResource {
-
+    
     private final UserDepartmentService svc = new UserDepartmentService();
-
+    
     /**
-     * Assign a user to a department.
-     * Body: { "userId": "...", "departmentId": "..." }
+     * Assigns a user to a department.
+     *
+     * @param body JSON map containing keys "userId" and "departmentId" with UUID strings
+     * @return HTTP 201 Created with confirmation message
      */
     @POST
     @RolesAllowed({"security_officer", "admin"})
@@ -35,9 +39,13 @@ public class UserDepartmentResource {
                 .entity(Map.of("message","User assigned to department"))
                 .build();
     }
-
+    
     /**
-     * Remove a user from a department.
+     * Removes a user from a department.
+     *
+     * @param u User UUID string path parameter
+     * @param d Department UUID string path parameter
+     * @return HTTP 200 OK with confirmation message if successful, 404 Not Found if assignment does not exist
      */
     @DELETE
     @Path("/{userId}/{departmentId}")
@@ -53,9 +61,12 @@ public class UserDepartmentResource {
         }
         return Response.ok(Map.of("message","User unassigned from department")).build();
     }
-
+    
     /**
-     * List all departments a user belongs to.
+     * Lists all departments that a user belongs to.
+     *
+     * @param u User UUID string path parameter
+     * @return HTTP 200 OK with list of departments JSON
      */
     @GET
     @Path("/user/{userId}")
@@ -65,9 +76,12 @@ public class UserDepartmentResource {
         List<Department> list = svc.getDepartmentsForUser(userId);
         return Response.ok(list).build();
     }
-
+    
     /**
-     * List all active users in a given department.
+     * Lists all active users in a given department.
+     *
+     * @param d Department UUID string path parameter
+     * @return HTTP 200 OK with list of users JSON
      */
     @GET
     @Path("/department/{departmentId}")

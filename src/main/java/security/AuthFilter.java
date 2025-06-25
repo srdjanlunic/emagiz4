@@ -12,35 +12,49 @@ import java.security.Principal;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Authentication filter that intercepts incoming HTTP requests to validate JWT tokens.
+ * <p>
+ * It allows OPTIONS requests (CORS preflight), skips authentication for auth and health endpoints,
+ * and validates the Authorization header bearing a JWT token.
+ * On successful validation, it sets the SecurityContext with the authenticated user's principal and roles.
+ */
 @Provider
 @PreMatching
 public class AuthFilter implements ContainerRequestFilter {
-
+    
+    /** Authentication scheme used in Authorization header */
     private static final String AUTH_SCHEME = "Bearer";
-
+    
+    /**
+     * Filters incoming requests to enforce authentication.
+     *
+     * @param requestContext context of the HTTP request being processed
+     * @throws IOException if an I/O exception occurs during filtering
+     */
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
         
         System.out.println();
         
-        // Handle CORS preflight requests
+        // Handle CORS preflight requests (OPTIONS)
         if (requestContext.getRequest().getMethod().equals("OPTIONS")) {
             requestContext.abortWith(Response.status(Response.Status.OK).build());
             return;
         }
-
+        
         // Skip authentication for auth endpoints and health check
         String path = requestContext.getUriInfo().getPath();
         System.out.println(path);
         if (path.contains("auth") || path.endsWith("/health")) {
             return;
         }
-
+        
         // Get the Authorization header from the request
         String authHeader = requestContext.getHeaderString("Authorization");
         
         System.out.println("Before auth header check");
-        // Validate the Authorization header
+        // Validate the Authorization header presence and scheme
         if (authHeader == null || !authHeader.startsWith(AUTH_SCHEME + " ")) {
             abortWithUnauthorized(requestContext, "Authorization header must be provided");
             return;
@@ -48,7 +62,7 @@ public class AuthFilter implements ContainerRequestFilter {
         System.out.println("After auth header check");
         // Extract the token from the Authorization header
         final String token = authHeader.substring(AUTH_SCHEME.length()).trim();
-
+        
         try {
             // Validate the token
             if (JWTUtil.validateToken(token)) {
@@ -57,15 +71,15 @@ public class AuthFilter implements ContainerRequestFilter {
                 final String role = JWTUtil.getRoleFromToken(token);
                 System.out.println(role);
                 final List<String> roles = (role != null) ? Collections.singletonList(role) : Collections.emptyList();
-
-                // Create a new SecurityContext
+                
+                // Preserve original security context for secure() method
                 SecurityContext originalContext = requestContext.getSecurityContext();
                 requestContext.setSecurityContext(new SecurityContext() {
                     @Override
                     public Principal getUserPrincipal() {
                         return () -> username;
                     }
-
+                    
                     @Override
                     public boolean isUserInRole(String requiredRole) {
                         if (roles.isEmpty()) {
@@ -74,12 +88,12 @@ public class AuthFilter implements ContainerRequestFilter {
                         // Case-insensitive role check
                         return roles.stream().anyMatch(r -> r.equalsIgnoreCase(requiredRole));
                     }
-
+                    
                     @Override
                     public boolean isSecure() {
                         return originalContext.isSecure();
                     }
-
+                    
                     @Override
                     public String getAuthenticationScheme() {
                         return AUTH_SCHEME;
@@ -92,13 +106,19 @@ public class AuthFilter implements ContainerRequestFilter {
             abortWithUnauthorized(requestContext, "Token validation failed");
         }
     }
-
+    
+    /**
+     * Aborts the request with a 401 Unauthorized response.
+     *
+     * @param requestContext the current request context to abort
+     * @param message the error message to include in the response body
+     */
     private void abortWithUnauthorized(ContainerRequestContext requestContext, String message) {
         requestContext.abortWith(
-            Response.status(Response.Status.UNAUTHORIZED)
-                    .header("WWW-Authenticate", AUTH_SCHEME)
-                    .entity("{\"error\":\"" + message + "\"}")
-                    .build()
+                Response.status(Response.Status.UNAUTHORIZED)
+                        .header("WWW-Authenticate", AUTH_SCHEME)
+                        .entity("{\"error\":\"" + message + "\"}")
+                        .build()
         );
     }
 }

@@ -1,4 +1,3 @@
-// dao/UserDepartmentDAO.java
 package dao;
 
 import config.DatabaseConfig;
@@ -11,8 +10,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * DAO for managing user-department relationships in the UserDepartment table.
+ */
 public class UserDepartmentDAO {
-
+    
+    /**
+     * Assigns a user to a department.
+     *
+     * @param userId       ID of the user
+     * @param departmentId ID of the department
+     */
     public void assign(UUID userId, UUID departmentId) {
         String sql = "INSERT INTO UserDepartment (user_id, department_id) VALUES (?, ?)";
         try (Connection conn = DatabaseConfig.getConnection();
@@ -24,7 +32,14 @@ public class UserDepartmentDAO {
             throw new RuntimeException("Failed to assign user to department", e);
         }
     }
-
+    
+    /**
+     * Removes a user from a department.
+     *
+     * @param userId       ID of the user
+     * @param departmentId ID of the department
+     * @return true if the record was deleted, false otherwise
+     */
     public boolean remove(UUID userId, UUID departmentId) {
         String sql = "DELETE FROM UserDepartment WHERE user_id = ? AND department_id = ?";
         try (Connection conn = DatabaseConfig.getConnection();
@@ -36,7 +51,13 @@ public class UserDepartmentDAO {
             throw new RuntimeException("Failed to remove user from department", e);
         }
     }
-
+    
+    /**
+     * Finds all departments that a user belongs to.
+     *
+     * @param userId ID of the user
+     * @return list of Department objects
+     */
     public List<Department> findDepartmentsByUser(UUID userId) {
         String sql = "SELECT d.* FROM Department d "
                 + "JOIN UserDepartment ud ON d.id = ud.department_id "
@@ -61,7 +82,13 @@ public class UserDepartmentDAO {
         }
         return list;
     }
-
+    
+    /**
+     * Finds all active users assigned to a department.
+     *
+     * @param departmentId ID of the department
+     * @return list of User objects
+     */
     public List<User> findUsersByDepartment(UUID departmentId) {
         String sql = "SELECT u.*, r.name AS role_name FROM UserAccount u "
                 + "JOIN UserDepartment ud ON u.id = ud.user_id "

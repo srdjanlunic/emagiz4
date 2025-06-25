@@ -12,43 +12,46 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * REST resource for managing departments.
+ */
 @Path("/departments")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class DepartmentResource {
     private DepartmentService departmentService;
-
+    
+    /**
+     * Default constructor initializes DepartmentService.
+     */
     public DepartmentResource() {
         this.departmentService = new DepartmentService();
     }
     
-    
+    /**
+     * Creates a new department.
+     *
+     * @param departmentJson JSON representation of the department to create
+     * @return HTTP response with created department JSON or error message
+     */
     @POST
     @RolesAllowed({"security_officer", "admin"})
     public Response createDepartment(String departmentJson) {
         try {
             Department department = JsonUtil.fromJson(departmentJson, Department.class);
-
+            
             if (department.getName() == null || department.getName().trim().isEmpty()) {
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(JsonUtil.toJson(Map.of("error", "Department name is required")))
                         .build();
             }
-
-            /*
-            if (department.getOrganizationId() == null) {
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(JsonUtil.toJson(Map.of("error", "Organization ID is required")))
-                        .build();
-            }
-            */
-
+            
             if (department.getCreatedAt() == null) {
                 department.setCreatedAt(new Timestamp(System.currentTimeMillis()));
             }
-
+            
             Department createdDepartment = departmentService.createDepartment(department);
-
+            
             if (createdDepartment != null) {
                 return Response.status(Response.Status.CREATED)
                         .entity(JsonUtil.toJson(createdDepartment))
@@ -64,7 +67,12 @@ public class DepartmentResource {
                     .build();
         }
     }
-
+    
+    /**
+     * Retrieves all departments.
+     *
+     * @return HTTP response with list of departments in JSON or error message
+     */
     @GET
     @RolesAllowed({"security_officer", "admin"})
     public Response getAllDepartments() {
@@ -77,7 +85,13 @@ public class DepartmentResource {
                     .build();
         }
     }
-
+    
+    /**
+     * Retrieves a department by its ID.
+     *
+     * @param idStr the UUID string of the department to retrieve
+     * @return HTTP response with department JSON or error message
+     */
     @GET
     @Path("/{id}")
     @RolesAllowed({"security_officer", "admin"})
@@ -98,7 +112,14 @@ public class DepartmentResource {
                     .build();
         }
     }
-
+    
+    /**
+     * Updates an existing department by ID.
+     *
+     * @param idStr         the UUID string of the department to update
+     * @param departmentJson JSON representation of the updated department
+     * @return HTTP response with updated department JSON or error message
+     */
     @PUT
     @Path("/{id}")
     @RolesAllowed({"security_officer", "admin"})
@@ -108,7 +129,7 @@ public class DepartmentResource {
             Department department = JsonUtil.fromJson(departmentJson, Department.class);
             department.setId(id);
             Department updatedDepartment = departmentService.updateDepartment(department);
-
+            
             if (updatedDepartment != null) {
                 return Response.ok(JsonUtil.toJson(updatedDepartment)).build();
             } else {
@@ -122,7 +143,13 @@ public class DepartmentResource {
                     .build();
         }
     }
-
+    
+    /**
+     * Deletes a department by ID.
+     *
+     * @param idStr the UUID string of the department to delete
+     * @return HTTP response confirming deletion or error message
+     */
     @DELETE
     @Path("/{id}")
     @RolesAllowed({"security_officer", "admin"})

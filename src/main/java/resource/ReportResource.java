@@ -1,5 +1,6 @@
 package resource;
 
+import java.util.UUID;
 import service.ReportService;
 
 import jakarta.annotation.security.RolesAllowed;
@@ -40,27 +41,43 @@ public class ReportResource {
     @Path("/system/{userId}")
     @RolesAllowed("system_owner")
     public Response generateSystemOwnerReport(@PathParam("userId") String userId) {
-        return null;
+        var fileBytes = svc.generateSystemOwnerReport(UUID.fromString(userId));
+        return Response.ok(fileBytes)
+                .header("Content-Disposition", "attachment; filename=systemowner_report.pdf")
+                .header("Content-Type", "application/pdf")
+                .build();
     }
     
     @GET
     @Path("/system")
     @RolesAllowed("admin")
     public Response generateSystemsReport() {
-        return null;
+        var fileBytes = svc.generateSystemsReport();
+        return Response.ok(fileBytes)
+                .header("Content-Disposition", "attachment; filename=systems_report.pdf")
+                .header("Content-Type", "application/pdf")
+                .build();
     }
     
     @GET
     @Path("/vulnerability")
     @RolesAllowed({"security_officer", "admin"})
     public Response generateVulnerabilitiesReport() {
-        return null;
+        var fileBytes = svc.generateVulnerabilitiesReport();
+        return Response.ok(fileBytes)
+                .header("Content-Disposition", "attachment; filename=cve_report.pdf")
+                .header("Content-Type", "application/pdf")
+                .build();
     }
     
     @GET
     @Path("/escalation")
     @RolesAllowed({"technical_expert", "admin"})
     public Response generateEscalationsReport() {
-        return null;
+        var fileBytes = svc.generateEscalationsReport();
+        return Response.ok(fileBytes)
+                .header("Content-Disposition", "attachment; filename=escalations_report.pdf")
+                .header("Content-Type", "application/pdf")
+                .build();
     }
 }

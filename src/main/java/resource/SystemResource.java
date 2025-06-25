@@ -19,6 +19,9 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * REST resource for managing IT systems and their implementations.
+ */
 @Path("/systems")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -27,15 +30,19 @@ public class SystemResource {
     private final SystemImplementationService systemImplementationService;
     private final SystemImplementationDAO systemImplementationDAO;
     private static final Logger logger = LoggerFactory.getLogger(SystemResource.class);
-
+    
     public SystemResource() {
         this.systemService = new SystemService();
         this.systemImplementationService = new SystemImplementationService();
         this.systemImplementationDAO = new SystemImplementationDAO();
     }
     
-    //TODO: FRONTEND implement linking systems to system owners
-    
+    /**
+     * Creates a new system.
+     *
+     * @param systemJson JSON representation of SystemDto
+     * @return HTTP 201 Created with the created system JSON or error response
+     */
     @POST
     @RolesAllowed({"system_owner", "admin"})
     public Response createSystem(String systemJson) {
@@ -48,10 +55,16 @@ public class SystemResource {
             return Response.status(Response.Status.CREATED).entity(JsonUtil.toJson(createdSystem)).build();
         } catch (Exception e) {
             logger.error("Error creating system", e);
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("{\"error\":\"" + e.getMessage() + "\"}").build();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("{\"error\":\"" + e.getMessage() + "\"}").build();
         }
     }
-
+    
+    /**
+     * Retrieves all systems.
+     *
+     * @return HTTP 200 OK with list of systems JSON or error response
+     */
     @GET
     @RolesAllowed({"security_officer", "system_owner", "admin"})
     public Response getAllSystems() {
@@ -59,10 +72,17 @@ public class SystemResource {
             List<SystemDto> systems = systemService.getAllSystems();
             return Response.ok(JsonUtil.toJson(systems)).build();
         } catch (Exception e) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("{\"error\":\"" + e.getMessage() + "\"}").build();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("{\"error\":\"" + e.getMessage() + "\"}").build();
         }
     }
-
+    
+    /**
+     * Retrieves a system by its ID.
+     *
+     * @param idStr UUID string of the system ID
+     * @return HTTP 200 OK with system JSON if found, 404 if not found, or error response
+     */
     @GET
     @Path("/{id}")
     @RolesAllowed({"security_officer", "system_owner", "admin"})
@@ -76,10 +96,18 @@ public class SystemResource {
                 return Response.status(Response.Status.NOT_FOUND).build();
             }
         } catch (Exception e) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("{\"error\":\"" + e.getMessage() + "\"}").build();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("{\"error\":\"" + e.getMessage() + "\"}").build();
         }
     }
-
+    
+    /**
+     * Updates a system by its ID.
+     *
+     * @param idStr UUID string of the system ID
+     * @param systemJson JSON representation of SystemDto with updated fields
+     * @return HTTP 200 OK with updated system JSON if successful, 404 if not found, or error response
+     */
     @PUT
     @Path("/{id}")
     @RolesAllowed({"system_owner", "admin"})
@@ -94,10 +122,17 @@ public class SystemResource {
                 return Response.status(Response.Status.NOT_FOUND).build();
             }
         } catch (Exception e) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("{\"error\":\"" + e.getMessage() + "\"}").build();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("{\"error\":\"" + e.getMessage() + "\"}").build();
         }
     }
-
+    
+    /**
+     * Deletes a system by its ID.
+     *
+     * @param idStr UUID string of the system ID
+     * @return HTTP 200 OK if deleted, 404 if not found, or error response
+     */
     @DELETE
     @Path("/{id}")
     @RolesAllowed({"system_owner", "admin"})
@@ -118,7 +153,13 @@ public class SystemResource {
                     .build();
         }
     }
-
+    
+    /**
+     * Creates a new system implementation.
+     *
+     * @param implJson JSON representation of SystemImplementationDto
+     * @return HTTP 201 Created with created implementation JSON or error response
+     */
     @POST
     @Path("/implementations")
     @RolesAllowed({"system_owner", "admin"})
@@ -128,10 +169,16 @@ public class SystemResource {
             SystemImplementationDto createdImpl = systemImplementationService.createSystemImplementation(implDto);
             return Response.status(Response.Status.CREATED).entity(JsonUtil.toJson(createdImpl)).build();
         } catch (Exception e) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("{\"error\":\"" + e.getMessage() + "\"}").build();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("{\"error\":\"" + e.getMessage() + "\"}").build();
         }
     }
-
+    
+    /**
+     * Retrieves all system implementations.
+     *
+     * @return HTTP 200 OK with list of implementations JSON or error response
+     */
     @GET
     @Path("/implementations")
     @RolesAllowed({"security_officer", "system_owner", "admin"})
@@ -145,7 +192,13 @@ public class SystemResource {
                     .build();
         }
     }
-
+    
+    /**
+     * Retrieves a system implementation by its ID.
+     *
+     * @param idStr UUID string of the system implementation ID
+     * @return HTTP 200 OK with implementation JSON if found, 404 if not found, or error response
+     */
     @GET
     @Path("/implementations/{id}")
     @RolesAllowed({"security_officer", "system_owner", "admin"})
@@ -166,7 +219,14 @@ public class SystemResource {
                     .build();
         }
     }
-
+    
+    /**
+     * Updates a system implementation by its ID.
+     *
+     * @param idStr UUID string of the system implementation ID
+     * @param implJson JSON representation of updated SystemImplementationDto
+     * @return HTTP 200 OK with updated implementation JSON if successful, 404 if not found, or error response
+     */
     @PUT
     @Path("/implementations/{id}")
     @RolesAllowed({"system_owner", "admin"})
@@ -181,10 +241,17 @@ public class SystemResource {
                 return Response.status(Response.Status.NOT_FOUND).build();
             }
         } catch (Exception e) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("{\"error\":\"" + e.getMessage() + "\"}").build();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("{\"error\":\"" + e.getMessage() + "\"}").build();
         }
     }
-
+    
+    /**
+     * Deletes a system implementation by its ID.
+     *
+     * @param idStr UUID string of the system implementation ID
+     * @return HTTP 200 OK if deleted, 404 if not found, or error response
+     */
     @DELETE
     @Path("/implementations/{id}")
     @RolesAllowed({"system_owner", "admin"})
@@ -205,7 +272,13 @@ public class SystemResource {
                     .build();
         }
     }
-
+    
+    /**
+     * Retrieves system implementations by department ID.
+     *
+     * @param departmentIdStr UUID string of the department ID
+     * @return HTTP 200 OK with list of implementations JSON or error response
+     */
     @GET
     @Path("/implementations/department/{departmentId}")
     @RolesAllowed({"security_officer", "system_owner", "admin"})
@@ -220,7 +293,13 @@ public class SystemResource {
                     .build();
         }
     }
-
+    
+    /**
+     * Retrieves system implementations by system ID.
+     *
+     * @param systemIdStr UUID string of the system ID
+     * @return HTTP 200 OK with list of implementations JSON or error response
+     */
     @GET
     @Path("/{systemId}/implementations")
     @RolesAllowed({"security_officer", "system_owner", "admin"})
@@ -235,7 +314,13 @@ public class SystemResource {
                     .build();
         }
     }
-
+    
+    /**
+     * Recalculates and returns the risk score for a given system implementation ID.
+     *
+     * @param idStr UUID string of the system implementation ID
+     * @return HTTP 200 OK with updated implementation JSON if successful, 404 if not found, or error response
+     */
     @POST
     @Path("/implementations/{id}/recalculate")
     public Response recalculateAndGetRiskScore(@PathParam("id") String idStr) {
@@ -248,7 +333,8 @@ public class SystemResource {
                 return Response.status(Response.Status.NOT_FOUND).build();
             }
         } catch (Exception e) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("{\"error\":\"" + e.getMessage() + "\"}").build();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("{\"error\":\"" + e.getMessage() + "\"}").build();
         }
     }
 }

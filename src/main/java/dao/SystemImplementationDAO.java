@@ -8,66 +8,57 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Handles database operations for system implementations (i.e. specific deployments of systems in departments).
+ */
 public class SystemImplementationDAO {
-
+    
+    /**
+     * Creates a new SystemImplementation record after verifying references exist.
+     *
+     * @param implementation the implementation to insert
+     * @return the created implementation, or null if insert failed
+     */
     public SystemImplementation create(SystemImplementation implementation) {
         Connection conn = null;
         PreparedStatement stmt = null;
         ResultSet rs = null;
-
+        
         try {
             System.out.println("=== SystemImplementationDAO.create - START ===");
-            System.out.println("SystemID: " + implementation.getSystemId());
-            System.out.println("DepartmentID: " + implementation.getDepartmentId());
-            System.out.println("DataClassification: " + implementation.getDataClassification());
-            System.out.println("CriticalityLevel: " + implementation.getCriticalityLevel());
-            System.out.println("InternetFacing: " + implementation.isInternetFacing());
-            System.out.println("SensitiveCustomerData: " + implementation.isSensitiveCustomerData());
-            System.out.println("RiskScore: " + implementation.getRiskScore());
-            System.out.println("Version: " + implementation.getVersion());
-            System.out.println("Environment: " + implementation.getEnvironment());
-
+            
+            // Validate existence of referenced ITSystem
             conn = DatabaseConfig.getConnection();
-            System.out.println("Database connection established");
-
-            // First, let's check if the referenced system and department exist
-            System.out.println("Checking if system exists...");
             PreparedStatement checkSystemStmt = conn.prepareStatement("SELECT id FROM ITSystem WHERE id = ?");
             checkSystemStmt.setObject(1, implementation.getSystemId());
             ResultSet systemRs = checkSystemStmt.executeQuery();
             if (!systemRs.next()) {
-                System.out.println("❌ System with ID " + implementation.getSystemId() + " does not exist");
+                System.out.println("System not found");
                 return null;
             }
             systemRs.close();
             checkSystemStmt.close();
-            System.out.println("✅ System exists");
-
-            System.out.println("Checking if department exists...");
+            
+            // Validate existence of referenced Department
             PreparedStatement checkDeptStmt = conn.prepareStatement("SELECT id FROM Department WHERE id = ?");
             checkDeptStmt.setObject(1, implementation.getDepartmentId());
             ResultSet deptRs = checkDeptStmt.executeQuery();
             if (!deptRs.next()) {
-                System.out.println("❌ Department with ID " + implementation.getDepartmentId() + " does not exist");
+                System.out.println("Department not found");
                 return null;
             }
             deptRs.close();
             checkDeptStmt.close();
-            System.out.println("✅ Department exists");
-
-            // Use simpler INSERT without RETURNING clause
+            
+            // Insert the implementation
             String sql = "INSERT INTO SystemImplementation (id, system_id, department_id, data_classification, " +
                     "criticality_level, internet_facing, sensitive_customer_data, risk_score, version, " +
                     "environment, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            System.out.println("SQL: " + sql);
-
-            // Generate UUID manually
+            
             UUID newId = UUID.randomUUID();
             implementation.setId(newId);
-            System.out.println("Generated ID: " + newId);
-
+            
             stmt = conn.prepareStatement(sql);
-
             stmt.setObject(1, implementation.getId());
             stmt.setObject(2, implementation.getSystemId());
             stmt.setObject(3, implementation.getDepartmentId());
@@ -80,42 +71,36 @@ public class SystemImplementationDAO {
             stmt.setString(10, implementation.getEnvironment());
             stmt.setTimestamp(11, implementation.getCreatedAt());
             stmt.setTimestamp(12, implementation.getUpdatedAt());
-
-            System.out.println("Statement prepared, executing...");
-
+            
             int affectedRows = stmt.executeUpdate();
-            System.out.println("Affected rows: " + affectedRows);
-
             if (affectedRows > 0) {
-                System.out.println("✅ Implementation created with ID: " + implementation.getId());
+                System.out.println("Implementation created");
                 return implementation;
-            } else {
-                System.out.println("❌ No rows affected");
-                return null;
             }
         } catch (SQLException e) {
-            System.out.println("❌ SQL Exception in SystemImplementationDAO.create: " + e.getMessage());
-            System.out.println("SQL State: " + e.getSQLState());
-            System.out.println("Error Code: " + e.getErrorCode());
+            System.out.println("SQL Exception in create: " + e.getMessage());
             e.printStackTrace();
-            return null;
         } finally {
             DatabaseUtil.closeResources(conn, stmt, rs);
             System.out.println("=== SystemImplementationDAO.create - END ===");
         }
+        return null;
     }
-
+    
+    /**
+     * Finds a system implementation by its ID.
+     */
     public SystemImplementation findById(UUID id) {
         Connection conn = null;
         PreparedStatement stmt = null;
         ResultSet rs = null;
-
+        
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement("SELECT * FROM SystemImplementation WHERE id = ?");
             stmt.setObject(1, id);
             rs = stmt.executeQuery();
-
+            
             if (rs.next()) {
                 return mapResultSetToSystemImplementation(rs);
             }
@@ -127,18 +112,21 @@ public class SystemImplementationDAO {
         }
         return null;
     }
-
+    
+    /**
+     * Returns all system implementations.
+     */
     public List<SystemImplementation> findAll() {
         List<SystemImplementation> implementations = new ArrayList<>();
         Connection conn = null;
         PreparedStatement stmt = null;
         ResultSet rs = null;
-
+        
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement("SELECT * FROM SystemImplementation ORDER BY created_at DESC");
             rs = stmt.executeQuery();
-
+            
             while (rs.next()) {
                 implementations.add(mapResultSetToSystemImplementation(rs));
             }
@@ -150,11 +138,14 @@ public class SystemImplementationDAO {
         }
         return implementations;
     }
-
+    
+    /**
+     * Updates an existing system implementation.
+     */
     public SystemImplementation update(SystemImplementation implementation) {
         Connection conn = null;
         PreparedStatement stmt = null;
-
+        
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement(
@@ -163,7 +154,7 @@ public class SystemImplementationDAO {
                             "sensitive_customer_data = ?, risk_score = ?, version = ?, environment = ?, " +
                             "updated_at = ? WHERE id = ?"
             );
-
+            
             stmt.setObject(1, implementation.getSystemId());
             stmt.setObject(2, implementation.getDepartmentId());
             stmt.setString(3, implementation.getDataClassification());
@@ -175,7 +166,7 @@ public class SystemImplementationDAO {
             stmt.setString(9, implementation.getEnvironment());
             stmt.setTimestamp(10, implementation.getUpdatedAt());
             stmt.setObject(11, implementation.getId());
-
+            
             int affectedRows = stmt.executeUpdate();
             if (affectedRows > 0) {
                 return implementation;
@@ -188,16 +179,19 @@ public class SystemImplementationDAO {
         }
         return null;
     }
-
+    
+    /**
+     * Deletes a system implementation by ID.
+     */
     public boolean delete(UUID id) {
         Connection conn = null;
         PreparedStatement stmt = null;
-
+        
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement("DELETE FROM SystemImplementation WHERE id = ?");
             stmt.setObject(1, id);
-
+            
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
             System.out.println("Error in delete: " + e.getMessage());
@@ -207,19 +201,22 @@ public class SystemImplementationDAO {
         }
         return false;
     }
-
+    
+    /**
+     * Gets all implementations for a specific department.
+     */
     public List<SystemImplementation> findByDepartment(UUID departmentId) {
         List<SystemImplementation> implementations = new ArrayList<>();
         Connection conn = null;
         PreparedStatement stmt = null;
         ResultSet rs = null;
-
+        
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement("SELECT * FROM SystemImplementation WHERE department_id = ?");
             stmt.setObject(1, departmentId);
             rs = stmt.executeQuery();
-
+            
             while (rs.next()) {
                 implementations.add(mapResultSetToSystemImplementation(rs));
             }
@@ -231,19 +228,22 @@ public class SystemImplementationDAO {
         }
         return implementations;
     }
-
+    
+    /**
+     * Gets all implementations for a specific system.
+     */
     public List<SystemImplementation> findBySystem(UUID systemId) {
         List<SystemImplementation> implementations = new ArrayList<>();
         Connection conn = null;
         PreparedStatement stmt = null;
         ResultSet rs = null;
-
+        
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement("SELECT * FROM SystemImplementation WHERE system_id = ?");
             stmt.setObject(1, systemId);
             rs = stmt.executeQuery();
-
+            
             while (rs.next()) {
                 implementations.add(mapResultSetToSystemImplementation(rs));
             }
@@ -255,16 +255,22 @@ public class SystemImplementationDAO {
         }
         return implementations;
     }
-
+    
+    /**
+     * Finds all system IDs that are linked to a given vulnerability.
+     */
     public List<String> findSystemIdsByVulnerabilityId(UUID vulnerabilityId) {
         List<String> systemIds = new ArrayList<>();
         String sql = "SELECT DISTINCT si.system_id FROM SystemImplementation si " +
-                     "JOIN VulnerabilityMatch vm ON si.id = vm.system_implementation_id " +
-                     "WHERE vm.vulnerability_id = ?";
+                "JOIN VulnerabilityMatch vm ON si.id = vm.system_implementation_id " +
+                "WHERE vm.vulnerability_id = ?";
+        
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
             stmt.setObject(1, vulnerabilityId);
             ResultSet rs = stmt.executeQuery();
+            
             while (rs.next()) {
                 systemIds.add(((UUID) rs.getObject("system_id")).toString());
             }
@@ -273,7 +279,10 @@ public class SystemImplementationDAO {
         }
         return systemIds;
     }
-
+    
+    /**
+     * Converts a result set row into a SystemImplementation object.
+     */
     public SystemImplementation mapResultSetToSystemImplementation(ResultSet rs) throws SQLException {
         SystemImplementation implementation = new SystemImplementation();
         implementation.setId((UUID) rs.getObject("id"));
