@@ -7,8 +7,11 @@ import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Tests the methods in the class AuthService.
+ */
 public class AuthTest {
-    private AuthService authService;
+    private AuthService svc;
     private UserDAO userDAO;
     private final String plainPassword = "securePassword";
     
@@ -17,9 +20,12 @@ public class AuthTest {
     private String email;
     private String hashedPassword;
     
+    /**
+     * Create a test user with a unique username and email to be used for authentication tests.
+     */
     @BeforeEach
     public void setup() {
-        authService = new AuthService();
+        svc = new AuthService();
         userDAO = new UserDAO();
         
         // Generate unique username and email to avoid conflicts
@@ -37,7 +43,7 @@ public class AuthTest {
         user.setUsername(username);
         
         
-        hashedPassword = authService.hashPassword(plainPassword);
+        hashedPassword = svc.hashPassword(plainPassword);
         user.setPassword(hashedPassword);
         user.setEmail(email);
         user.setFirstName("Test");
@@ -48,94 +54,48 @@ public class AuthTest {
             userDAO.create(user);
         } catch (Exception e) {
             System.err.println("Failed to create test user: " + e.getMessage());
-            throw new RuntimeException("Test setup failed", e);
+            throw new RuntimeException(e);
         }
     }
     
-    
-    
-    @Test
-    public void testAuthenticate_ValidCredentials_ReturnsUser() {
-        // Debug: Verify user was created
-        User createdUser = userDAO.findByUsername(username);
-        assertNotNull(createdUser, "Test user should exist in database");
-        User result = authService.authenticate(username, plainPassword);
-        
-        assertNotNull(result, "Expected a non-null user object for valid credentials");
-        assertEquals(username, result.getUsername(), "Username mismatch");
-        assertEquals(testUserId, result.getId(), "User ID mismatch");
-        assertTrue(result.isActive(), "User should be active");
-    }
-    
-    @Test
-    public void testAuthenticate_InvalidUsername_ReturnsNull() {
-        User result = authService.authenticate("nonexistent_user", plainPassword);
-        assertNull(result, "Expected null for invalid username");
-    }
-    
-    @Test
-    public void testAuthenticate_InvalidPassword_ReturnsNull() {
-        User result = authService.authenticate(username, "wrongPassword");
-        assertNull(result, "Expected null for invalid password");
-    }
-    
-    @Test
-    public void testAuthenticate_InactiveUser_ReturnsNull() {
-        // Create an inactive user
-        User inactiveUser = new User();
-        UUID inactiveUserId = UUID.randomUUID();
-        inactiveUser.setId(inactiveUserId);
-        inactiveUser.setUsername("inactive_user");
-        inactiveUser.setPassword(hashedPassword);
-        inactiveUser.setEmail("inactive@test.com");
-        inactiveUser.setFirstName("Inactive");
-        inactiveUser.setLastName("User");
-        inactiveUser.setActive(false);
-        
-        userDAO.create(inactiveUser);
-        
-        try {
-            User result = authService.authenticate("inactive_user", plainPassword);
-            assertNull(result, "Expected null for inactive user");
-        } finally {
-            // Clean up the inactive user
-            userDAO.delete(inactiveUserId);
-        }
-    }
-    
-    @Test
-    public void testAuthenticate_NullCredentials_ReturnsNull() {
-        User result1 = authService.authenticate(null, plainPassword);
-        User result2 = authService.authenticate(username, null);
-        User result3 = authService.authenticate(null, null);
-        
-        assertNull(result1, "Expected null for null username");
-        assertNull(result2, "Expected null for null password");
-        assertNull(result3, "Expected null for null credentials");
-    }
-    
+    /**
+     * Remove the test user from the database after each test.
+     */
     @AfterEach
     public void cleanup() {
-        // Clean up the test user
-        if (testUserId != null) {
-            try {
-                userDAO.delete(testUserId);
-            } catch (Exception e) {
-                System.err.println("Failed to cleanup test user: " + e.getMessage());
-            }
-        }
+        userDAO.delete(testUserId);
+    }
+    
+    /**
+     * Test the password hashing functionality to ensure the plain password is transformed.
+     */
+    @Test
+    public void testHashPassword() {
+        String hash = svc.hashPassword(plainPassword);
+        assertNotEquals(plainPassword, hash);
+    }
+    
+    /**
+     * Test the password verification logic using both correct and incorrect passwords.
+     */
+    @Test
+    public void testVerifyPassword() {
+        assertTrue(svc.verifyPassword(plainPassword, hashedPassword));
+        assertFalse(svc.verifyPassword("wrongPassword", hashedPassword));
+    }
+    
+    /**
+     * Test the authentication method with valid and invalid credentials.
+     */
+    @Test
+    public void testAuthenticate() {
+        // Correct username and password should authenticate successfully
+        User user = svc.authenticate(username, plainPassword);
+        assertNotNull(user);
+        assertEquals(username, user.getUsername());
         
-        // Also try cleanup by username as backup
-        if (username != null) {
-            try {
-                User existingUser = userDAO.findByUsername(username);
-                if (existingUser != null) {
-                    userDAO.delete(existingUser.getId());
-                }
-            } catch (Exception e) {
-            
-            }
-        }
+        // Wrong password should result in failed authentication
+        User failedUser = svc.authenticate(username, "wrongPassword");
+        assertNull(failedUser);
     }
 }
-

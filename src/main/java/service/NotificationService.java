@@ -5,10 +5,6 @@ import dao.SystemImplementationDAO;
 import dao.UserDAO;
 import dao.VulnerabilityDAO;
 import model.Notification;
-import model.SystemImplementation;
-import model.User;
-import model.Vulnerability;
-import model.VulnerabilityMatch;
 import dto.NotificationDto;
 import java.util.List;
 import java.util.UUID;
@@ -96,6 +92,11 @@ public class NotificationService {
      * @param systemImplementationIds list of system implementation IDs affected
      */
     public void createVulnerabilityMatchNotifications(UUID vulnerabilityId, String cveId, List<UUID> systemImplementationIds) {
+        //TODO: Implement vulnerability match notifications
+        for (UUID implementationId : systemImplementationIds) {
+            // Get the system owner(s) for the given system implementation
+            //List<UUID> ownerIds = systemImplementationDAO.findOwnerbyImplementation
+        }
         System.out.println("Placeholder for creating vulnerability match notifications.");
     }
     
@@ -106,6 +107,8 @@ public class NotificationService {
      * @param notification the notification to send
      */
     public void sendNotification(Notification notification) {
+        //TODO: Implement send notification to user
+        
         System.out.println("Notification sent to user " + notification.getUserId() + ": " + notification.getMessage());
     }
     
