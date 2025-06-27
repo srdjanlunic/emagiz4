@@ -74,7 +74,7 @@ public class SystemImplementationTest {
         var id = implem.getId();
         var updatedModel = new SystemImplementationDto
                 (id, system.getId(), department.getId(), "INTERNAL",
-                 "CRITICAL", false, false, 0,
+                 "MEDIUM", false, false, 0,
                  "1.8", "Production", new Timestamp(System.currentTimeMillis()),
                  new Timestamp(System.currentTimeMillis()));
         var updatedImplem = svc.updateSystemImplementation(implem.getId(), updatedModel);

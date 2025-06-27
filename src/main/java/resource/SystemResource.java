@@ -41,7 +41,7 @@ public class SystemResource {
     /**
      * Creates a new system and its implementation.
      *
-     * @param registrationDto JSON representation of SystemRegistrationDto
+     * @param systemJson JSON representation of SystemRegistrationDto
      * @return HTTP 201 Created with the created system implementation JSON or error response
      */
     @POST

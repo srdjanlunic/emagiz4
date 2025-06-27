@@ -1,5 +1,6 @@
 package service;
 
+import dao.UserDAO;
 import java.sql.Timestamp;
 import java.util.UUID;
 import model.ReportLog;
@@ -15,7 +16,7 @@ public class ReportLogTest {
     @BeforeEach
     public void setup() {
         svc = new ReportLogService();
-        randomUserId = UUID.randomUUID();
+        randomUserId = new UserDAO().findAll().get(0).getId();
         var reportLogModel = new ReportLog(randomUserId, "Test", "Test Log",
                                            new Timestamp(System.currentTimeMillis()-100),
                                            new Timestamp(System.currentTimeMillis()+100),

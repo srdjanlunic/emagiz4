@@ -9,6 +9,8 @@ public class SettingTest {
     
     @Test
     public void testSaveAndGetSetting() {
+        svc = new SettingService();
+        
         var key = "last_cve_import_time";
         var value = new Timestamp(System.currentTimeMillis()).toString();
         
