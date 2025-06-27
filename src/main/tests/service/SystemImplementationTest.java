@@ -66,36 +66,54 @@ public class SystemImplementationTest {
     
     @Test
     public void testGetSystemImplementationById() {
-    
+        assertEquals(implem, svc.getSystemImplementationById(implem.getId()));
     }
     
     @Test
     public void testUpdateSystemImplementation() {
-    
+        var id = implem.getId();
+        var updatedModel = new SystemImplementationDto
+                (id, system.getId(), department.getId(), "INTERNAL",
+                 "CRITICAL", false, false, 0,
+                 "1.8", "Production", new Timestamp(System.currentTimeMillis()),
+                 new Timestamp(System.currentTimeMillis()));
+        var updatedImplem = svc.updateSystemImplementation(implem.getId(), updatedModel);
+        assertEquals(updatedImplem, updatedModel);
     }
     
     @Test
     public void testDeleteSystemImplementation() {
-    
+        assertTrue(svc.deleteSystemImplementation(implem.getId()));
     }
     
     @Test
     public void testCalculateRiskScore() {
-    
+        var sysImplem = new SystemImplementation();
+        sysImplem.setId(implem.getId());
+        sysImplem.setSystemId(implem.getSystemId());
+        sysImplem.setDepartmentId(implem.getDepartmentId());
+        sysImplem.setDataClassification(implem.getDataClassification());
+        sysImplem.setCriticalityLevel(implem.getCriticalityLevel());
+        sysImplem.setInternetFacing(implem.isInternetFacing());
+        sysImplem.setSensitiveCustomerData(implem.isSensitiveCustomerData());
+        sysImplem.setRiskScore(implem.getRiskScore());
+        sysImplem.setVersion(implem.getVersion());
+        sysImplem.setEnvironment(implem.getEnvironment());
+        sysImplem.setCreatedAt(implem.getCreatedAt());
+        sysImplem.setUpdatedAt(implem.getUpdatedAt());
+        
+        assertEquals(30, svc.calculateRiskScore(sysImplem));
     }
     
     @Test
     public void testGetImplementationsByDepartment() {
-    
+        var implemList = svc.getImplementationsByDepartment(department.getId());
+        assertTrue(implemList.contains(implem));
     }
     
     @Test
     public void testGetImplementationsBySystem() {
-    
-    }
-    
-    @Test
-    public void testRecalculateRiskScore() {
-    
+        var implemList = svc.getImplementationsBySystem(system.getId());
+        assertTrue(implemList.contains(implem));
     }
 }
