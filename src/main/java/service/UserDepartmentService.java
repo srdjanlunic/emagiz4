@@ -17,7 +17,7 @@ public class UserDepartmentService {
      * @param departmentId the UUID of the department to assign the user to
      */
     public void assignUserToDepartment(UUID userId, UUID departmentId) {
-        dao.assign(userId, departmentId);
+        dao.assignUserToDepartment(userId, departmentId);
     }
     
     /**

@@ -64,4 +64,16 @@ public enum AssessmentStatus {
         }
         throw new IllegalArgumentException("Unknown assessment status: " + value);
     }
+
+    /**
+     * Returns the corresponding {@code AssessmentStatus} for the given string value.
+     * This is an alias for {@link #fromValue(String)}.
+     *
+     * @param value string value to match
+     * @return matching {@code AssessmentStatus}
+     * @throws IllegalArgumentException if no matching status is found
+     */
+    public static AssessmentStatus fromString(String value) {
+        return fromValue(value);
+    }
 }
