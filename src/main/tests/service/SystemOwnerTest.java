@@ -1,5 +1,7 @@
 package service;
 
+import dao.SystemImplementationDAO;
+import dao.UserDAO;
 import dto.UserCreationRequestDto;
 import model.SystemImplementation;
 import model.User;
@@ -30,8 +32,8 @@ public class SystemOwnerTest {
         ownerService = new SystemOwnerService();
         
         UserCreationRequestDto userDto = new UserCreationRequestDto();
-        userDto.setUsername("testOwnerUser");
-        userDto.setEmail("owner@example.com");
+        userDto.setUsername(UUID.randomUUID().toString());
+        userDto.setEmail(UUID.randomUUID().toString());
         userDto.setPassword("owner123");
         userDto.setRole("system_owner");
         testUser = userService.createUser(userDto);
@@ -46,8 +48,15 @@ public class SystemOwnerTest {
         impl.setRiskScore(10);
         impl.setSensitiveCustomerData(false);
         
-        testImplementation = new dao.SystemImplementationDAO().create(impl);
+        testImplementation = new SystemImplementationDAO().findAll().get(0); //new dao.SystemImplementationDAO().create(impl);
     }
+    
+    @AfterEach
+    public void cleanup() {
+        new UserDAO().delete(testUser.getId());
+        new SystemImplementationDAO().delete(testImplementation.getId());
+    }
+    
     /**
      * Assign a user as owner and verify retrieval.
      */

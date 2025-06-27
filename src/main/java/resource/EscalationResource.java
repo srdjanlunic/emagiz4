@@ -22,6 +22,7 @@ public class EscalationResource {
     public Response createEscalation(String escalationJson) {
         try {
             var request = JsonUtil.fromJson(escalationJson, EscalationCreationDto.class);
+            request.setReason(request.getReason().trim());
             var createdEscalation = svc.create(request);
             
             if (createdEscalation != null) {
@@ -46,6 +47,9 @@ public class EscalationResource {
         try {
             var id = UUID.fromString(idStr);
             var request = JsonUtil.fromJson(responseJson, EscalationReviewDto.class);
+            
+            request.setResponse(request.getResponse().trim());
+            
             var reviewedEscalation = svc.review(id, request);
             
             if (reviewedEscalation != null) {
@@ -72,7 +76,11 @@ public class EscalationResource {
             var escalation = JsonUtil.fromJson(escalationJson, Escalation.class);
             escalation.setId(id);
             
+            escalation.setResponse(escalation.getResponse().trim());
+            escalation.setEscalationReason(escalation.getEscalationReason().trim());
+            
             var updatedEscalation = svc.update(escalation);
+            
             
             if (updatedEscalation != null) {
                 return Response.ok(JsonUtil.toJson(updatedEscalation)).header("Cache-Control", "no-store").build();

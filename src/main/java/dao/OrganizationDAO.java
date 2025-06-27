@@ -27,12 +27,13 @@ public class OrganizationDAO {
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement(
-                    "INSERT INTO Organization (name, created_at) VALUES (?, ?) RETURNING id",
+                    "INSERT INTO Organization (id, name, created_at) VALUES (?, ?, ?) RETURNING id",
                     Statement.RETURN_GENERATED_KEYS
             );
             
-            stmt.setString(1, organization.getName());
-            stmt.setTimestamp(2, organization.getCreatedAt());
+            stmt.setObject(1, UUID.randomUUID());
+            stmt.setString(2, organization.getName());
+            stmt.setTimestamp(3, organization.getCreatedAt());
             
             int affectedRows = stmt.executeUpdate();
             if (affectedRows > 0) {

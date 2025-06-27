@@ -82,6 +82,7 @@ public class SystemDAO {
             stmt = conn.prepareStatement("SELECT * FROM ITSystem WHERE id = ?");
             stmt.setObject(1, id);
             rs = stmt.executeQuery();
+            System.out.println(rs);
             
             if (rs.next()) {
                 return mapResultSetToSystem(rs);

@@ -1,6 +1,7 @@
 package service;
 
 import dao.OrganizationDAO;
+import java.util.UUID;
 import model.Department;
 import model.Organization;
 import org.junit.jupiter.api.*;
@@ -22,7 +23,9 @@ public class DepartmentTest {
     @BeforeEach
     public void setup() {
         svc = new DepartmentService();
-        organization = new OrganizationDAO().create(new Organization("Department Test Org"));
+        var organizationModel = new Organization("Department Test Org");
+        organizationModel.setId(UUID.randomUUID());
+        organization = new OrganizationDAO().create(organizationModel);
         var departmentModel = new Department("Unit Test Department", "Test", organization.getId());
         department = svc.createDepartment(departmentModel);
     }
@@ -32,6 +35,7 @@ public class DepartmentTest {
      */
     @AfterEach
     public void cleanup() {
+        new OrganizationDAO().delete(organization.getId());
         svc.deleteDepartment(department.getId());
     }
     

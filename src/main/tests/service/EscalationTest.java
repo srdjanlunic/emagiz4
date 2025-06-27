@@ -39,10 +39,11 @@ public class EscalationTest {
         
         // Create a base escalation record
         EscalationCreationDto dto = new EscalationCreationDto();
-        dto.setSystemVulnerabilityId(vulnerabilityId);
+        dto.setCveId("");
+        dto.setSystemId(UUID.randomUUID());
         dto.setSecurityOfficerId(officerId);
-        dto.setEscalationReason("Initial test escalation");
-        dto.setEscalationDate(null); // Timestamp not needed for testing
+        dto.setReason("Initial test escalation");
+        //dto.setEscalationDate(null); // Timestamp not needed for testing
         
         Escalation escalation = escalationService.create(dto);
         assertNotNull(escalation);
@@ -56,10 +57,11 @@ public class EscalationTest {
     @Test
     public void testCreateEscalation_Success() {
         EscalationCreationDto dto = new EscalationCreationDto();
-        dto.setSystemVulnerabilityId(UUID.randomUUID());
+        dto.setCveId("");
+        dto.setSystemId(UUID.randomUUID());
         dto.setSecurityOfficerId(UUID.randomUUID());
-        dto.setEscalationReason("New escalation test");
-        dto.setEscalationDate(null);
+        dto.setReason("New escalation test");
+        //dto.setEscalationDate(null);
         
         Escalation escalation = escalationService.create(dto);
         
@@ -135,10 +137,11 @@ public class EscalationTest {
     @Test
     public void testDeleteEscalation_RemovesRecord() {
         EscalationCreationDto dto = new EscalationCreationDto();
-        dto.setSystemVulnerabilityId(UUID.randomUUID());
+        dto.setCveId("");
+        dto.setSystemId(UUID.randomUUID());
         dto.setSecurityOfficerId(UUID.randomUUID());
-        dto.setEscalationReason("To be deleted");
-        dto.setEscalationDate(null);
+        dto.setReason("To be deleted");
+        //dto.setEscalationDate(null);
         
         Escalation tempEscalation = escalationService.create(dto);
         UUID tempId = tempEscalation.getId();
