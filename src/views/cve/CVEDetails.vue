@@ -25,6 +25,10 @@ const showEscalateModal = ref(false);
 const escalationReason = ref('');
 const selectedTechExpertId = ref(null);
 
+const showAssignSystemsModal = ref(false);
+const selectedSystemIds = ref([]);
+const assigningLoading = ref(false);
+
 const techExperts = computed(() => adminStore.users.filter(u => u.roleName === 'technical_expert'));
 
 // Check if the current user owns at least one affected system
@@ -37,6 +41,11 @@ const canUpdateStatus = computed(() => {
     const system = systemsStore.getSystemById(systemId);
     return system && system.ownerId === user.value.id;
   });
+});
+
+// Check if user can manage affected systems (Admins and Security Officers only)
+const canManageSystems = computed(() => {
+  return authStore.isAdmin || authStore.isSecurityOfficer;
 });
 
 // Get system name by ID
@@ -123,6 +132,25 @@ const escalateCVE = async () => {
     }
 };
 
+const openAssignSystemsModal = () => {
+  // Initialize with current affected systems
+  selectedSystemIds.value = [...(cve.value.affectedSystems || [])];
+  showAssignSystemsModal.value = true;
+};
+
+const updateAffectedSystems = async () => {
+  assigningLoading.value = true;
+  
+  try {
+    await cvesStore.updateAffectedSystems(cveId.value, selectedSystemIds.value);
+    showAssignSystemsModal.value = false;
+  } catch (error) {
+    // Error handled by store
+  } finally {
+    assigningLoading.value = false;
+  }
+};
+
 // Mark notification as read if applicable
 onMounted(() => {
   if (cve.value && user.value) {
@@ -134,6 +162,9 @@ onMounted(() => {
       cvesStore.markNotificationRead(cveId.value, user.value.id);
     }
   }
+  
+  // Load systems for the assign systems functionality
+  systemsStore.fetchSystems();
 });
 </script>
 
@@ -165,7 +196,13 @@ onMounted(() => {
           <button @click="openEscalateModal" style="display: inline-flex; align-items: center; padding: 10px 20px; background-color: #f59e0b; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); margin-left: 12px;">
             Escalate
           </button>
-          <button @click="showUpdateForm = true" style="display: inline-flex; align-items: center; padding: 10px 20px; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+          <button v-if="canManageSystems" @click="openAssignSystemsModal" style="display: inline-flex; align-items: center; padding: 10px 20px; background: linear-gradient(135deg, #059669 0%, #047857 100%); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); margin-left: 12px;">
+            <svg style="width: 16px; height: 16px; margin-right: 8px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Assign Systems
+          </button>
+          <button @click="showUpdateForm = true" style="display: inline-flex; align-items: center; padding: 10px 20px; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); margin-left: 12px;">
             Update Status
           </button>
         </div>
@@ -228,6 +265,45 @@ onMounted(() => {
             <div style="display: flex; justify-content: flex-end; gap: 12px;">
                 <button @click="showEscalateModal = false" style="padding: 10px 20px; background-color: #F3F4F6; color: #374151; border-radius: 6px; font-weight: 500; border: none; cursor: pointer;">Cancel</button>
                 <button @click="escalateCVE" style="padding: 10px 20px; background-color: #f59e0b; color: white; border-radius: 6px; font-weight: 500; border: none; cursor: pointer;">Escalate</button>
+            </div>
+        </div>
+      </div>
+
+      <!-- Assign Systems Modal -->
+      <div v-if="showAssignSystemsModal" style="position: fixed; inset: 0; background-color: rgba(107, 114, 128, 0.75); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50;">
+        <div style="background-color: white; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); padding: 24px; max-width: 600px; width: 100%; max-height: 80vh; overflow-y: auto;">
+            <h3 style="font-size: 20px; font-weight: 600; color: #111827; margin-bottom: 24px;">Assign Systems to CVE</h3>
+            <p style="color: #6b7280; margin-bottom: 24px;">Select which systems are affected by this CVE:</p>
+            
+            <div style="max-height: 400px; overflow-y: auto; border: 1px solid #E5E7EB; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+              <div v-if="systemsStore.systems.length === 0" style="text-align: center; color: #6b7280; padding: 20px;">
+                No systems available
+              </div>
+              
+              <div v-else style="display: grid; gap: 12px;">
+                <label v-for="system in systemsStore.systems" :key="system.id" style="display: flex; items-center; gap: 12px; padding: 12px; border: 1px solid #E5E7EB; border-radius: 6px; background: #F9FAFB; cursor: pointer; transition: background-color 0.2s;" :style="selectedSystemIds.includes(system.id) ? 'background: #EBF8FF; border-color: #3B82F6;' : ''">
+                  <input type="checkbox" :value="system.id" v-model="selectedSystemIds" style="margin: 0; transform: scale(1.2);">
+                  <div style="flex: 1;">
+                    <div style="font-weight: 500; color: #111827;">{{ system.name }}</div>
+                    <div style="font-size: 14px; color: #6b7280;">{{ system.description || 'No description' }}</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+              <span style="font-size: 14px; color: #6b7280;">{{ selectedSystemIds.length }} system(s) selected</span>
+              <div style="display: flex; gap: 8px;">
+                <button @click="selectedSystemIds = []" style="padding: 6px 12px; background-color: #F3F4F6; color: #374151; border-radius: 4px; font-size: 12px; border: none; cursor: pointer;">Clear All</button>
+                <button @click="selectedSystemIds = systemsStore.systems.map(s => s.id)" style="padding: 6px 12px; background-color: #3B82F6; color: white; border-radius: 4px; font-size: 12px; border: none; cursor: pointer;">Select All</button>
+              </div>
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                <button @click="showAssignSystemsModal = false" :disabled="assigningLoading" style="padding: 10px 20px; background-color: #F3F4F6; color: #374151; border-radius: 6px; font-weight: 500; border: none; cursor: pointer;" :style="assigningLoading ? 'opacity: 0.7; cursor: not-allowed;' : ''">Cancel</button>
+                <button @click="updateAffectedSystems" :disabled="assigningLoading" style="padding: 10px 20px; background: linear-gradient(135deg, #059669 0%, #047857 100%); color: white; border-radius: 6px; font-weight: 500; border: none; cursor: pointer;" :style="assigningLoading ? 'opacity: 0.7; cursor: not-allowed;' : ''">
+                  {{ assigningLoading ? 'Updating...' : 'Update Assignments' }}
+                </button>
             </div>
         </div>
       </div>

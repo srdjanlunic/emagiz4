@@ -5,6 +5,8 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 import java.io.InputStream;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 /**
  * DatabaseConfig is responsible for initializing and managing connections
@@ -21,9 +23,13 @@ public class DatabaseConfig {
     private static String DB_USER;
     private static String DB_PASSWORD;
     
+    // Connection pool
+    private static HikariDataSource dataSource;
+    
     // Static block: Loads configuration when class is first used
     static {
         loadDatabaseProperties();
+        initializeConnectionPool();
     }
     
     /**
@@ -64,17 +70,55 @@ public class DatabaseConfig {
     }
     
     /**
-     * Gets a connection to the database using configured credentials.
+     * Initializes the connection pool for better performance
+     */
+    private static void initializeConnectionPool() {
+        try {
+            HikariConfig config = new HikariConfig();
+            config.setJdbcUrl(DB_URL);
+            config.setUsername(DB_USER);
+            config.setPassword(DB_PASSWORD);
+            config.setDriverClassName("org.postgresql.Driver");
+            
+            // Connection pool settings for better performance
+            config.setMinimumIdle(2);
+            config.setMaximumPoolSize(10);
+            config.setConnectionTimeout(5000); // 5 seconds
+            config.setIdleTimeout(300000); // 5 minutes
+            config.setMaxLifetime(600000); // 10 minutes
+            config.setLeakDetectionThreshold(60000); // 1 minute
+            
+            // Performance tuning
+            config.addDataSourceProperty("cachePrepStmts", "true");
+            config.addDataSourceProperty("prepStmtCacheSize", "250");
+            config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+            config.addDataSourceProperty("useServerPrepStmts", "true");
+            config.addDataSourceProperty("rewriteBatchedStatements", "true");
+            
+            dataSource = new HikariDataSource(config);
+        } catch (Exception e) {
+            System.err.println("Failed to initialize connection pool: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Gets a connection to the database using the connection pool.
      *
-     * @return a live SQL Connection
-     * @throws SQLException if connection or driver loading fails
+     * @return a live SQL Connection from the pool
+     * @throws SQLException if connection from pool fails
      */
     public static Connection getConnection() throws SQLException {
-        try {
-            Class.forName("org.postgresql.Driver");
-            return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
-        } catch (ClassNotFoundException e) {
-            throw new SQLException("PostgreSQL driver not found", e);
+        if (dataSource != null) {
+            return dataSource.getConnection();
+        } else {
+            // Fallback to direct connection if pool initialization failed
+            try {
+                Class.forName("org.postgresql.Driver");
+                return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+            } catch (ClassNotFoundException e) {
+                throw new SQLException("PostgreSQL driver not found", e);
+            }
         }
     }
     

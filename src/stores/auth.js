@@ -173,7 +173,14 @@ export const useAuthStore = defineStore('auth', {
           throw new Error(data.error || 'Demo login failed');
         }
 
-        this.setAuth(data.token, data.user);
+        this.token = data.token;
+        this.user = data.user;
+        
+        // Store in localStorage
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        return data;
       } catch (error) {
         this.error = error.message;
         throw error;

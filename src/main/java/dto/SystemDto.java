@@ -13,6 +13,16 @@ public class SystemDto {
     private String description;
     private Timestamp createdAt;
     
+    // Implementation fields
+    private String version;
+    private String environment;
+    private int riskScore;
+    private String dataClassification;
+    private String criticalityLevel;
+    private boolean internetFacing;
+    private boolean sensitiveCustomerData;
+    private UUID ownerId;
+    
     /**
      * Default constructor.
      */
@@ -85,5 +95,85 @@ public class SystemDto {
     /** @param createdAt Creation timestamp */
     public void setCreatedAt(Timestamp createdAt) {
         this.createdAt = createdAt;
+    }
+    
+    /** @return System version */
+    public String getVersion() {
+        return version;
+    }
+    
+    /** @param version System version */
+    public void setVersion(String version) {
+        this.version = version;
+    }
+    
+    /** @return System environment */
+    public String getEnvironment() {
+        return environment;
+    }
+    
+    /** @param environment System environment */
+    public void setEnvironment(String environment) {
+        this.environment = environment;
+    }
+    
+    /** @return Risk score */
+    public int getRiskScore() {
+        return riskScore;
+    }
+    
+    /** @param riskScore Risk score */
+    public void setRiskScore(int riskScore) {
+        this.riskScore = riskScore;
+    }
+    
+    /** @return Data classification */
+    public String getDataClassification() {
+        return dataClassification;
+    }
+    
+    /** @param dataClassification Data classification */
+    public void setDataClassification(String dataClassification) {
+        this.dataClassification = dataClassification;
+    }
+    
+    /** @return Criticality level */
+    public String getCriticalityLevel() {
+        return criticalityLevel;
+    }
+    
+    /** @param criticalityLevel Criticality level */
+    public void setCriticalityLevel(String criticalityLevel) {
+        this.criticalityLevel = criticalityLevel;
+    }
+    
+    /** @return True if internet facing */
+    public boolean isInternetFacing() {
+        return internetFacing;
+    }
+    
+    /** @param internetFacing Internet facing flag */
+    public void setInternetFacing(boolean internetFacing) {
+        this.internetFacing = internetFacing;
+    }
+    
+    /** @return True if handles sensitive customer data */
+    public boolean isSensitiveCustomerData() {
+        return sensitiveCustomerData;
+    }
+    
+    /** @param sensitiveCustomerData Sensitive customer data flag */
+    public void setSensitiveCustomerData(boolean sensitiveCustomerData) {
+        this.sensitiveCustomerData = sensitiveCustomerData;
+    }
+    
+    /** @return Owner ID */
+    public UUID getOwnerId() {
+        return ownerId;
+    }
+    
+    /** @param ownerId Owner ID */
+    public void setOwnerId(UUID ownerId) {
+        this.ownerId = ownerId;
     }
 }

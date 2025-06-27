@@ -68,10 +68,11 @@ public class SystemResource {
      */
     @GET
     @RolesAllowed({"security_officer", "system_owner", "admin"})
-    public Response getAllSystems() {
+    public Response getAllSystems(@QueryParam("page") @DefaultValue("1") int page,
+                                  @QueryParam("pageSize") @DefaultValue("10") int pageSize) {
         try {
-            List<SystemDto> systems = systemService.getAllSystems();
-            return Response.ok(JsonUtil.toJson(systems)).build();
+            Map<String, Object> responseData = systemService.getAllSystems(page, pageSize);
+            return Response.ok(JsonUtil.toJson(responseData)).build();
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("{\"error\":\"" + e.getMessage() + "\"}").build();

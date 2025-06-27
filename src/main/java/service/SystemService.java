@@ -11,6 +11,8 @@ import java.sql.Timestamp;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.HashMap;
 
 public class SystemService {
     private final SystemDAO systemDAO;
@@ -112,10 +114,38 @@ public class SystemService {
      *
      * @return list of SystemDto objects representing all systems
      */
-    public List<SystemDto> getAllSystems() {
-        return systemDAO.findAll().stream()
-                .map(this::toDto)
+    public Map<String, Object> getAllSystems() {
+        List<ITSystem> systems = systemDAO.findAll();
+        int totalSystems = systemDAO.countAll();
+
+        List<SystemDto> systemDtos = systems.stream()
+                .map(this::toEnrichedDto)
                 .collect(Collectors.toList());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("systems", systemDtos);
+        response.put("totalSystems", totalSystems);
+        response.put("page", 1);
+        response.put("pageSize", totalSystems);
+        
+        return response;
+    }
+    
+    public Map<String, Object> getAllSystems(int page, int pageSize) {
+        List<ITSystem> systems = systemDAO.findAll(page, pageSize);
+        int totalSystems = systemDAO.countAll();
+
+        List<SystemDto> systemDtos = systems.stream()
+                .map(this::toEnrichedDto)
+                .collect(Collectors.toList());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("systems", systemDtos);
+        response.put("totalSystems", totalSystems);
+        response.put("page", page);
+        response.put("pageSize", pageSize);
+        
+        return response;
     }
     
     /**
@@ -126,7 +156,7 @@ public class SystemService {
      */
     public SystemDto getSystemById(UUID id) {
         ITSystem system = systemDAO.findById(id);
-        return system != null ? toDto(system) : null;
+        return system != null ? toEnrichedDto(system) : null;
     }
     
     /**
@@ -155,6 +185,54 @@ public class SystemService {
      */
     public boolean deleteSystem(UUID id) {
         return systemDAO.delete(id);
+    }
+    
+    /**
+     * Converts an ITSystem model to an enriched SystemDto that includes implementation details.
+     *
+     * @param system the ITSystem entity to convert
+     * @return the corresponding enriched SystemDto
+     */
+    private SystemDto toEnrichedDto(ITSystem system) {
+        // Find the primary implementation for this system
+        List<SystemImplementation> implementations = systemImplementationDAO.findBySystem(system.getId());
+        
+        if (!implementations.isEmpty()) {
+            // Use the first implementation for the main system data
+            SystemImplementation primaryImpl = implementations.get(0);
+            
+            SystemDto dto = new SystemDto(
+                    system.getId(),
+                    system.getName(),
+                    system.getVendor(),
+                    system.getDescription(),
+                    system.getCreatedAt()
+            );
+            
+            // Add implementation fields
+            dto.setVersion(primaryImpl.getVersion());
+            dto.setEnvironment(primaryImpl.getEnvironment());
+            dto.setRiskScore(primaryImpl.getRiskScore());
+            dto.setDataClassification(primaryImpl.getDataClassification());
+            dto.setCriticalityLevel(primaryImpl.getCriticalityLevel());
+            dto.setInternetFacing(primaryImpl.isInternetFacing());
+            dto.setSensitiveCustomerData(primaryImpl.isSensitiveCustomerData());
+            
+            // Get owner information
+            UUID ownerId = systemOwnerDAO.findOwnerBySystemImplementationId(primaryImpl.getId());
+            dto.setOwnerId(ownerId);
+            
+            return dto;
+        } else {
+            // Return basic system info if no implementations exist
+            return new SystemDto(
+                    system.getId(),
+                    system.getName(),
+                    system.getVendor(),
+                    system.getDescription(),
+                    system.getCreatedAt()
+            );
+        }
     }
     
     /**
