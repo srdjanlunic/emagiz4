@@ -252,8 +252,30 @@ const unreadNotifications = computed(() => {
 
 onMounted(async () => {
   try {
-    await systemsStore.fetchSystems();
-    await cvesStore.fetchCVEs();
+    // Fetch data based on user role - same logic as main.js initialization
+    const promises = []
+    
+    // Systems data - accessible by admin, security_officer, and system_owner
+    if (authStore.isAdmin || authStore.isSecurityOfficer || authStore.isSystemOwner) {
+      promises.push(systemsStore.fetchSystems())
+    }
+    
+    // CVE data - accessible by different roles with different endpoints
+    if (authStore.isAdmin || authStore.isSecurityOfficer) {
+      // Admin and security officers see all CVEs
+      promises.push(cvesStore.fetchCVEs())
+    } else if (authStore.isTechnicalExpert) {
+      // Technical experts see only escalated CVEs
+      promises.push(cvesStore.fetchEscalatedCVEs(authStore.user.id))
+    } else if (authStore.isSystemOwner) {
+      // System owners see CVEs for their systems only
+      promises.push(cvesStore.fetchCVEsByOwner(authStore.user.id))
+    }
+    
+    // Execute all authorized requests in parallel
+    if (promises.length > 0) {
+      await Promise.allSettled(promises)
+    }
   } catch (error) {
     console.error("Failed to load dashboard data:", error);
   } finally {

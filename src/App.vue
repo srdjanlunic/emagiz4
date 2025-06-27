@@ -7,7 +7,7 @@ const authStore = useAuthStore();
 const notificationsStore = useNotificationsStore();
 
 watch(() => authStore.isAuthenticated, (isAuthenticated) => {
-  if (isAuthenticated) {
+  if (isAuthenticated && hasNotificationAccess()) {
     notificationsStore.startPolling();
   } else {
     notificationsStore.stopPolling();
@@ -15,10 +15,16 @@ watch(() => authStore.isAuthenticated, (isAuthenticated) => {
 });
 
 onMounted(() => {
-  if (authStore.isAuthenticated) {
+  if (authStore.isAuthenticated && hasNotificationAccess()) {
     notificationsStore.startPolling();
   }
 });
+
+// Helper function to check if user has notification access
+const hasNotificationAccess = () => {
+  // Technical experts don't have access to notifications
+  return !authStore.isTechnicalExpert;
+};
 </script>
 
 <template>

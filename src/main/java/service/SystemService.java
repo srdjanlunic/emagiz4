@@ -188,6 +188,32 @@ public class SystemService {
     }
     
     /**
+     * Retrieves all systems owned by a specific user.
+     *
+     * @param ownerId the UUID of the owner (user) to get systems for
+     * @return list of SystemDto objects representing systems owned by the user
+     */
+    public List<SystemDto> getSystemsByOwner(UUID ownerId) {
+        // Get all implementations owned by this user
+        List<SystemImplementation> implementations = systemOwnerDAO.findImplementationsByOwner(ownerId);
+        
+        // Get unique systems from these implementations
+        List<UUID> systemIds = implementations.stream()
+                .map(SystemImplementation::getSystemId)
+                .distinct()
+                .collect(Collectors.toList());
+        
+        // Get the actual systems and convert to DTOs
+        List<SystemDto> systemDtos = systemIds.stream()
+                .map(systemDAO::findById)
+                .filter(system -> system != null)
+                .map(this::toEnrichedDto)
+                .collect(Collectors.toList());
+        
+        return systemDtos;
+    }
+    
+    /**
      * Converts an ITSystem model to an enriched SystemDto that includes implementation details.
      *
      * @param system the ITSystem entity to convert

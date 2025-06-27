@@ -8,28 +8,44 @@ import java.util.UUID;
 import model.Escalation;
 import model.EscalationStatus;
 import util.DatabaseUtil;
+import java.sql.Statement;
+import java.sql.Types;
 
 public class EscalationDAO {
     
     public Escalation create(Escalation escalation) {
-        String sql = "INSERT INTO escalations (id, system_vulnerability_id," +
+        String sql = "INSERT INTO escalations (system_vulnerability_id," +
                 "security_officer_id, escalation_reason, escalation_date, escalation_status," +
-                "tech_expert_id, response, response_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "tech_expert_id, response, response_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sql, new String[]{"id"})) {
             
-            escalation.setId(UUID.randomUUID());
-            stmt.setObject(1, escalation.getId());
-            stmt.setObject(2, escalation.getSystemVulnerabilityId());
-            stmt.setObject(3, escalation.getSecurityOfficerId());
-            stmt.setString(4, escalation.getEscalationReason());
-            stmt.setTimestamp(5, escalation.getEscalationDate());
-            stmt.setString(6, escalation.getEscalationStatus().getValue());
-            stmt.setObject(7, escalation.getTechExpertId());
-            stmt.setString(8, escalation.getResponse());
-            stmt.setTimestamp(9, escalation.getResponseDate());
+            stmt.setObject(1, escalation.getSystemVulnerabilityId());
+            stmt.setObject(2, escalation.getSecurityOfficerId());
+            stmt.setString(3, escalation.getEscalationReason());
+            stmt.setTimestamp(4, escalation.getEscalationDate());
+            stmt.setString(5, escalation.getEscalationStatus().getValue());
+            if (escalation.getTechExpertId() == null) {
+                stmt.setNull(6, Types.OTHER);
+            } else {
+                stmt.setObject(6, escalation.getTechExpertId());
+            }
+            stmt.setString(7, escalation.getResponse());
+            stmt.setTimestamp(8, escalation.getResponseDate());
             
-            stmt.executeUpdate();
+            int affectedRows = stmt.executeUpdate();
+
+            if (affectedRows == 0) {
+                throw new SQLException("Creating escalation failed, no rows affected.");
+            }
+
+            try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    escalation.setId((UUID) generatedKeys.getObject(1));
+                } else {
+                    throw new SQLException("Creating escalation failed, no ID obtained.");
+                }
+            }
             return escalation;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -164,6 +180,30 @@ public class EscalationDAO {
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement("SELECT * FROM escalations WHERE tech_expert_id = ?");
+            stmt.setObject(1, techExpertId);
+            rs = stmt.executeQuery();
+            
+            while (rs.next()) {
+                escalations.add(mapResultSetToEscalation(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            DatabaseUtil.closeResources(conn, stmt, rs);
+        }
+        return escalations;
+    }
+
+    public List<Escalation> findByTechExpertOrUnassigned(UUID techExpertId) {
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        
+        var escalations = new ArrayList<Escalation>();
+        
+        try {
+            conn = DatabaseConfig.getConnection();
+            stmt = conn.prepareStatement("SELECT * FROM escalations WHERE tech_expert_id = ? OR tech_expert_id IS NULL");
             stmt.setObject(1, techExpertId);
             rs = stmt.executeQuery();
             

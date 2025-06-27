@@ -257,13 +257,37 @@ onMounted(async () => {
             </div>
           </div>
 
-          <!-- Implementations -->
-          <div>
-            <h3 style="font-size: 18px; font-weight: 600; color: #111827; margin-bottom: 16px;">Implementations</h3>
+          <!-- Current Owner Display -->
+          <div v-if="!authStore.isAdmin">
+            <h3 style="font-size: 18px; font-weight: 600; color: #111827; margin-bottom: 16px;">System Owner</h3>
             
-            <div v-for="(implementation, index) in formData.implementations" :key="index" class="p-4 border rounded-md">
-              <h2 class="text-lg font-bold">Implementation {{ index + 1 }}</h2>
-              <!-- Implementation fields -->
+            <div style="padding: 16px; background-color: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+              <p style="font-size: 14px; color: #6b7280;">This system is currently assigned to:</p>
+              <p style="font-size: 16px; font-weight: 500; color: #111827; margin-top: 4px;">
+                {{ formData.ownerId ? 'System Owner (ID: ' + formData.ownerId + ')' : 'No owner assigned' }}
+              </p>
+              <p style="font-size: 13px; color: #6b7280; margin-top: 8px;">
+                To change system ownership, contact your security officer.
+              </p>
+            </div>
+          </div>
+
+          <!-- Implementation Summary (for reference) -->
+          <div v-if="formData.implementations && formData.implementations.length > 0">
+            <h3 style="font-size: 18px; font-weight: 600; color: #111827; margin-bottom: 16px;">Implementation Details</h3>
+            
+            <div style="padding: 16px; background-color: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+              <div v-for="(implementation, index) in formData.implementations" :key="index" style="margin-bottom: 16px;">
+                <h4 style="font-size: 16px; font-weight: 500; color: #111827; margin-bottom: 8px;">
+                  {{ implementation.environment || 'Production' }} Environment (v{{ implementation.version || formData.version }})
+                </h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; font-size: 14px; color: #6b7280;">
+                  <div><strong>Version:</strong> {{ implementation.version || formData.version }}</div>
+                  <div><strong>Environment:</strong> {{ implementation.environment || 'Production' }}</div>
+                  <div><strong>Risk Score:</strong> {{ implementation.riskScore || formData.riskScore }}</div>
+                  <div><strong>Location:</strong> {{ implementation.location || 'Not specified' }}</div>
+                </div>
+              </div>
             </div>
           </div>
 
