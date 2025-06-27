@@ -8,6 +8,7 @@ import service.SystemService;
 import util.JsonUtil;
 import dto.SystemDto;
 import dto.SystemImplementationDto;
+import dto.SystemRegistrationDto;
 import dao.SystemImplementationDAO;
 
 import jakarta.ws.rs.*;
@@ -38,21 +39,21 @@ public class SystemResource {
     }
     
     /**
-     * Creates a new system.
+     * Creates a new system and its implementation.
      *
-     * @param systemJson JSON representation of SystemDto
-     * @return HTTP 201 Created with the created system JSON or error response
+     * @param registrationDto JSON representation of SystemRegistrationDto
+     * @return HTTP 201 Created with the created system implementation JSON or error response
      */
     @POST
     @RolesAllowed({"system_owner", "admin"})
     public Response createSystem(String systemJson) {
         logger.info("Received request to create system with JSON: {}", systemJson);
         try {
-            SystemDto systemDto = JsonUtil.fromJson(systemJson, SystemDto.class);
-            logger.info("Successfully parsed SystemDto: {}", systemDto);
-            ITSystem createdSystem = systemService.createSystem(systemDto);
-            logger.info("Successfully created system: {}", createdSystem);
-            return Response.status(Response.Status.CREATED).entity(JsonUtil.toJson(createdSystem)).build();
+            SystemRegistrationDto registrationDto = JsonUtil.fromJson(systemJson, SystemRegistrationDto.class);
+            logger.info("Successfully parsed SystemRegistrationDto");
+            SystemImplementation createdImplementation = systemService.registerSystem(registrationDto);
+            logger.info("Successfully created system implementation: {}", createdImplementation.getId());
+            return Response.status(Response.Status.CREATED).entity(JsonUtil.toJson(createdImplementation)).build();
         } catch (Exception e) {
             logger.error("Error creating system", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)

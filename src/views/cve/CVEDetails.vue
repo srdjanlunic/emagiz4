@@ -4,12 +4,14 @@ import { useRoute, useRouter } from 'vue-router';
 import { useCVEsStore } from '../../stores/cves';
 import { useSystemsStore } from '../../stores/systems';
 import { useAuthStore } from '../../stores/auth';
+import { useAdminStore } from '../../stores/admin';
 
 const route = useRoute();
 const router = useRouter();
 const cvesStore = useCVEsStore();
 const systemsStore = useSystemsStore();
 const authStore = useAuthStore();
+const adminStore = useAdminStore();
 
 const cveId = computed(() => route.params.id);
 const cve = computed(() => cvesStore.getCVEById(cveId.value));
@@ -19,6 +21,11 @@ const newStatus = ref('');
 const statusNote = ref('');
 const loading = ref(false);
 const showUpdateForm = ref(false);
+const showEscalateModal = ref(false);
+const escalationReason = ref('');
+const selectedTechExpertId = ref(null);
+
+const techExperts = computed(() => adminStore.users.filter(u => u.roleName === 'technical_expert'));
 
 // Check if the current user owns at least one affected system
 const canUpdateStatus = computed(() => {
@@ -95,6 +102,27 @@ const updateCVEStatus = async () => {
   }
 };
 
+const openEscalateModal = () => {
+    adminStore.fetchUsers(); // Make sure we have the user list
+    showEscalateModal.value = true;
+};
+
+const escalateCVE = async () => {
+    if (!escalationReason.value || !selectedTechExpertId.value) {
+        alert('Please provide a reason and select a technical expert.');
+        return;
+    }
+
+    const systemIdToEscalate = cve.value.affectedSystems[0];
+    
+    try {
+        await cvesStore.escalateCVE(cveId.value, systemIdToEscalate, escalationReason.value, selectedTechExpertId.value);
+        showEscalateModal.value = false;
+    } catch (error) {
+        alert('Failed to escalate CVE.');
+    }
+};
+
 // Mark notification as read if applicable
 onMounted(() => {
   if (cve.value && user.value) {
@@ -134,6 +162,9 @@ onMounted(() => {
         </div>
         
         <div v-if="canUpdateStatus && !showUpdateForm">
+          <button @click="openEscalateModal" style="display: inline-flex; align-items: center; padding: 10px 20px; background-color: #f59e0b; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); margin-left: 12px;">
+            Escalate
+          </button>
           <button @click="showUpdateForm = true" style="display: inline-flex; align-items: center; padding: 10px 20px; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
             Update Status
           </button>
@@ -177,6 +208,30 @@ onMounted(() => {
         </div>
       </div>
       
+      <!-- Escalate Modal -->
+      <div v-if="showEscalateModal" style="position: fixed; inset: 0; background-color: rgba(107, 114, 128, 0.75); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50;">
+        <div style="background-color: white; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); padding: 24px; max-width: 500px; width: 100%;">
+            <h3 style="font-size: 20px; font-weight: 600; color: #111827; margin-bottom: 24px;">Escalate CVE</h3>
+            <div style="display: grid; gap: 16px; margin-bottom: 24px;">
+                <div>
+                    <label for="escalation-reason" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">Reason</label>
+                    <textarea id="escalation-reason" v-model="escalationReason" rows="3" style="width: 100%; border-radius: 6px; border: 1px solid #D1D5DB; padding: 10px 12px; font-size: 14px; line-height: 1.5; color: #111827; background-color: white; transition: border-color 0.2s; box-sizing: border-box;" placeholder="Provide a reason for escalation"></textarea>
+                </div>
+                <div>
+                    <label for="tech-expert" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">Technical Expert</label>
+                    <select id="tech-expert" v-model="selectedTechExpertId" style="width: 100%; border-radius: 6px; border: 1px solid #D1D5DB; padding: 10px 12px; font-size: 14px; line-height: 1.5; color: #111827; background-color: white; transition: border-color 0.2s; box-sizing: border-box;">
+                        <option :value="null" disabled>Select an expert</option>
+                        <option v-for="expert in techExperts" :key="expert.id" :value="expert.id">{{ expert.username }}</option>
+                    </select>
+                </div>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                <button @click="showEscalateModal = false" style="padding: 10px 20px; background-color: #F3F4F6; color: #374151; border-radius: 6px; font-weight: 500; border: none; cursor: pointer;">Cancel</button>
+                <button @click="escalateCVE" style="padding: 10px 20px; background-color: #f59e0b; color: white; border-radius: 6px; font-weight: 500; border: none; cursor: pointer;">Escalate</button>
+            </div>
+        </div>
+      </div>
+
       <!-- Main content -->
       <div style="display: grid; grid-template-columns: repeat(1, minmax(0, 1fr)); gap: 24px;" :style="'@media (min-width: 1024px) { grid-template-columns: repeat(3, minmax(0, 1fr)); }'">
         <!-- Left column: Description and Systems -->

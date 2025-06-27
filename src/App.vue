@@ -1,3 +1,26 @@
+<script setup>
+import { watch, onMounted } from 'vue';
+import { useAuthStore } from './stores/auth';
+import { useNotificationsStore } from './stores/notifications';
+
+const authStore = useAuthStore();
+const notificationsStore = useNotificationsStore();
+
+watch(() => authStore.isAuthenticated, (isAuthenticated) => {
+  if (isAuthenticated) {
+    notificationsStore.startPolling();
+  } else {
+    notificationsStore.stopPolling();
+  }
+});
+
+onMounted(() => {
+  if (authStore.isAuthenticated) {
+    notificationsStore.startPolling();
+  }
+});
+</script>
+
 <template>
   <router-view></router-view>
 </template>

@@ -95,6 +95,36 @@ public class SystemDAO {
     }
     
     /**
+     * Finds a system by its name and vendor.
+     *
+     * @param name the system name
+     * @param vendor the system vendor
+     * @return the system if found, or null
+     */
+    public ITSystem findByNameAndVendor(String name, String vendor) {
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        
+        try {
+            conn = DatabaseConfig.getConnection();
+            stmt = conn.prepareStatement("SELECT * FROM ITSystem WHERE name = ? AND vendor = ?");
+            stmt.setString(1, name);
+            stmt.setString(2, vendor);
+            rs = stmt.executeQuery();
+            
+            if (rs.next()) {
+                return mapResultSetToSystem(rs);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            DatabaseUtil.closeResources(conn, stmt, rs);
+        }
+        return null;
+    }
+    
+    /**
      * Returns all systems in the database.
      *
      * @return list of IT systems

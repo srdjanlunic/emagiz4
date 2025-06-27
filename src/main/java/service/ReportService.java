@@ -24,6 +24,8 @@ public class ReportService {
     private final SystemDAO systemDAO = new SystemDAO();
     private final EscalationDAO escalationDAO = new EscalationDAO();
     private final UserDAO userDAO = new UserDAO();
+    private final VulnerabilityAssessmentDAO vulnerabilityAssessmentDAO = new VulnerabilityAssessmentDAO();
+    private final SystemImplementationDAO systemImplementationDAO = new SystemImplementationDAO();
     
     /**
      * Generate a dashboard summary that maps each system implementation ID to counts of open and resolved vulnerabilities.
@@ -44,7 +46,7 @@ public class ReportService {
                                 (List<VulnerabilityMatch> matchesForSystem) -> {
                                     long openCount = matchesForSystem.stream()
                                             .map((VulnerabilityMatch m) -> {
-                                                List<VulnerabilityAssessment> assessments = VulnerabilityAssessmentDAO.findByMatch(m.getId());
+                                                List<VulnerabilityAssessment> assessments = vulnerabilityAssessmentDAO.findByMatch(m.getId());
                                                 return assessments.isEmpty()
                                                         ? null
                                                         : assessments.get(0);
@@ -222,6 +224,37 @@ public class ReportService {
             table.addCell("Reviewed by: " + techExpert.getUsername());
             table.addCell("Response: " + escalation.getResponse());
             table.addCell("Response date: " + escalation.getResponseDate());
+        }
+        
+        document.add(table);
+        document.close();
+        return byteArrayStream.toByteArray();
+    }
+
+    public byte[] generateRiskAssessmentReport() {
+        var implementations = systemImplementationDAO.findAll();
+        
+        var document = new Document();
+        var byteArrayStream = new ByteArrayOutputStream();
+        
+        PdfWriter.getInstance(document, byteArrayStream);
+        document.open();
+        
+        document.add(new Paragraph("Risk Assessment Report"));
+        document.add(new Paragraph(" "));
+        
+        var table = new PdfPTable(4);
+        table.addCell(new Phrase("System Name", new Font(Font.BOLD)));
+        table.addCell(new Phrase("Risk Score", new Font(Font.BOLD)));
+        table.addCell(new Phrase("Criticality", new Font(Font.BOLD)));
+        table.addCell(new Phrase("Internet Facing", new Font(Font.BOLD)));
+
+        for (SystemImplementation impl : implementations) {
+            var system = systemDAO.findById(impl.getSystemId());
+            table.addCell(system.getName());
+            table.addCell(String.valueOf(impl.getRiskScore()));
+            table.addCell(impl.getCriticalityLevel());
+            table.addCell(String.valueOf(impl.isInternetFacing()));
         }
         
         document.add(table);

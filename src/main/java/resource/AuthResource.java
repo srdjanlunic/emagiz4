@@ -42,7 +42,7 @@ public class AuthResource {
         try {
             if (loginRequest.username == null || loginRequest.password == null) {
                 return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(JsonUtil.toJson(Map.of("error", "Username and password are required")))
+                        .entity(Map.of("error", "Username and password are required"))
                         .header("Cache-Control", "no-store")
                         .build();
             }
@@ -64,16 +64,16 @@ public class AuthResource {
                         "organizationId", user.getOrganizationId() != null ? user.getOrganizationId().toString() : ""
                 ));
                 
-                return Response.ok(JsonUtil.toJson(response)).header("Cache-Control", "no-store").build();
+                return Response.ok(response).header("Cache-Control", "no-store").build();
             } else {
                 return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(JsonUtil.toJson(Map.of("error", "Invalid credentials")))
+                        .entity(Map.of("error", "Invalid credentials"))
                         .header("Cache-Control", "no-store")
                         .build();
             }
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(JsonUtil.toJson(Map.of("error", "Login failed: " + e.getMessage())))
+                    .entity(Map.of("error", "Login failed: " + e.getMessage()))
                     .header("Cache-Control", "no-store")
                     .build();
         }
@@ -89,7 +89,7 @@ public class AuthResource {
     @POST
     @Path("/logout")
     public Response logout() {
-        return Response.ok(JsonUtil.toJson(Map.of("message", "Logged out successfully")))
+        return Response.ok(Map.of("message", "Logged out successfully"))
                 .header("Cache-Control", "no-store")
                 .build();
     }
@@ -106,7 +106,7 @@ public class AuthResource {
         try {
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(JsonUtil.toJson(Map.of("error", "Missing or invalid authorization header")))
+                        .entity(Map.of("error", "Missing or invalid authorization header"))
                         .header("Cache-Control", "no-store")
                         .build();
             }
@@ -125,16 +125,16 @@ public class AuthResource {
                         "roleId", roleId
                 );
                 
-                return Response.ok(JsonUtil.toJson(response)).header("Cache-Control", "no-store").build();
+                return Response.ok(response).header("Cache-Control", "no-store").build();
             } else {
                 return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(JsonUtil.toJson(Map.of("error", "Invalid or expired token")))
+                        .entity(Map.of("error", "Invalid or expired token"))
                         .header("Cache-Control", "no-store")
                         .build();
             }
         } catch (Exception e) {
             return Response.status(Response.Status.UNAUTHORIZED)
-                    .entity(JsonUtil.toJson(Map.of("error", "Token validation failed")))
+                    .entity(Map.of("error", "Token validation failed"))
                     .header("Cache-Control", "no-store")
                     .build();
         }
@@ -165,16 +165,16 @@ public class AuthResource {
                         "organizationId", user.getOrganizationId() != null ? user.getOrganizationId().toString() : ""
                 ));
                 
-                return Response.ok(JsonUtil.toJson(response)).header("Cache-Control", "no-store").build();
+                return Response.ok(response).header("Cache-Control", "no-store").build();
             } else {
                 return Response.status(Response.Status.NOT_FOUND)
-                        .entity(JsonUtil.toJson(Map.of("error", "No user found for role: " + request.roleName)))
-                        .header("Cache-Control", "no-store")
+                        .entity(Map.of("error", "No user found for role: " + request.roleName))
+                        .header("Cache-control", "no-store")
                         .build();
             }
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(JsonUtil.toJson(Map.of("error", "Demo login failed: " + e.getMessage())))
+                    .entity(Map.of("error", "Demo login failed: " + e.getMessage()))
                     .header("Cache-Control", "no-store")
                     .build();
         }

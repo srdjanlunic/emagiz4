@@ -119,7 +119,7 @@ export const useAdminStore = defineStore('admin', {
       }
     },
 
-    async createDepartment(departmentName) {
+    async createDepartment(departmentData) {
       const authStore = useAuthStore()
       const notificationsStore = useNotificationsStore()
       this.loading = true
@@ -129,7 +129,7 @@ export const useAdminStore = defineStore('admin', {
         const tempOrganizationId = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
         const newDepartment = await authStore.apiCall('/departments', {
           method: 'POST',
-          body: JSON.stringify({ name: departmentName, organizationId: tempOrganizationId }),
+          body: JSON.stringify({ ...departmentData, organizationId: tempOrganizationId }),
         });
         this.departments.push(newDepartment);
         notificationsStore.addNotification('Department created successfully', 'success')
@@ -234,5 +234,69 @@ export const useAdminStore = defineStore('admin', {
         this.loading = false;
       }
     },
+
+    async downloadRiskAssessmentReport() {
+        const authStore = useAuthStore();
+        this.loading = true;
+        this.error = null;
+        try {
+            const response = await fetch(`${authStore.apiUrl}/api/reports/risk-assessment`, {
+                headers: {
+                    'Authorization': `Bearer ${authStore.token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to download report');
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'risk_assessment_report.pdf';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        } catch (error) {
+            this.error = error.message;
+            console.error('Error downloading report:', error);
+            throw error;
+        } finally {
+            this.loading = false;
+        }
+    },
+
+    async downloadVulnerabilityReport() {
+        const authStore = useAuthStore();
+        this.loading = true;
+        this.error = null;
+        try {
+            const response = await fetch(`${authStore.apiUrl}/api/reports/vulnerability`, {
+                headers: {
+                    'Authorization': `Bearer ${authStore.token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to download report');
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'vulnerability_report.pdf';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        } catch (error) {
+            this.error = error.message;
+            console.error('Error downloading report:', error);
+            throw error;
+        } finally {
+            this.loading = false;
+        }
+    }
   },
 }); 

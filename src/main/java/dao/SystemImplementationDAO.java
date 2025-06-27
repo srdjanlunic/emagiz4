@@ -27,8 +27,9 @@ public class SystemImplementationDAO {
         try {
             System.out.println("=== SystemImplementationDAO.create - START ===");
             
-            // Validate existence of referenced ITSystem
             conn = DatabaseConfig.getConnection();
+            
+            // Validate existence of referenced ITSystem
             PreparedStatement checkSystemStmt = conn.prepareStatement("SELECT id FROM ITSystem WHERE id = ?");
             checkSystemStmt.setObject(1, implementation.getSystemId());
             ResultSet systemRs = checkSystemStmt.executeQuery();
@@ -38,17 +39,6 @@ public class SystemImplementationDAO {
             }
             systemRs.close();
             checkSystemStmt.close();
-            
-            // Validate existence of referenced Department
-            PreparedStatement checkDeptStmt = conn.prepareStatement("SELECT id FROM Department WHERE id = ?");
-            checkDeptStmt.setObject(1, implementation.getDepartmentId());
-            ResultSet deptRs = checkDeptStmt.executeQuery();
-            if (!deptRs.next()) {
-                System.out.println("Department not found");
-                return null;
-            }
-            deptRs.close();
-            checkDeptStmt.close();
             
             // Insert the implementation
             String sql = "INSERT INTO SystemImplementation (id, system_id, department_id, data_classification, " +

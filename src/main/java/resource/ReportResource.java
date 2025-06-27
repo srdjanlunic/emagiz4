@@ -80,4 +80,15 @@ public class ReportResource {
                 .header("Content-Type", "application/pdf")
                 .build();
     }
+    
+    @GET
+    @Path("/risk-assessment")
+    @RolesAllowed({"security_officer", "admin"})
+    public Response generateRiskAssessmentReport() {
+        var fileBytes = svc.generateRiskAssessmentReport();
+        return Response.ok(fileBytes)
+                .header("Content-Disposition", "attachment; filename=risk_assessment_report.pdf")
+                .header("Content-Type", "application/pdf")
+                .build();
+    }
 }

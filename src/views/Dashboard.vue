@@ -6,6 +6,7 @@ import { useSystemsStore } from '../stores/systems';
 import { useCVEsStore } from '../stores/cves';
 import { useAuthStore } from '../stores/auth';
 import { useNotificationsStore } from '../stores/notifications';
+import { useAdminStore } from '../stores/admin';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -13,6 +14,7 @@ const systemsStore = useSystemsStore();
 const cvesStore = useCVEsStore();
 const authStore = useAuthStore();
 const notificationStore = useNotificationsStore();
+const adminStore = useAdminStore();
 
 const systems = computed(() => systemsStore.systems);
 const isAdmin = computed(() => authStore.isAdmin);
@@ -93,6 +95,30 @@ const importNewCVEs = async () => {
   }
 };
 
+const downloadReport = async () => {
+    try {
+        await adminStore.downloadRiskAssessmentReport();
+    } catch (error) {
+        notificationStore.addNotification({
+            message: 'Error downloading report',
+            type: 'error',
+            timeout: 5000
+        });
+    }
+};
+
+const downloadVulnerabilityReport = async () => {
+    try {
+        await adminStore.downloadVulnerabilityReport();
+    } catch (error) {
+        notificationStore.addNotification({
+            message: 'Error downloading report',
+            type: 'error',
+            timeout: 5000
+        });
+    }
+};
+
 // Stats
 const totalSystems = computed(() => systems.value.length);
 const totalCVEs = computed(() => cvesStore.cves.length);
@@ -130,6 +156,18 @@ onMounted(async () => {
     <div class="dashboard-header">
       <h1>Dashboard</h1>
       <div v-if="isAdmin || isSecurityOfficer">
+        <button 
+          @click="downloadVulnerabilityReport" 
+          class="import-button"
+        >
+          Download CVE Report
+        </button>
+        <button 
+          @click="downloadReport" 
+          class="import-button"
+        >
+          Download Risk Assessment Report
+        </button>
         <button 
           @click="importNewCVEs" 
           class="import-button"

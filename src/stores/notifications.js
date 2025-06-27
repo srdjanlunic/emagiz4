@@ -6,6 +6,7 @@ export const useNotificationsStore = defineStore('notifications', {
     notifications: [],
     loading: false,
     error: null,
+    pollingIntervalId: null,
   }),
   actions: {
     async fetchNotifications() {
@@ -46,6 +47,19 @@ export const useNotificationsStore = defineStore('notifications', {
     },
     removeNotification(id) {
       this.notifications = this.notifications.filter(n => n.id !== id);
+    },
+    startPolling() {
+      if (this.pollingIntervalId) return; // Already polling
+      this.fetchNotifications(); // Fetch immediately
+      this.pollingIntervalId = setInterval(() => {
+        this.fetchNotifications();
+      }, 15000); // Poll every 15 seconds
+    },
+    stopPolling() {
+      if (this.pollingIntervalId) {
+        clearInterval(this.pollingIntervalId);
+        this.pollingIntervalId = null;
+      }
     }
   },
 }); 

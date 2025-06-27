@@ -16,6 +16,9 @@
         <h2 class="text-xl font-bold mb-4">Implementations</h2>
         <div v-if="system.implementations && system.implementations.length > 0">
           <div v-for="impl in system.implementations" :key="impl.id" class="p-4 border rounded-md mb-4">
+            <p><strong>Version:</strong> {{ impl.version }}</p>
+            <p><strong>Environment:</strong> {{ impl.environment }}</p>
+            <p><strong>Risk Score:</strong> {{ impl.riskScore }}</p>
             <p><strong>Location:</strong> {{ impl.location }}</p>
             <p><strong>Department:</strong> {{ impl.departmentName }}</p>
           </div>

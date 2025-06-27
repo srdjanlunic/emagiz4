@@ -8,16 +8,23 @@ import dto.UserCreationRequestDto;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.UUID;
+import dao.DepartmentDAO;
+import dao.UserDepartmentDAO;
+import model.Department;
 
 public class UserService {
     private UserDAO userDAO;
     private AuthService authService;
     private RoleService roleService;
+    private DepartmentDAO departmentDAO;
+    private UserDepartmentDAO userDepartmentDAO;
     
     public UserService() {
         this.userDAO = new UserDAO();
         this.authService = new AuthService();
         this.roleService = new RoleService();
+        this.departmentDAO = new DepartmentDAO();
+        this.userDepartmentDAO = new UserDepartmentDAO();
     }
     
     /**
@@ -58,7 +65,17 @@ public class UserService {
         user.setLastName("");
         
         if (validateUserData(user)) {
-            return userDAO.create(user);
+            User createdUser = userDAO.create(user);
+            if (createdUser != null && userRequest.getDepartment() != null && !userRequest.getDepartment().isEmpty()) {
+                Department department = departmentDAO.findByName(userRequest.getDepartment());
+                if (department != null) {
+                    userDepartmentDAO.assignUserToDepartment(createdUser.getId(), department.getId());
+                } else {
+                    // Or maybe create the department if it doesn't exist? For now, we just log it.
+                    System.err.println("Department not found: " + userRequest.getDepartment());
+                }
+            }
+            return createdUser;
         }
         return null;
     }

@@ -34,12 +34,11 @@ export const useAuthStore = defineStore('auth', {
           body: JSON.stringify(credentials)
         });
         
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ message: 'Login failed' }));
-          throw new Error(errorData.message || 'Invalid credentials');
-        }
-        
         const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Invalid credentials');
+        }
         
         this.token = data.token;
         this.user = data.user;
@@ -75,7 +74,7 @@ export const useAuthStore = defineStore('auth', {
         
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({ message: 'Registration failed' }));
-          throw new Error(errorData.message || 'Registration failed');
+          throw new Error(errorData.error || 'Registration failed');
         }
         
         const data = await response.json();
@@ -139,26 +138,45 @@ export const useAuthStore = defineStore('auth', {
         throw new Error('Authentication expired');
       }
       
+      const responseText = await response.text();
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Request failed' }));
-        throw new Error(errorData.message || `Request failed with status ${response.status}`);
+        try {
+            const errorData = JSON.parse(responseText);
+            throw new Error(errorData.message || `Request failed with status ${response.status}`);
+        } catch (e) {
+            throw new Error(responseText || `Request failed with status ${response.status}`);
+        }
       }
       
-      return response.json();
+      try {
+        return JSON.parse(responseText);
+      } catch (e) {
+        return responseText;
+      }
     },
 
     async demoLogin(roleName) {
       this.loading = true
       this.error = null
       try {
-        const response = await this.apiCall('/auth/demo-login', {
+        const response = await fetch(`${API_BASE_URL}/auth/demo-login`, {
           method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
           body: JSON.stringify({ roleName }),
-        })
-        this.setAuth(response.token, response.user)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Demo login failed');
+        }
+
+        this.setAuth(data.token, data.user);
       } catch (error) {
-        this.error = error.message
-        throw error
+        this.error = error.message;
+        throw error;
       } finally {
         this.loading = false
       }

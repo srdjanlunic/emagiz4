@@ -30,6 +30,9 @@ import Departments from '../views/admin/Departments.vue'
 // Notifications component
 import Notifications from '../views/Notifications.vue'
 
+// Escalations component
+import Escalations from '../views/escalations/Escalations.vue'
+
 const routes = [
   {
     path: '/',
@@ -43,10 +46,11 @@ const routes = [
       { path: '/systems/:id/edit', name: 'edit-system', component: EditSystem, meta: { roles: ['admin', 'security_officer', 'system_owner'] } },
       { path: '/systems/:id', name: 'system-detail', component: SystemDetail, meta: { roles: ['admin', 'security_officer', 'system_owner'] } },
       { path: '/cve', name: 'cve', component: CVEList, meta: { roles: ['admin', 'security_officer', 'system_owner'] } },
-      { path: '/cve/:id', name: 'cve-detail', component: CveDetail, meta: { roles: ['admin', 'security_officer', 'system_owner'] } },
+      { path: '/cve/:id', name: 'cve-detail', component: CveDetail, meta: { roles: ['admin', 'security_officer', 'system_owner', 'technical_expert'] } },
       { path: '/admin/users', name: 'user-management', component: UserManagement, meta: { roles: ['admin', 'security_officer'] } },
       { path: '/admin/departments', name: 'departments', component: Departments, meta: { roles: ['admin', 'security_officer'] } },
-      { path: '/notifications', name: 'notifications', component: Notifications, meta: { roles: ['admin', 'security_officer', 'system_owner', 'technical_expert'] } }
+      { path: '/notifications', name: 'notifications', component: Notifications, meta: { roles: ['admin', 'security_officer', 'system_owner', 'technical_expert'] } },
+      { path: '/escalations', name: 'escalations', component: Escalations, meta: { roles: ['admin', 'security_officer', 'technical_expert'] } }
     ]
   },
   {
