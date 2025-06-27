@@ -54,6 +54,16 @@ public class SystemResource {
             SystemImplementation createdImplementation = systemService.registerSystem(registrationDto);
             logger.info("Successfully created system implementation: {}", createdImplementation.getId());
             return Response.status(Response.Status.CREATED).entity(JsonUtil.toJson(createdImplementation)).build();
+        } catch (RuntimeException e) {
+            logger.error("Error processing system registration: {}", e.getMessage());
+            if (e.getCause() instanceof com.fasterxml.jackson.databind.exc.InvalidFormatException) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity("{\"error\":\"Invalid format for ownerId. It must be a valid UUID string.\"}")
+                        .build();
+            }
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("{\"error\":\"Invalid request data: " + e.getMessage() + "\"}")
+                    .build();
         } catch (Exception e) {
             logger.error("Error creating system", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)

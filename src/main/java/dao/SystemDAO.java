@@ -35,7 +35,7 @@ public class SystemDAO {
             System.out.println("Database connection obtained");
             
             stmt = conn.prepareStatement(
-                    "INSERT INTO ITSystem (id, name, vendor, description, created_at) VALUES (?, ?, ?, ?, ?)"
+                    "INSERT INTO \"itsystem\" (id, name, vendor, description, created_at) VALUES (?, ?, ?, ?, ?)"
             );
             
             stmt.setObject(1, system.getId());
@@ -79,7 +79,7 @@ public class SystemDAO {
         
         try {
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("SELECT * FROM ITSystem WHERE id = ?");
+            stmt = conn.prepareStatement("SELECT * FROM \"itsystem\" WHERE id = ?");
             stmt.setObject(1, id);
             rs = stmt.executeQuery();
             
@@ -108,7 +108,7 @@ public class SystemDAO {
         
         try {
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("SELECT * FROM ITSystem WHERE name = ? AND vendor = ?");
+            stmt = conn.prepareStatement("SELECT * FROM \"itsystem\" WHERE name = ? AND vendor = ?");
             stmt.setString(1, name);
             stmt.setString(2, vendor);
             rs = stmt.executeQuery();
@@ -137,7 +137,7 @@ public class SystemDAO {
         
         try {
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("SELECT * FROM ITSystem ORDER BY created_at DESC");
+            stmt = conn.prepareStatement("SELECT * FROM \"itsystem\" ORDER BY created_at DESC");
             rs = stmt.executeQuery();
             
             while (rs.next()) {
@@ -159,7 +159,7 @@ public class SystemDAO {
         
         try {
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("SELECT * FROM ITSystem ORDER BY created_at DESC LIMIT ? OFFSET ?");
+            stmt = conn.prepareStatement("SELECT * FROM \"itsystem\" ORDER BY created_at DESC LIMIT ? OFFSET ?");
             stmt.setInt(1, pageSize);
             stmt.setInt(2, (page - 1) * pageSize);
             rs = stmt.executeQuery();
@@ -182,7 +182,7 @@ public class SystemDAO {
         
         try {
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("SELECT COUNT(*) FROM ITSystem");
+            stmt = conn.prepareStatement("SELECT COUNT(*) FROM \"itsystem\"");
             rs = stmt.executeQuery();
             
             if (rs.next()) {
@@ -209,7 +209,7 @@ public class SystemDAO {
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement(
-                    "UPDATE ITSystem SET name = ?, vendor = ?, description = ? WHERE id = ?"
+                    "UPDATE \"itsystem\" SET name = ?, vendor = ?, description = ? WHERE id = ?"
             );
             
             stmt.setString(1, system.getName());
@@ -241,7 +241,7 @@ public class SystemDAO {
         
         try {
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("DELETE FROM ITSystem WHERE id = ?");
+            stmt = conn.prepareStatement("DELETE FROM \"itsystem\" WHERE id = ?");
             stmt.setObject(1, id);
             
             return stmt.executeUpdate() > 0;

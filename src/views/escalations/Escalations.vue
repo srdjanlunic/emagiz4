@@ -98,7 +98,7 @@ const getStatusChipStyle = (status) => {
       <div v-for="escalation in escalations" :key="escalation.id" class="escalation-card" style="background: white; border-radius: 12px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1); transition: all 0.2s ease-in-out; position: relative;">
         <div class="card-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
           <h2 style="font-size: 20px; font-weight: 700; color: #1f2937; margin-right: 16px;">{{ escalation.cveId }}</h2>
-          <span :style="getStatusChipStyle(escalation.status)" style="padding: 4px 12px; border-radius: 9999px; font-size: 13px; font-weight: 500; text-transform: capitalize;">{{ escalation.status.replace('_', ' ') }}</span>
+          <span :style="getStatusChipStyle(escalation.status)" style="padding: 4px 12px; border-radius: 9999px; font-size: 13px; font-weight: 500; text-transform: capitalize;">{{ escalation.status ? escalation.status.replace('_', ' ') : 'N/A' }}</span>
         </div>
         
         <div class="details-grid" style="display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 20px;">

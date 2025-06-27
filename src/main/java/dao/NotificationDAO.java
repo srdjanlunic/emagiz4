@@ -20,7 +20,7 @@ public class NotificationDAO {
      * @return the saved notification with generated ID
      */
     public Notification create(Notification notification) {
-        String sql = "INSERT INTO Notification (id, user_id, match_id, system_id, vulnerability_id, message, type, priority, is_read, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id";
+        String sql = "INSERT INTO \"notification\" (id, user_id, match_id, system_id, vulnerability_id, message, type, priority, is_read, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id";
         
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -40,7 +40,7 @@ public class NotificationDAO {
             stmt.setString(7, notification.getType());
             stmt.setString(8, notification.getPriority());
             stmt.setBoolean(9, notification.isRead());
-            stmt.setTimestamp(10, notification.getCreatedAt());
+            stmt.setTimestamp(10, new Timestamp(notification.getCreatedAt().getTime()));
             
             rs = stmt.executeQuery();
             if (rs.next()) {
@@ -62,7 +62,7 @@ public class NotificationDAO {
      * @return the notification if found, else null
      */
     public Notification findById(UUID id) {
-        String sql = "SELECT * FROM Notification WHERE id = ?";
+        String sql = "SELECT * FROM \"notification\" WHERE id = ?";
         
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -92,7 +92,7 @@ public class NotificationDAO {
      * @return list of notifications
      */
     public List<Notification> findByUser(UUID userId) {
-        String sql = "SELECT * FROM Notification WHERE user_id = ? ORDER BY created_at DESC";
+        String sql = "SELECT * FROM \"notification\" WHERE user_id = ? ORDER BY created_at DESC";
         List<Notification> notifications = new ArrayList<>();
         
         Connection conn = null;
@@ -123,7 +123,7 @@ public class NotificationDAO {
      * @return list of unread notifications
      */
     public List<Notification> findUnreadByUser(UUID userId) {
-        String sql = "SELECT * FROM Notification WHERE user_id = ? AND is_read = false ORDER BY created_at DESC";
+        String sql = "SELECT * FROM \"notification\" WHERE user_id = ? AND is_read = false ORDER BY created_at DESC";
         List<Notification> notifications = new ArrayList<>();
         
         Connection conn = null;
@@ -154,7 +154,7 @@ public class NotificationDAO {
      * @return true if updated, false otherwise
      */
     public boolean markAsRead(UUID id) {
-        String sql = "UPDATE Notification SET is_read = true, read_at = CURRENT_TIMESTAMP WHERE id = ?";
+        String sql = "UPDATE \"notification\" SET is_read = true, read_at = CURRENT_TIMESTAMP WHERE id = ?";
         
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -180,7 +180,7 @@ public class NotificationDAO {
      * @return true if deleted, false otherwise
      */
     public boolean delete(UUID id) {
-        String sql = "DELETE FROM Notification WHERE id = ?";
+        String sql = "DELETE FROM \"notification\" WHERE id = ?";
         
         Connection conn = null;
         PreparedStatement stmt = null;

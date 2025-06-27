@@ -22,7 +22,7 @@ public class SystemOwnerDAO {
      * @param implId  ID of the system implementation
      */
     public void assignOwner(UUID userId, UUID implId) {
-        String sql = "INSERT INTO SystemOwner (user_id, system_implementation_id) VALUES (?, ?)";
+        String sql = "INSERT INTO \"system_owner\" (user_id, system_implementation_id) VALUES (?, ?)";
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setObject(1, userId);
@@ -41,7 +41,7 @@ public class SystemOwnerDAO {
      * @return true if an owner was removed, false otherwise
      */
     public boolean removeOwner(UUID userId, UUID implId) {
-        String sql = "DELETE FROM SystemOwner WHERE user_id = ? AND system_implementation_id = ?";
+        String sql = "DELETE FROM \"system_owner\" WHERE user_id = ? AND system_implementation_id = ?";
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setObject(1, userId);
@@ -59,7 +59,7 @@ public class SystemOwnerDAO {
      * @return list of users who own it
      */
     public List<User> findOwnersByImplementation(UUID implId) {
-        String sql = "SELECT u.* FROM UserAccount u JOIN SystemOwner so ON u.id = so.user_id WHERE so.system_implementation_id = ?";
+        String sql = "SELECT u.* FROM \"useraccount\" u JOIN \"system_owner\" so ON u.id = so.user_id WHERE so.system_implementation_id = ?";
         List<User> list = new ArrayList<>();
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -82,7 +82,7 @@ public class SystemOwnerDAO {
      * @return list of system implementations
      */
     public List<SystemImplementation> findImplementationsByOwner(UUID userId) {
-        String sql = "SELECT si.* FROM SystemImplementation si JOIN SystemOwner so ON si.id = so.system_implementation_id WHERE so.user_id = ?";
+        String sql = "SELECT si.* FROM \"systemimplementation\" si JOIN \"system_owner\" so ON si.id = so.system_implementation_id WHERE so.user_id = ?";
         List<SystemImplementation> list = new ArrayList<>();
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -105,7 +105,7 @@ public class SystemOwnerDAO {
      * @return UUID of the owner, or null if no owner found
      */
     public UUID findOwnerBySystemImplementationId(UUID implId) {
-        String sql = "SELECT user_id FROM SystemOwner WHERE system_implementation_id = ? LIMIT 1";
+        String sql = "SELECT user_id FROM \"system_owner\" WHERE system_implementation_id = ? LIMIT 1";
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setObject(1, implId);

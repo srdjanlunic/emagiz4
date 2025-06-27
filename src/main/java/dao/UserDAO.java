@@ -29,7 +29,7 @@ public class UserDAO {
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement(
-                    "SELECT * FROM UserAccount WHERE username = ? AND is_active = true"
+                    "SELECT * FROM \"useraccount\" WHERE username = ? AND is_active = true"
             );
             stmt.setString(1, username);
             rs = stmt.executeQuery();
@@ -52,7 +52,7 @@ public class UserDAO {
      * @return the created user with ID set, or null if creation failed
      */
     public User create(User user) {
-        String sql = "INSERT INTO useraccount (id, username, password, email, first_name, last_name, role_id, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO useraccount (id, username, password_hash, email, first_name, last_name, role_id, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
@@ -109,9 +109,10 @@ public class UserDAO {
      * @return list of UserDto with basic information
      */
     public List<UserDto> findAll() {
-        String sql = "SELECT u.id, u.username, u.email, r.name as role_name " +
+        String sql = "SELECT u.id, u.username, u.email, r.role_name " +
                 "FROM useraccount u " +
-                "LEFT JOIN role r ON u.role_id = r.id WHERE is_active = true";
+                "LEFT JOIN user_role ur ON u.id = ur.user_id " +
+                "LEFT JOIN role r ON ur.role_id = r.id WHERE u.is_active = true";
         List<UserDto> users = new ArrayList<>();
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
@@ -295,7 +296,7 @@ public class UserDAO {
         User user = new User();
         user.setId((UUID) rs.getObject("id"));
         user.setUsername(rs.getString("username"));
-        user.setPassword(rs.getString("password"));
+        user.setPassword(rs.getString("password_hash"));
         user.setEmail(rs.getString("email"));
         user.setFirstName(rs.getString("first_name"));
         user.setLastName(rs.getString("last_name"));

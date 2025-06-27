@@ -12,12 +12,17 @@ import dao.SystemVulnerabilityDAO;
 import model.Vulnerability;
 import model.SystemVulnerability;
 import java.sql.Timestamp;
+import java.util.stream.Collectors;
+import dto.EscalationDto;
+import dao.SystemDAO;
+import model.ITSystem;
 
 public class EscalationService {
     
     private EscalationDAO escalationDAO = new EscalationDAO();
     private VulnerabilityDAO vulnerabilityDAO = new VulnerabilityDAO();
     private SystemVulnerabilityDAO systemVulnerabilityDAO = new SystemVulnerabilityDAO();
+    private SystemDAO systemDAO = new SystemDAO();
     
     public Escalation create(EscalationCreationDto escalationCreation) {
         System.out.println("Creating escalation for CVE: " + escalationCreation.getCveId() + ", System: " + escalationCreation.getSystemId());
@@ -58,7 +63,7 @@ public class EscalationService {
         return escalationDAO.create(escalation);
     }
     
-    public Escalation review(UUID id, EscalationReviewDto escalationReview) {
+    public Escalation review(Integer id, EscalationReviewDto escalationReview) {
         var escalation = escalationDAO.findById(id);
         
         escalation.setTechExpertId(escalationReview.getTechExpertId());
@@ -73,11 +78,11 @@ public class EscalationService {
         return escalationDAO.update(escalation);
     }
     
-    public boolean delete(UUID id) {
+    public boolean delete(Integer id) {
         return escalationDAO.delete(id);
     }
     
-    public Escalation findById(UUID id) {
+    public Escalation findById(Integer id) {
         return escalationDAO.findById(id);
     }
     
@@ -89,11 +94,44 @@ public class EscalationService {
         return escalationDAO.findBySecurityOfficer(securityOfficerId);
     }
     
-    public List<Escalation> findByTechExpert(UUID techExpertid) {
-        return escalationDAO.findByTechExpertOrUnassigned(techExpertid);
+    public List<EscalationDto> findByTechExpert(UUID techExpertid) {
+        List<Escalation> escalations = escalationDAO.findByTechExpertOrUnassigned(techExpertid);
+        return escalations.stream()
+            .map(this::toDto)
+            .collect(Collectors.toList());
     }
     
-    public List<Escalation> findAll() {
-        return escalationDAO.findAll();
+    public List<EscalationDto> findAll() {
+        List<Escalation> escalations = escalationDAO.findAll();
+        return escalations.stream()
+            .map(this::toDto)
+            .collect(Collectors.toList());
+    }
+
+    private EscalationDto toDto(Escalation escalation) {
+        EscalationDto dto = new EscalationDto();
+        dto.setId(escalation.getId());
+        dto.setSystemVulnerabilityId(escalation.getSystemVulnerabilityId());
+        dto.setSecurityOfficerId(escalation.getSecurityOfficerId());
+        dto.setReason(escalation.getEscalationReason());
+        dto.setEscalationDate(escalation.getEscalationDate());
+        dto.setStatus(escalation.getEscalationStatus());
+        dto.setTechExpertId(escalation.getTechExpertId());
+        dto.setResponse(escalation.getResponse());
+        dto.setResponseDate(escalation.getResponseDate());
+
+        SystemVulnerability sv = systemVulnerabilityDAO.findById(escalation.getSystemVulnerabilityId());
+        if (sv != null) {
+            ITSystem system = systemDAO.findById(sv.getSystemId());
+            if (system != null) {
+                dto.setSystemName(system.getName());
+            }
+            Vulnerability vulnerability = vulnerabilityDAO.findById(sv.getVulnerabilityId());
+            if (vulnerability != null) {
+                dto.setCveId(vulnerability.getCveId());
+            }
+        }
+
+        return dto;
     }
 }

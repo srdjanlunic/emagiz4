@@ -30,7 +30,7 @@ public class SystemImplementationDAO {
             conn = DatabaseConfig.getConnection();
             
             // Validate existence of referenced ITSystem
-            PreparedStatement checkSystemStmt = conn.prepareStatement("SELECT id FROM ITSystem WHERE id = ?");
+            PreparedStatement checkSystemStmt = conn.prepareStatement("SELECT id FROM itsystem WHERE id = ?");
             checkSystemStmt.setObject(1, implementation.getSystemId());
             ResultSet systemRs = checkSystemStmt.executeQuery();
             if (!systemRs.next()) {
@@ -41,7 +41,7 @@ public class SystemImplementationDAO {
             checkSystemStmt.close();
             
             // Insert the implementation
-            String sql = "INSERT INTO SystemImplementation (id, system_id, department_id, data_classification, " +
+            String sql = "INSERT INTO systemimplementation (id, system_id, department_id, data_classification, " +
                     "criticality_level, internet_facing, sensitive_customer_data, risk_score, version, " +
                     "environment, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             
@@ -87,7 +87,7 @@ public class SystemImplementationDAO {
         
         try {
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("SELECT * FROM SystemImplementation WHERE id = ?");
+            stmt = conn.prepareStatement("SELECT * FROM systemimplementation WHERE id = ?");
             stmt.setObject(1, id);
             rs = stmt.executeQuery();
             
@@ -114,7 +114,7 @@ public class SystemImplementationDAO {
         
         try {
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("SELECT * FROM SystemImplementation ORDER BY created_at DESC");
+            stmt = conn.prepareStatement("SELECT * FROM systemimplementation ORDER BY created_at DESC");
             rs = stmt.executeQuery();
             
             while (rs.next()) {
@@ -139,7 +139,7 @@ public class SystemImplementationDAO {
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement(
-                    "UPDATE SystemImplementation SET system_id = ?, department_id = ?, " +
+                    "UPDATE systemimplementation SET system_id = ?, department_id = ?, " +
                             "data_classification = ?, criticality_level = ?, internet_facing = ?, " +
                             "sensitive_customer_data = ?, risk_score = ?, version = ?, environment = ?, " +
                             "updated_at = ? WHERE id = ?"
@@ -179,7 +179,7 @@ public class SystemImplementationDAO {
         
         try {
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("DELETE FROM SystemImplementation WHERE id = ?");
+            stmt = conn.prepareStatement("DELETE FROM systemimplementation WHERE id = ?");
             stmt.setObject(1, id);
             
             return stmt.executeUpdate() > 0;
@@ -203,7 +203,7 @@ public class SystemImplementationDAO {
         
         try {
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("SELECT * FROM SystemImplementation WHERE department_id = ?");
+            stmt = conn.prepareStatement("SELECT * FROM systemimplementation WHERE department_id = ?");
             stmt.setObject(1, departmentId);
             rs = stmt.executeQuery();
             
@@ -230,7 +230,7 @@ public class SystemImplementationDAO {
         
         try {
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("SELECT * FROM SystemImplementation WHERE system_id = ?");
+            stmt = conn.prepareStatement("SELECT * FROM systemimplementation WHERE system_id = ?");
             stmt.setObject(1, systemId);
             rs = stmt.executeQuery();
             
@@ -251,7 +251,7 @@ public class SystemImplementationDAO {
      */
     public List<String> findSystemIdsByVulnerabilityId(UUID vulnerabilityId) {
         List<String> systemIds = new ArrayList<>();
-        String sql = "SELECT DISTINCT si.system_id FROM SystemImplementation si " +
+        String sql = "SELECT DISTINCT si.system_id FROM systemimplementation si " +
                 "JOIN VulnerabilityMatch vm ON si.id = vm.system_implementation_id " +
                 "WHERE vm.vulnerability_id = ?";
         

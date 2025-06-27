@@ -172,6 +172,30 @@
         <finalName>vulnerability-management-system</finalName>
         <plugins>
             <plugin>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-maven-plugin</artifactId>
+                <version>8.5.13</version>
+                <executions>
+                    <execution>
+                        <id>migrate-database</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>migrate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <url>jdbc:postgresql://bronto.ewi.utwente.nl:5432/dab_di2425-2b_205?currentSchema=dab_di2425-2b_205</url>
+                    <user>dab_di2425-2b_205</user>
+                    <password>CHANGE_ME</password>
+                    <schemas>
+                        <schema>dab_di2425-2b_205</schema>
+                    </schemas>
+                    <baselineOnMigrate>true</baselineOnMigrate>
+                    <baselineVersion>3</baselineVersion>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
