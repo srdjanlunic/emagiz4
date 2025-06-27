@@ -48,6 +48,33 @@ const canManageSystems = computed(() => {
   return authStore.isAdmin || authStore.isSecurityOfficer;
 });
 
+// Check if user can escalate CVEs
+const canEscalate = computed(() => {
+  if (!cve.value) return false;
+  
+  // Security officers and system owners can escalate
+  if (!authStore.isSecurityOfficer && !authStore.isSystemOwner) return false;
+  
+  // System owners can only escalate CVEs affecting their systems
+  if (authStore.isSystemOwner && !authStore.isSecurityOfficer) {
+    const userOwnsAffectedSystem = cve.value.affectedSystems?.some(systemId => {
+      const system = systemsStore.getSystemById(systemId);
+      return system && system.ownerId === user.value.id;
+    });
+    if (!userOwnsAffectedSystem) return false;
+  }
+  
+  // Security officers: Can escalate if CVE is critical OR if status is unclear/unknown
+  if (authStore.isSecurityOfficer) {
+    const isCritical = cve.value.severity?.toLowerCase() === 'critical';
+    const isUnclearStatus = !cve.value.status || cve.value.status === 'open' || cve.value.status === 'unclear';
+    return isCritical || isUnclearStatus;
+  }
+  
+  // System owners: Can always escalate CVEs affecting their systems
+  return true;
+});
+
 // Get system name by ID
 const getSystemNameById = (systemId) => {
   const system = systemsStore.getSystemById(systemId);
@@ -72,6 +99,7 @@ const getStatusClass = (status) => {
   if (status === 'in_progress') return 'background-color: #fef3c7; color: #92400e;';
   if (status === 'resolved') return 'background-color: #d1fae5; color: #065f46;';
   if (status === 'accepted_risk') return 'background-color: #fef3c7; color: #92400e;';
+  if (status === 'false_positive') return 'background-color: #e5e7eb; color: #374151;';
   return 'background-color: #f3f4f6; color: #374151;'; // Default
 };
 
@@ -151,6 +179,49 @@ const updateAffectedSystems = async () => {
   }
 };
 
+// Technical Expert Actions
+const markFalsePositive = async () => {
+  if (!confirm('Are you sure you want to mark this CVE as a false positive?')) {
+    return;
+  }
+  
+  try {
+    // Update status to false positive with technical expert analysis
+    const note = 'Marked as false positive by technical expert after analysis.';
+    
+    if (cve.value.affectedSystems && cve.value.affectedSystems.length > 0) {
+      await cvesStore.updateCVEStatus(
+        cveId.value,
+        cve.value.affectedSystems[0],
+        'resolved',
+        note
+      );
+    }
+  } catch (error) {
+    alert('Error marking CVE as false positive');
+  }
+};
+
+const recommendUpdate = async () => {
+  const recommendation = prompt('Please provide update recommendation details:');
+  if (!recommendation) return;
+  
+  try {
+    const note = `Technical expert recommends update: ${recommendation}`;
+    
+    if (cve.value.affectedSystems && cve.value.affectedSystems.length > 0) {
+      await cvesStore.updateCVEStatus(
+        cveId.value,
+        cve.value.affectedSystems[0],
+        'in_progress',
+        note
+      );
+    }
+  } catch (error) {
+    alert('Error adding update recommendation');
+  }
+};
+
 // Mark notification as read if applicable
 onMounted(() => {
   if (cve.value && user.value) {
@@ -193,7 +264,7 @@ onMounted(() => {
         </div>
         
         <div v-if="canUpdateStatus && !showUpdateForm">
-          <button @click="openEscalateModal" style="display: inline-flex; align-items: center; padding: 10px 20px; background-color: #f59e0b; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); margin-left: 12px;">
+          <button v-if="canEscalate" @click="openEscalateModal" style="display: inline-flex; align-items: center; padding: 10px 20px; background-color: #f59e0b; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); margin-left: 12px;">
             Escalate
           </button>
           <button v-if="canManageSystems" @click="openAssignSystemsModal" style="display: inline-flex; align-items: center; padding: 10px 20px; background: linear-gradient(135deg, #059669 0%, #047857 100%); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); margin-left: 12px;">
@@ -204,6 +275,16 @@ onMounted(() => {
           </button>
           <button @click="showUpdateForm = true" style="display: inline-flex; align-items: center; padding: 10px 20px; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); margin-left: 12px;">
             Update Status
+          </button>
+        </div>
+        
+        <!-- Technical Expert Actions -->
+        <div v-if="authStore.isTechnicalExpert && !showUpdateForm">
+          <button @click="markFalsePositive" style="display: inline-flex; align-items: center; padding: 10px 20px; background-color: #6b7280; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); margin-left: 12px;">
+            Mark False Positive
+          </button>
+          <button @click="recommendUpdate" style="display: inline-flex; align-items: center; padding: 10px 20px; background-color: #059669; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); margin-left: 12px;">
+            Recommend Update
           </button>
         </div>
       </div>
@@ -222,6 +303,7 @@ onMounted(() => {
                 <option value="in_progress">In Progress</option>
                 <option value="resolved">Resolved</option>
                 <option value="accepted_risk">Accepted Risk</option>
+                <option v-if="authStore.isTechnicalExpert" value="false_positive">False Positive</option>
               </select>
               <div style="pointer-events: none; position: absolute; top: 0; right: 0; bottom: 0; display: flex; align-items: center; padding: 0 12px; color: #6b7280;">
                 <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">

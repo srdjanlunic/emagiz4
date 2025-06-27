@@ -138,6 +138,29 @@ export const useCVEsStore = defineStore('cves', {
         this.loading = false;
       }
     },
+
+    async fetchEscalatedCVEs(techExpertId) {
+      const authStore = useAuthStore();
+      this.loading = true;
+      this.error = null;
+      
+      try {
+        // Fetch escalated CVEs for the technical expert
+        const data = await authStore.apiCall(`/vulnerabilities/escalated/${techExpertId}`);
+        const transformedCVEs = data.map(this.transformCVEData);
+        
+        // Replace the CVEs list with only escalated CVEs for technical experts
+        this.cves = transformedCVEs;
+        
+        return transformedCVEs;
+      } catch (error) {
+        this.error = error.message;
+        console.error('Error fetching escalated CVEs:', error);
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
     
     async searchCVEs(searchTerm) {
       const authStore = useAuthStore();

@@ -26,6 +26,7 @@ import CveDetail from '../views/cve/CVEDetails.vue'
 // Admin components
 import UserManagement from '../views/admin/UserManagement.vue'
 import Departments from '../views/admin/Departments.vue'
+import SystemOwnerManagement from '../views/admin/SystemOwnerManagement.vue'
 
 // Notifications component
 import Notifications from '../views/Notifications.vue'
@@ -41,15 +42,16 @@ const routes = [
     meta: { requiresAuth: true },
     children: [
       { path: '/dashboard', name: 'Dashboard', component: Dashboard, meta: { roles: ['admin', 'security_officer', 'system_owner', 'technical_expert'] } },
-      { path: '/systems', name: 'systems', component: Systems, meta: { roles: ['admin', 'security_officer', 'system_owner'] } },
-      { path: '/systems/add', name: 'add-system', component: AddSystem, meta: { roles: ['admin', 'security_officer', 'system_owner'] } },
-      { path: '/systems/:id/edit', name: 'edit-system', component: EditSystem, meta: { roles: ['admin', 'security_officer', 'system_owner'] } },
-      { path: '/systems/:id', name: 'system-detail', component: SystemDetail, meta: { roles: ['admin', 'security_officer', 'system_owner'] } },
-      { path: '/cve', name: 'cve', component: CVEList, meta: { roles: ['admin', 'security_officer', 'system_owner'] } },
+      { path: '/systems', name: 'systems', component: Systems, meta: { roles: ['admin', 'system_owner'] } },
+      { path: '/systems/add', name: 'add-system', component: AddSystem, meta: { roles: ['admin', 'system_owner'] } },
+      { path: '/systems/:id/edit', name: 'edit-system', component: EditSystem, meta: { roles: ['admin', 'system_owner'] } },
+      { path: '/systems/:id', name: 'system-detail', component: SystemDetail, meta: { roles: ['admin', 'system_owner'] } },
+      { path: '/cve', name: 'cve', component: CVEList, meta: { roles: ['admin', 'security_officer', 'system_owner', 'technical_expert'] } },
       { path: '/cve/:id', name: 'cve-detail', component: CveDetail, meta: { roles: ['admin', 'security_officer', 'system_owner', 'technical_expert'] } },
       { path: '/admin/users', name: 'user-management', component: UserManagement, meta: { roles: ['admin', 'security_officer'] } },
       { path: '/admin/departments', name: 'departments', component: Departments, meta: { roles: ['admin', 'security_officer'] } },
-      { path: '/notifications', name: 'notifications', component: Notifications, meta: { roles: ['admin', 'security_officer', 'system_owner', 'technical_expert'] } },
+      { path: '/admin/system-owners', name: 'system-owner-management', component: SystemOwnerManagement, meta: { roles: ['admin', 'security_officer'] } },
+      { path: '/notifications', name: 'notifications', component: Notifications, meta: { roles: ['admin', 'security_officer', 'system_owner'] } },
       { path: '/escalations', name: 'escalations', component: Escalations, meta: { roles: ['admin', 'security_officer', 'technical_expert'] } }
     ]
   },

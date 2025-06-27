@@ -11,11 +11,13 @@ const user = computed(() => authStore.user);
 
 const allNavItems = [
   { name: 'Dashboard', path: '/dashboard', icon: 'M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z', roles: ['admin', 'security_officer', 'system_owner', 'technical_expert'] },
-  { name: 'Systems', path: '/systems', icon: 'M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z', roles: ['admin', 'security_officer', 'system_owner'] },
-  { name: 'CVEs', path: '/cve', icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z', roles: ['admin', 'security_officer', 'system_owner'] },
+  { name: 'Systems', path: '/systems', icon: 'M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z', roles: ['admin', 'system_owner'] },
+  { name: 'CVEs', path: '/cve', icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z', roles: ['admin', 'security_officer', 'system_owner', 'technical_expert'] },
+  { name: 'Escalations', path: '/escalations', icon: 'M13 10V3L4 14h7v7l9-11h-7z', roles: ['admin', 'security_officer', 'technical_expert'] },
   { name: 'Users', path: '/admin/users', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z', roles: ['admin', 'security_officer'] },
   { name: 'Departments', path: '/admin/departments', icon: 'M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z', roles: ['admin', 'security_officer'] },
-  { name: 'Notifications', path: '/notifications', icon: 'M15 17h5l-5 5v-5zM4 4a2 2 0 012-2h4a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V4z', roles: ['admin', 'security_officer', 'system_owner', 'technical_expert'] }
+  { name: 'System Owners', path: '/admin/system-owners', icon: 'M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z M17 9h2v2h-2V9z M17 13h2v2h-2v-2z', roles: ['admin', 'security_officer'] },
+  { name: 'Notifications', path: '/notifications', icon: 'M15 17h5l-5 5v-5zM4 4a2 2 0 012-2h4a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V4z', roles: ['admin', 'security_officer', 'system_owner'] }
 ];
 
 // Navigation items based on user role

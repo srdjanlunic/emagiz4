@@ -80,6 +80,26 @@ public class SystemResource {
     }
     
     /**
+     * Retrieves systems owned by a specific user.
+     *
+     * @param ownerIdStr UUID string of the owner (user) ID
+     * @return HTTP 200 OK with list of systems JSON or error response
+     */
+    @GET
+    @Path("/owner/{ownerId}")
+    @RolesAllowed({"security_officer", "system_owner", "admin"})
+    public Response getSystemsByOwner(@PathParam("ownerId") String ownerIdStr) {
+        try {
+            UUID ownerId = UUID.fromString(ownerIdStr);
+            List<SystemDto> systems = systemService.getSystemsByOwner(ownerId);
+            return Response.ok(JsonUtil.toJson(systems)).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("{\"error\":\"" + e.getMessage() + "\"}").build();
+        }
+    }
+    
+    /**
      * Retrieves a system by its ID.
      *
      * @param idStr UUID string of the system ID

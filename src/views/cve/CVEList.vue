@@ -166,11 +166,14 @@ const loadData = async () => {
     // Load systems first, then CVEs
     await systemsStore.fetchSystems();
     
-    if (systemFilter.value) {
+    // Technical experts only see escalated CVEs
+    if (authStore.isTechnicalExpert) {
+      await cvesStore.fetchEscalatedCVEs(userId.value);
+    } else if (systemFilter.value) {
       // Load CVEs for specific system
       await cvesStore.fetchCVEsBySystem(systemFilter.value);
     } else {
-      // Load all CVEs
+      // Load all CVEs for other roles
       await cvesStore.fetchCVEs();
     }
   } catch (err) {
