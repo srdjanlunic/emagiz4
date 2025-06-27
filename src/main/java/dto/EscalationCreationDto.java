@@ -4,17 +4,42 @@ import java.sql.Timestamp;
 import java.util.UUID;
 
 public class EscalationCreationDto {
-    private UUID systemVulnerabilityId;
+    private String cveId;
+    private UUID systemId;
+    private String reason;
+    private UUID techExpertId;
     private UUID securityOfficerId;
-    private String escalationReason;
-    private Timestamp escalationDate;
     
-    public UUID getSystemVulnerabilityId() {
-        return systemVulnerabilityId;
+    public String getCveId() {
+        return cveId;
     }
     
-    public void setSystemVulnerabilityId(UUID systemVulnerabilityId) {
-        this.systemVulnerabilityId = systemVulnerabilityId;
+    public void setCveId(String cveId) {
+        this.cveId = cveId;
+    }
+    
+    public UUID getSystemId() {
+        return systemId;
+    }
+    
+    public void setSystemId(UUID systemId) {
+        this.systemId = systemId;
+    }
+    
+    public String getReason() {
+        return reason;
+    }
+    
+    public void setReason(String reason) {
+        this.reason = reason;
+    }
+    
+    public UUID getTechExpertId() {
+        return techExpertId;
+    }
+    
+    public void setTechExpertId(UUID techExpertId) {
+        this.techExpertId = techExpertId;
     }
     
     public UUID getSecurityOfficerId() {
@@ -23,21 +48,5 @@ public class EscalationCreationDto {
     
     public void setSecurityOfficerId(UUID securityOfficerId) {
         this.securityOfficerId = securityOfficerId;
-    }
-    
-    public String getEscalationReason() {
-        return escalationReason;
-    }
-    
-    public void setEscalationReason(String escalationReason) {
-        this.escalationReason = escalationReason;
-    }
-    
-    public Timestamp getEscalationDate() {
-        return escalationDate;
-    }
-    
-    public void setEscalationDate(Timestamp escalationDate) {
-        this.escalationDate = escalationDate;
     }
 }

@@ -21,7 +21,7 @@ public class UserDepartmentDAO {
      * @param userId       ID of the user
      * @param departmentId ID of the department
      */
-    public void assign(UUID userId, UUID departmentId) {
+    public void assignUserToDepartment(UUID userId, UUID departmentId) {
         String sql = "INSERT INTO UserDepartment (user_id, department_id) VALUES (?, ?)";
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {

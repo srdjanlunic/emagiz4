@@ -65,6 +65,30 @@ public class DepartmentDAO {
     }
     
     /**
+     * Finds a department by its name.
+     *
+     * @param name department name
+     * @return the department or null
+     */
+    public Department findByName(String name) {
+        String sql = "SELECT * FROM department WHERE name = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setString(1, name);
+            ResultSet rs = stmt.executeQuery();
+            
+            if (rs.next()) {
+                return mapResultSetToDepartment(rs);
+            }
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+    
+    /**
      * Returns all departments.
      *
      * @return list of departments

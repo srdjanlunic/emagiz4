@@ -193,15 +193,15 @@ export const useCVEsStore = defineStore('cves', {
             throw new Error('Could not determine the system for this CVE status update.');
         }
         
-        const updatedCVE = await authStore.apiCall(`/vulnerabilities/system/${systemId}/vulnerability/${cveId}`, {
+        await authStore.apiCall(`/vulnerabilities/system/${systemId}/vulnerability/${cveId}`, {
           method: 'PUT',
           body: JSON.stringify({ status, notes: explanation }),
         });
         
-        // After updating, we should probably refetch the data for that system to get the new status
-        await this.fetchCVEsBySystem(systemId);
+        // After updating, refetch the data for that system to get the new status
+        await this.fetchCVEBySystemAndCveId(systemId, cveId);
 
-        notificationsStore.addNotification(`CVE ${cveId} status updated to ${status}.`, 'success');
+        notificationsStore.addNotification('CVE status updated successfully!', 'success');
       } catch (error) {
         this.error = error.message;
         notificationsStore.addNotification(error.message || `Failed to update CVE ${cveId} status.`, 'error');
@@ -211,22 +211,37 @@ export const useCVEsStore = defineStore('cves', {
       }
     },
     
-    async markNotificationRead(cveId, userId) {
-      // Note: This should use the notifications API endpoint
-      const authStore = useAuthStore();
-      
-      try {
-        // Find the notification for this CVE and user
-        const cve = this.getCVEById(cveId);
-        if (cve && cve.notifications) {
-          const notification = cve.notifications.find(n => n.userId === userId);
-          if (notification) {
-            // This would call PUT /notifications/{id}/read in the real implementation
-            notification.read = true;
-          }
+    async fetchCVEBySystemAndCveId(systemId, cveId) {
+        const authStore = useAuthStore();
+        this.loading = true;
+        this.error = null;
+        try {
+            const data = await authStore.apiCall(`/vulnerabilities/system/${systemId}/vulnerability/${cveId}`);
+            const transformedCVE = this.transformCVEData(data);
+            const existingIndex = this.cves.findIndex(c => c.cveId === transformedCVE.cveId);
+            if (existingIndex >= 0) {
+                this.cves[existingIndex] = transformedCVE;
+            } else {
+                this.cves.push(transformedCVE);
+            }
+            return transformedCVE;
+        } catch (error) {
+            this.error = error.message;
+            console.error('Error fetching CVE:', error);
+            throw error;
+        } finally {
+            this.loading = false;
         }
-      } catch (error) {
-        console.error('Error marking notification as read:', error);
+    },
+    
+    async markNotificationRead(cveId, userId) {
+      const authStore = useAuthStore()
+      const cve = this.cves.find(c => c.cveId === cveId)
+      if (cve && cve.notifications) {
+        const notification = cve.notifications.find(n => n.userId === userId);
+        if (notification) {
+          notification.read = true;
+        }
       }
     },
     
@@ -264,6 +279,32 @@ export const useCVEsStore = defineStore('cves', {
 
     async getCVEHistory(cveId) {
       // Implementation of getCVEHistory method
+    },
+
+    async escalateCVE(cveId, systemId, reason, techExpertId) {
+        const authStore = useAuthStore();
+        const notificationsStore = useNotificationsStore();
+        this.loading = true;
+        this.error = null;
+        try {
+            await authStore.apiCall('/escalations', {
+                method: 'POST',
+                body: JSON.stringify({
+                    cveId,
+                    systemId,
+                    reason,
+                    techExpertId,
+                    securityOfficerId: authStore.user.id
+                }),
+            });
+            notificationsStore.addNotification(`CVE ${cveId} escalated successfully.`, 'success');
+        } catch (error) {
+            this.error = error.message;
+            notificationsStore.addNotification(error.message || `Failed to escalate CVE ${cveId}.`, 'error');
+            throw error;
+        } finally {
+            this.loading = false;
+        }
     }
   }
 }) 

@@ -18,12 +18,16 @@ const systemId = computed(() => route.params.id);
 const formData = ref({
   name: '',
   description: '',
-  version: '',
   vendor: '',
   ownerId: null,
+  // Implementation fields
+  version: '',
+  environment: '',
   internetFacing: false,
   dataClassification: 'PUBLIC',
   criticalityLevel: 'LOW',
+  sensitiveCustomerData: false,
+  riskScore: 0,
   implementations: []
 });
 
@@ -61,7 +65,38 @@ const handleSubmit = async () => {
   loading.value = true;
   
   try {
-    await systemsStore.updateSystem(systemId.value, formData.value);
+    // 1. Prepare system data
+    const systemData = {
+      name: formData.value.name,
+      description: formData.value.description,
+      vendor: formData.value.vendor,
+      ownerId: formData.value.ownerId
+    };
+    
+    // 2. Prepare implementation data (assuming one implementation for now)
+    const implementation = formData.value.implementations[0];
+    if (implementation) {
+      const implementationData = {
+        id: implementation.id,
+        systemId: systemId.value,
+        departmentId: implementation.departmentId, // preserve existing department
+        version: formData.value.version,
+        environment: formData.value.environment,
+        dataClassification: formData.value.dataClassification,
+        criticalityLevel: formData.value.criticalityLevel,
+        internetFacing: formData.value.internetFacing,
+        sensitiveCustomerData: formData.value.sensitiveCustomerData
+      };
+
+      // 3. Call update actions
+      await systemsStore.updateSystem(systemId.value, systemData);
+      await systemsStore.updateImplementation(implementation.id, implementationData);
+    } else {
+        // if no implementation, just update system
+        await systemsStore.updateSystem(systemId.value, systemData);
+    }
+
+
     notificationsStore.addNotification('System updated successfully', 'success');
     router.push('/systems');
   } catch (err) {
@@ -81,8 +116,26 @@ onMounted(async () => {
   try {
     const system = await systemsStore.fetchSystemById(systemId.value);
     if (system) {
-      formData.value = { ...system };
-      formData.value.implementations = await systemsStore.fetchImplementationsForSystem(systemId.value);
+      // Populate system fields
+      formData.value.name = system.name;
+      formData.value.description = system.description;
+      formData.value.vendor = system.vendor;
+      formData.value.ownerId = system.ownerId;
+      
+      // Fetch and populate implementation fields
+      const implementations = await systemsStore.fetchImplementationsForSystem(systemId.value);
+      formData.value.implementations = implementations;
+      
+      if (implementations && implementations.length > 0) {
+        const impl = implementations[0]; // Assuming we edit the first one
+        formData.value.version = impl.version;
+        formData.value.environment = impl.environment;
+        formData.value.internetFacing = impl.internetFacing;
+        formData.value.dataClassification = impl.dataClassification;
+        formData.value.criticalityLevel = impl.criticalityLevel;
+        formData.value.sensitiveCustomerData = impl.sensitiveCustomerData;
+        formData.value.riskScore = impl.riskScore;
+      }
     } else {
       error.value = 'System not found.';
     }
@@ -143,6 +196,16 @@ onMounted(async () => {
                   <input id="vendor" v-model="formData.vendor" type="text" required style="width: 100%; border-radius: 6px; border: 1px solid #D1D5DB; padding: 10px 12px; font-size: 14px; line-height: 1.5; color: #111827; background-color: white; transition: border-color 0.2s; box-sizing: border-box;" placeholder="System vendor/manufacturer">
                 </div>
               </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div>
+                  <label for="environment" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">Environment</label>
+                  <input id="environment" v-model="formData.environment" type="text" style="width: 100%; border-radius: 6px; border: 1px solid #D1D5DB; padding: 10px 12px; font-size: 14px; line-height: 1.5; color: #111827; background-color: white; transition: border-color 0.2s; box-sizing: border-box;" placeholder="e.g., Production">
+                </div>
+                 <div>
+                  <label for="riskScore" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">Risk Score</label>
+                  <input id="riskScore" :value="formData.riskScore" type="text" readonly style="width: 100%; border-radius: 6px; border: 1px solid #D1D5DB; padding: 10px 12px; font-size: 14px; line-height: 1.5; color: #111827; background-color: #F3F4F6; cursor: not-allowed;" >
+                </div>
+              </div>
             </div>
           </div>
 
@@ -173,6 +236,13 @@ onMounted(async () => {
                   <span style="font-size: 14px; font-weight: 500; color: #374151;">Internet Facing</span>
                 </label>
                 <p style="font-size: 13px; color: #6b7280; margin-top: 4px; margin-left: 24px;">Check if this system is accessible from the internet</p>
+              </div>
+              <div>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input type="checkbox" v-model="formData.sensitiveCustomerData" style="width: 16px; height: 16px; accent-color: #3b82f6;">
+                  <span style="font-size: 14px; font-weight: 500; color: #374151;">Handles Sensitive Customer Data</span>
+                </label>
+                <p style="font-size: 13px; color: #6b7280; margin-top: 4px; margin-left: 24px;">Check if this system processes or stores sensitive customer data</p>
               </div>
             </div>
           </div>

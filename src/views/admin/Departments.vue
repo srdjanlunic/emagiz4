@@ -8,6 +8,7 @@ const users = computed(() => adminStore.users);
 const loading = ref(false);
 const showAddDepartmentModal = ref(false);
 const newDepartmentName = ref('');
+const newDepartmentDescription = ref('');
 
 // Selected department for assigning users
 const selectedDepartment = ref(null);
@@ -22,6 +23,7 @@ const openAddDepartmentModal = () => {
 const closeAddDepartmentModal = () => {
   showAddDepartmentModal.value = false;
   newDepartmentName.value = '';
+  newDepartmentDescription.value = '';
 };
 
 // Add a department (demo purposes)
@@ -31,7 +33,10 @@ const addDepartment = async () => {
   }
   loading.value = true;
   try {
-    await adminStore.createDepartment(newDepartmentName.value);
+    await adminStore.createDepartment({
+        name: newDepartmentName.value, 
+        description: newDepartmentDescription.value
+    });
     closeAddDepartmentModal();
     adminStore.fetchDepartments();
   } catch (error) {
@@ -127,7 +132,6 @@ const toggleUserSelection = (userId) => {
             <tr>
               <th style="padding: 12px 24px; text-align: left; font-size: 12px; font-weight: 500; text-transform: uppercase; color: #6b7280; background: #f9fafb; border-bottom: 1px solid #e5e7eb;">Department Name</th>
               <th style="padding: 12px 24px; text-align: left; font-size: 12px; font-weight: 500; text-transform: uppercase; color: #6b7280; background: #f9fafb; border-bottom: 1px solid #e5e7eb;">Description</th>
-              <th style="padding: 12px 24px; text-align: left; font-size: 12px; font-weight: 500; text-transform: uppercase; color: #6b7280; background: #f9fafb; border-bottom: 1px solid #e5e7eb;">Manager</th>
               <th style="padding: 12px 24px; text-align: right; font-size: 12px; font-weight: 500; text-transform: uppercase; color: #6b7280; background: #f9fafb; border-bottom: 1px solid #e5e7eb;"><span style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;">Actions</span></th>
             </tr>
           </thead>
@@ -137,7 +141,6 @@ const toggleUserSelection = (userId) => {
                 <div style="font-weight: 500; color: #111827;">{{ dept.name }}</div>
               </td>
               <td style="padding: 16px 24px; color: #6b7280;">{{ dept.description }}</td>
-              <td style="padding: 16px 24px; color: #6b7280;">{{ dept.manager }}</td>
               <td style="padding: 16px 24px; text-align: right;">
                 <button @click="deleteDepartment(dept.id)" style="color: #2563eb; font-weight: 500; text-decoration: none; transition: color 0.2s; :hover { color: #1d4ed8; }">Delete</button>
               </td>
@@ -152,8 +155,14 @@ const toggleUserSelection = (userId) => {
       <div style="background-color: white; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); padding: 24px; max-width: 500px; width: 100%;">
         <h3 style="font-size: 20px; font-weight: 600; color: #111827; margin-bottom: 24px;">Add New Department</h3>
         <div style="margin-bottom: 24px;">
-          <label for="dept-name" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">Department Name</label>
-          <input id="dept-name" v-model="newDepartmentName" type="text" style="width: 100%; border-radius: 6px; border: 1px solid #D1D5DB; padding: 10px 12px; font-size: 14px; line-height: 1.5; color: #111827; background-color: white; transition: border-color 0.2s; box-sizing: border-box;" placeholder="Enter department name" />
+          <div style="margin-bottom: 16px;">
+            <label for="dept-name" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">Department Name</label>
+            <input id="dept-name" v-model="newDepartmentName" type="text" style="width: 100%; border-radius: 6px; border: 1px solid #D1D5DB; padding: 10px 12px; font-size: 14px; line-height: 1.5; color: #111827; background-color: white; transition: border-color 0.2s; box-sizing: border-box;" placeholder="Enter department name" />
+          </div>
+          <div>
+            <label for="dept-desc" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">Description</label>
+            <textarea id="dept-desc" v-model="newDepartmentDescription" rows="3" style="width: 100%; border-radius: 6px; border: 1px solid #D1D5DB; padding: 10px 12px; font-size: 14px; line-height: 1.5; color: #111827; background-color: white; transition: border-color 0.2s; box-sizing: border-box;" placeholder="Enter department description"></textarea>
+          </div>
         </div>
         <div style="display: flex; justify-content: flex-end; gap: 12px;">
           <button @click="closeAddDepartmentModal" style="padding: 10px 20px; background-color: #F3F4F6; color: #374151; border-radius: 6px; font-weight: 500; border: none; cursor: pointer; transition: background-color 0.2s;">Cancel</button>

@@ -134,6 +134,31 @@ export const useSystemsStore = defineStore('systems', {
       }
     },
     
+    async updateImplementation(id, implementationData) {
+      const authStore = useAuthStore();
+      this.loading = true;
+      this.error = null;
+      
+      try {
+        const data = await authStore.apiCall(`/systems/implementations/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify(implementationData)
+        });
+        
+        // Optionally, update the implementation in the local state
+        // This is more complex as implementations are nested.
+        // A simple approach is to refetch the system or its implementations.
+        
+        return data;
+      } catch (error) {
+        this.error = error.message;
+        console.error('Error updating implementation:', error);
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+    
     async deleteSystem(id) {
       const authStore = useAuthStore();
       this.loading = true;

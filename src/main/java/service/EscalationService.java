@@ -7,18 +7,36 @@ import java.util.List;
 import java.util.UUID;
 import model.Escalation;
 import model.EscalationStatus;
+import dao.VulnerabilityDAO;
+import dao.SystemVulnerabilityDAO;
+import model.Vulnerability;
+import model.SystemVulnerability;
+import java.sql.Timestamp;
 
 public class EscalationService {
     
     private EscalationDAO escalationDAO = new EscalationDAO();
+    private VulnerabilityDAO vulnerabilityDAO = new VulnerabilityDAO();
+    private SystemVulnerabilityDAO systemVulnerabilityDAO = new SystemVulnerabilityDAO();
     
     public Escalation create(EscalationCreationDto escalationCreation) {
+        Vulnerability vulnerability = vulnerabilityDAO.findByCveId(escalationCreation.getCveId());
+        if (vulnerability == null) {
+            return null;
+        }
+
+        SystemVulnerability sv = systemVulnerabilityDAO.findBySystemAndVulnerability(escalationCreation.getSystemId(), vulnerability.getId());
+        if (sv == null) {
+            return null;
+        }
+        
         var escalation = new Escalation();
         
-        escalation.setSystemVulnerabilityId(escalationCreation.getSystemVulnerabilityId());
+        escalation.setSystemVulnerabilityId(sv.getId());
         escalation.setSecurityOfficerId(escalationCreation.getSecurityOfficerId());
-        escalation.setEscalationReason(escalationCreation.getEscalationReason());
-        escalation.setEscalationDate(escalationCreation.getEscalationDate());
+        escalation.setTechExpertId(escalationCreation.getTechExpertId());
+        escalation.setEscalationReason(escalationCreation.getReason());
+        escalation.setEscalationDate(new Timestamp(System.currentTimeMillis()));
         escalation.setEscalationStatus(EscalationStatus.ESCALATED);
         
         return escalationDAO.create(escalation);

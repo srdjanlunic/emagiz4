@@ -5,10 +5,12 @@ import dao.SystemImplementationDAO;
 import dao.UserDAO;
 import dao.VulnerabilityDAO;
 import model.Notification;
+import model.User;
 import dto.NotificationDto;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import dao.SystemOwnerDAO;
 
 /**
  * Service for managing notifications related to users and vulnerabilities.
@@ -18,6 +20,7 @@ public class NotificationService {
     private SystemImplementationDAO systemImplementationDAO;
     private UserDAO userDAO;
     private VulnerabilityDAO vulnerabilityDAO;
+    private SystemOwnerDAO systemOwnerDAO;
     
     /**
      * Constructs a NotificationService with DAO dependencies.
@@ -27,6 +30,7 @@ public class NotificationService {
         this.systemImplementationDAO = new SystemImplementationDAO();
         this.userDAO = new UserDAO();
         this.vulnerabilityDAO = new VulnerabilityDAO();
+        this.systemOwnerDAO = new SystemOwnerDAO();
     }
     
     /**
@@ -85,19 +89,28 @@ public class NotificationService {
     
     /**
      * Creates notifications for system owners related to a vulnerability match.
-     * Placeholder method for future implementation.
      *
+     * @param matchId                  the ID of the vulnerability match
      * @param vulnerabilityId          the vulnerability ID involved
-     * @param cveId                   the CVE identifier
-     * @param systemImplementationIds list of system implementation IDs affected
+     * @param cveId                    the CVE identifier
+     * @param systemImplementationId   the ID of the system implementation affected
      */
-    public void createVulnerabilityMatchNotifications(UUID vulnerabilityId, String cveId, List<UUID> systemImplementationIds) {
-        //TODO: Implement vulnerability match notifications
-        for (UUID implementationId : systemImplementationIds) {
-            // Get the system owner(s) for the given system implementation
-            //List<UUID> ownerIds = systemImplementationDAO.findOwnerbyImplementation
+    public void createVulnerabilityMatchNotifications(UUID matchId, UUID vulnerabilityId, String cveId, UUID systemImplementationId) {
+        List<User> owners = systemOwnerDAO.findOwnersByImplementation(systemImplementationId);
+        for (User owner : owners) {
+            String message = "New vulnerability " + cveId + " has been matched to one of your systems.";
+            
+            Notification notification = new Notification();
+            notification.setId(UUID.randomUUID());
+            notification.setUserId(owner.getId());
+            notification.setMatchId(matchId);
+            notification.setSystemId(systemImplementationId);
+            notification.setVulnerabilityId(vulnerabilityId);
+            notification.setMessage(message);
+            notification.setType("vulnerability_match");
+            
+            notificationDAO.create(notification);
         }
-        System.out.println("Placeholder for creating vulnerability match notifications.");
     }
     
     /**

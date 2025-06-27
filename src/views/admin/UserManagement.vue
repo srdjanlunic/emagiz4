@@ -6,11 +6,24 @@ const adminStore = useAdminStore();
 const users = computed(() => adminStore.users);
 const loading = ref(false);
 const showAddUserModal = ref(false);
+const searchQuery = ref('');
+
+const filteredUsers = computed(() => {
+  if (!searchQuery.value) {
+    return users.value;
+  }
+  return users.value.filter(user =>
+    user.username.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+    user.email.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+    (user.roleName && user.roleName.toLowerCase().replace('_', ' ').includes(searchQuery.value.toLowerCase()))
+  );
+});
 
 // Placeholder for creating a new user
 const newUser = ref({
   username: '',
   email: '',
+  password: '',
   role: 'system_owner',
   department: ''
 });
@@ -26,6 +39,7 @@ const closeAddUserModal = () => {
   newUser.value = {
     username: '',
     email: '',
+    password: '',
     role: 'system_owner',
     department: ''
   };
@@ -33,7 +47,7 @@ const closeAddUserModal = () => {
 
 // Add a user (demo purposes)
 const addUser = async () => {
-  if (!newUser.value.username || !newUser.value.email) {
+  if (!newUser.value.username || !newUser.value.email || !newUser.value.password) {
     alert('Please fill in all required fields');
     return;
   }
@@ -76,11 +90,20 @@ const deleteUser = async (userId) => {
       </button>
     </div>
 
+    <div class="user-search-and-filter" style="margin-bottom: 24px;">
+      <input v-model="searchQuery" type="text" placeholder="Search by name, email, or role..." style="width: 100%; border-radius: 8px; border: 1px solid #D1D5DB; padding: 12px 16px; font-size: 14px; color: #111827; background-color: white; transition: border-color 0.2s; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">
+    </div>
+
     <div class="systems-container" style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); overflow: hidden;">
       <div v-if="users.length === 0" style="text-align: center; padding: 48px 24px;">
         <h3 style="font-size: 18px; font-weight: 500; color: #374151; margin-bottom: 8px;">No users registered yet</h3>
         <p style="color: #6b7280; margin-bottom: 24px;">Add a user to get started</p>
         <button @click="openAddUserModal" style="display: inline-flex; align-items: center; padding: 10px 20px; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;">Add User</button>
+      </div>
+
+      <div v-else-if="filteredUsers.length === 0" style="text-align: center; padding: 48px 24px;">
+        <h3 style="font-size: 18px; font-weight: 500; color: #374151; margin-bottom: 8px;">No users found</h3>
+        <p style="color: #6b7280;">Your search for "{{ searchQuery }}" did not return any results.</p>
       </div>
 
       <div v-else style="overflow-x: auto;">
@@ -95,7 +118,7 @@ const deleteUser = async (userId) => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="user in users" :key="user.id" style="border-bottom: 1px solid #e5e7eb;">
+            <tr v-for="user in filteredUsers" :key="user.id" style="border-bottom: 1px solid #e5e7eb;">
               <td style="padding: 16px 24px;">
                 <div style="font-weight: 500; color: #111827;">{{ user.username }}</div>
               </td>
@@ -129,6 +152,11 @@ const deleteUser = async (userId) => {
           <div>
             <label for="modal-email" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">Email <span style="color: #EF4444;">*</span></label>
             <input id="modal-email" v-model="newUser.email" type="email" style="width: 100%; border-radius: 6px; border: 1px solid #D1D5DB; padding: 10px 12px; font-size: 14px; line-height: 1.5; color: #111827; background-color: white; transition: border-color 0.2s; box-sizing: border-box;" placeholder="Enter email"/>
+          </div>
+          
+          <div>
+            <label for="modal-password" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">Password <span style="color: #EF4444;">*</span></label>
+            <input id="modal-password" v-model="newUser.password" type="password" style="width: 100%; border-radius: 6px; border: 1px solid #D1D5DB; padding: 10px 12px; font-size: 14px; line-height: 1.5; color: #111827; background-color: white; transition: border-color 0.2s; box-sizing: border-box;" placeholder="Enter initial password"/>
           </div>
           
           <div>
