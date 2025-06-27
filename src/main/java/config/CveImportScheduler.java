@@ -22,6 +22,8 @@ public class CveImportScheduler implements ServletContextListener {
     
     // Timer to schedule and manage the recurring task
     private Timer timer;
+    // Singleton service instance to avoid repeated instantiation
+    private static final VulnerabilityService vulnerabilityService = new VulnerabilityService();
     
     /**
      * Initializes the context by scheduling a daily task at 2:00 AM to import CVEs.
@@ -41,8 +43,8 @@ public class CveImportScheduler implements ServletContextListener {
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                // Calls the service that handles CVE import logic
-                new VulnerabilityService().importCVEs();
+                // Use singleton service instance instead of creating new ones
+                vulnerabilityService.importCVEs();
             }
         }, firstRun, period);
     }

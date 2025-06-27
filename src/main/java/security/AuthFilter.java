@@ -35,8 +35,6 @@ public class AuthFilter implements ContainerRequestFilter {
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
         
-        System.out.println();
-        
         // Handle CORS preflight requests (OPTIONS)
         if (requestContext.getRequest().getMethod().equals("OPTIONS")) {
             requestContext.abortWith(Response.status(Response.Status.OK).build());
@@ -45,21 +43,18 @@ public class AuthFilter implements ContainerRequestFilter {
         
         // Skip authentication for auth endpoints and health check
         String path = requestContext.getUriInfo().getPath();
-        System.out.println(path);
-        if (path.contains("auth") || path.endsWith("/health")) {
+        if (path.contains("auth") || path.contains("health")) {
             return;
         }
         
         // Get the Authorization header from the request
         String authHeader = requestContext.getHeaderString("Authorization");
         
-        System.out.println("Before auth header check");
         // Validate the Authorization header presence and scheme
         if (authHeader == null || !authHeader.startsWith(AUTH_SCHEME + " ")) {
             abortWithUnauthorized(requestContext, "Authorization header must be provided");
             return;
         }
-        System.out.println("After auth header check");
         // Extract the token from the Authorization header
         final String token = authHeader.substring(AUTH_SCHEME.length()).trim();
         
@@ -69,7 +64,6 @@ public class AuthFilter implements ContainerRequestFilter {
                 // Extract user details from the token
                 final String username = JWTUtil.getUsernameFromToken(token);
                 final String role = JWTUtil.getRoleFromToken(token);
-                System.out.println(role);
                 final List<String> roles = (role != null) ? Collections.singletonList(role) : Collections.emptyList();
                 
                 // Preserve original security context for secure() method

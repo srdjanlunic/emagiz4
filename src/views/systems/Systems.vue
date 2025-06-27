@@ -14,6 +14,12 @@ const loading = ref(false);
 const error = ref(null);
 
 const systems = computed(() => systemsStore.systems);
+const totalSystems = computed(() => systemsStore.totalSystems);
+const page = computed(() => systemsStore.page);
+const pageSize = computed(() => systemsStore.pageSize);
+
+const totalPages = computed(() => Math.ceil(totalSystems.value / pageSize.value));
+
 const isAdmin = computed(() => authStore.isAdmin);
 const isSecurityOfficer = computed(() => authStore.isSecurityOfficer);
 const isTechnicalExpert = computed(() => authStore.isTechnicalExpert);
@@ -78,7 +84,7 @@ onMounted(async () => {
       await systemsStore.fetchSystemsByOwner(userId.value);
     } else {
       // Fetch all systems
-      await systemsStore.fetchSystems();
+      await systemsStore.fetchSystems(1, 10);
     }
     
     // Fetch CVEs to get counts
@@ -126,6 +132,17 @@ onMounted(async () => {
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
           Add System
+        </button>
+      </div>
+      
+      <!-- Pagination -->
+      <div v-if="totalPages > 1" class="pagination-container">
+        <button @click="changePage(page - 1)" :disabled="page <= 1" class="pagination-button">
+          Previous
+        </button>
+        <span>Page {{ page }} of {{ totalPages }}</span>
+        <button @click="changePage(page + 1)" :disabled="page >= totalPages" class="pagination-button">
+          Next
         </button>
       </div>
       
@@ -312,5 +329,31 @@ tr:last-child td {
     width: 100%;
     justify-content: center;
   }
+}
+
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.pagination-button {
+  padding: 8px 16px;
+  background-color: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.pagination-button:hover:not(:disabled) {
+  background-color: #e5e7eb;
+}
+
+.pagination-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style> 

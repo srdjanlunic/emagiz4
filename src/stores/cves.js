@@ -305,6 +305,34 @@ export const useCVEsStore = defineStore('cves', {
         } finally {
             this.loading = false;
         }
+    },
+
+    async updateAffectedSystems(cveId, systemIds) {
+      const authStore = useAuthStore();
+      const notificationsStore = useNotificationsStore();
+      this.loading = true;
+      this.error = null;
+      
+      try {
+        await authStore.apiCall(`/vulnerabilities/${cveId}/systems`, {
+          method: 'PUT',
+          body: JSON.stringify({ systemIds }),
+        });
+        
+        // Update the local CVE data
+        const cveIndex = this.cves.findIndex(c => c.cveId === cveId);
+        if (cveIndex >= 0) {
+          this.cves[cveIndex].affectedSystems = systemIds;
+        }
+        
+        notificationsStore.addNotification('Affected systems updated successfully!', 'success');
+      } catch (error) {
+        this.error = error.message;
+        notificationsStore.addNotification(error.message || `Failed to update affected systems for CVE ${cveId}.`, 'error');
+        throw error;
+      } finally {
+        this.loading = false;
+      }
     }
   }
 }) 

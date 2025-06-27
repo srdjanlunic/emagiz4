@@ -90,8 +90,31 @@ const deleteUser = async (userId) => {
       </button>
     </div>
 
-    <div class="user-search-and-filter" style="margin-bottom: 24px;">
-      <input v-model="searchQuery" type="text" placeholder="Search by name, email, or role..." style="width: 100%; border-radius: 8px; border: 1px solid #D1D5DB; padding: 12px 16px; font-size: 14px; color: #111827; background-color: white; transition: border-color 0.2s; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">
+    <div class="user-search-and-filter" style="margin-bottom: 24px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+      <div style="flex: 1; min-width: 250px; max-width: 500px;">
+        <div style="position: relative;">
+          <svg style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #9ca3af; pointer-events: none;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input 
+            v-model="searchQuery" 
+            type="text" 
+            placeholder="Search by name, email, or role..." 
+            style="width: 100%; border-radius: 8px; border: 1px solid #D1D5DB; padding: 12px 16px 12px 40px; font-size: 14px; color: #111827; background-color: white; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); box-sizing: border-box;"
+            @focus="$event.target.style.borderColor = '#3b82f6'; $event.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)'"
+            @blur="$event.target.style.borderColor = '#D1D5DB'; $event.target.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.05)'"
+          >
+        </div>
+      </div>
+      <div v-if="searchQuery" style="display: flex; align-items: center; gap: 8px; color: #6b7280; font-size: 14px;">
+        <span>{{ filteredUsers.length }} of {{ users.length }} users</span>
+        <button 
+          @click="searchQuery = ''" 
+          style="color: #6b7280; hover:color: #374151; font-size: 12px; text-decoration: underline; background: none; border: none; cursor: pointer; padding: 2px 4px;"
+        >
+          Clear
+        </button>
+      </div>
     </div>
 
     <div class="systems-container" style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); overflow: hidden;">

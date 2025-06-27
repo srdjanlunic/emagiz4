@@ -97,4 +97,26 @@ public class SystemOwnerDAO {
         }
         return list;
     }
+    
+    /**
+     * Finds the owner of a specific system implementation.
+     *
+     * @param implId ID of the system implementation
+     * @return UUID of the owner, or null if no owner found
+     */
+    public UUID findOwnerBySystemImplementationId(UUID implId) {
+        String sql = "SELECT user_id FROM SystemOwner WHERE system_implementation_id = ? LIMIT 1";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setObject(1, implId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return (UUID) rs.getObject("user_id");
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to find owner", e);
+        }
+        return null;
+    }
 }

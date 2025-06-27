@@ -150,6 +150,51 @@ public class SystemDAO {
         }
         return systems;
     }
+
+    public List<ITSystem> findAll(int page, int pageSize) {
+        List<ITSystem> systems = new ArrayList<>();
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        
+        try {
+            conn = DatabaseConfig.getConnection();
+            stmt = conn.prepareStatement("SELECT * FROM ITSystem ORDER BY created_at DESC LIMIT ? OFFSET ?");
+            stmt.setInt(1, pageSize);
+            stmt.setInt(2, (page - 1) * pageSize);
+            rs = stmt.executeQuery();
+            
+            while (rs.next()) {
+                systems.add(mapResultSetToSystem(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            DatabaseUtil.closeResources(conn, stmt, rs);
+        }
+        return systems;
+    }
+
+    public int countAll() {
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        
+        try {
+            conn = DatabaseConfig.getConnection();
+            stmt = conn.prepareStatement("SELECT COUNT(*) FROM ITSystem");
+            rs = stmt.executeQuery();
+            
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            DatabaseUtil.closeResources(conn, stmt, rs);
+        }
+        return 0;
+    }
     
     /**
      * Updates an existing system's data.

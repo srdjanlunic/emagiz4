@@ -53,7 +53,7 @@ export const useNotificationsStore = defineStore('notifications', {
       this.fetchNotifications(); // Fetch immediately
       this.pollingIntervalId = setInterval(() => {
         this.fetchNotifications();
-      }, 15000); // Poll every 15 seconds
+      }, 30000); // Increased from 15 seconds to 30 seconds to reduce server load
     },
     stopPolling() {
       if (this.pollingIntervalId) {

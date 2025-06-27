@@ -14,7 +14,7 @@ public class EscalationDAO {
     public Escalation create(Escalation escalation) {
         String sql = "INSERT INTO escalations (id, system_vulnerability_id," +
                 "security_officer_id, escalation_reason, escalation_date, escalation_status," +
-                "tech_expert_id, response, response_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "tech_expert_id, response, response_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
@@ -44,7 +44,7 @@ public class EscalationDAO {
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement(
-                    "UPDATE escalations SET system_vulnerability_id = ?, security_officer_id = ?" +
+                    "UPDATE escalations SET system_vulnerability_id = ?, security_officer_id = ?, " +
                             "escalation_reason = ?, escalation_date = ?, escalation_status = ?, " +
                             "tech_expert_id = ?, response = ?, response_date = ? WHERE id = ?"
             );

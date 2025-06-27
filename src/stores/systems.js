@@ -6,13 +6,18 @@ export const useSystemsStore = defineStore('systems', {
     systems: [],
     loading: false,
     error: null,
-    lastFetchTime: null
+    lastFetchTime: null,
+    totalSystems: 0,
+    page: 1,
+    pageSize: 10
   }),
   
   getters: {
     getSystemById: (state) => (id) => state.systems.find(system => system.id === id),
     
     // Get systems owned by current user
+    // This getter will now only work on the current page of systems.
+    // For full functionality, this filtering should be moved to the backend.
     userSystems: (state) => {
       const authStore = useAuthStore();
       if (!authStore.user) return [];
@@ -20,27 +25,25 @@ export const useSystemsStore = defineStore('systems', {
     },
     
     // Get high criticality systems
+    // This getter will now only work on the current page of systems.
+    // For full functionality, this filtering should be moved to the backend.
     highCriticalitySystems: (state) => {
       return state.systems.filter(system => system.criticalityLevel === 'HIGH');
     }
   },
   
   actions: {
-    async fetchSystems() {
-      const now = new Date();
-      const fiveMinutes = 5 * 60 * 1000;
-
-      if (this.lastFetchTime && (now - new Date(this.lastFetchTime)) < fiveMinutes) {
-        return;
-      }
-
+    async fetchSystems(page = 1, pageSize = 10) {
       const authStore = useAuthStore();
       this.loading = true;
       this.error = null;
       
       try {
-        const data = await authStore.apiCall('/systems');
-        this.systems = data;
+        const data = await authStore.apiCall(`/systems?page=${page}&pageSize=${pageSize}`);
+        this.systems = data.systems;
+        this.totalSystems = data.totalSystems;
+        this.page = data.page;
+        this.pageSize = data.pageSize;
         this.lastFetchTime = new Date().toISOString();
       } catch (error) {
         this.error = error.message;
