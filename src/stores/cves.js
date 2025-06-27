@@ -161,6 +161,29 @@ export const useCVEsStore = defineStore('cves', {
         this.loading = false;
       }
     },
+
+    async fetchCVEsByOwner(ownerId) {
+      const authStore = useAuthStore();
+      this.loading = true;
+      this.error = null;
+      
+      try {
+        // Fetch CVEs for systems owned by the system owner
+        const data = await authStore.apiCall(`/vulnerabilities/owner/${ownerId}`);
+        const transformedCVEs = data.map(this.transformCVEData);
+        
+        // Replace the CVEs list with only CVEs for owner's systems
+        this.cves = transformedCVEs;
+        
+        return transformedCVEs;
+      } catch (error) {
+        this.error = error.message;
+        console.error('Error fetching CVEs by owner:', error);
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
     
     async searchCVEs(searchTerm) {
       const authStore = useAuthStore();
@@ -320,7 +343,7 @@ export const useCVEsStore = defineStore('cves', {
                     securityOfficerId: authStore.user.id
                 }),
             });
-            notificationsStore.addNotification(`CVE ${cveId} escalated successfully.`, 'success');
+            notificationsStore.addNotification(`CVE ${cveId} escalated to technical experts successfully.`, 'success');
         } catch (error) {
             this.error = error.message;
             notificationsStore.addNotification(error.message || `Failed to escalate CVE ${cveId}.`, 'error');

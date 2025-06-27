@@ -23,13 +23,12 @@ const loading = ref(false);
 const showUpdateForm = ref(false);
 const showEscalateModal = ref(false);
 const escalationReason = ref('');
-const selectedTechExpertId = ref(null);
 
 const showAssignSystemsModal = ref(false);
 const selectedSystemIds = ref([]);
 const assigningLoading = ref(false);
 
-const techExperts = computed(() => adminStore.users.filter(u => u.roleName === 'technical_expert'));
+// Technical experts pool - escalations are available to all experts
 
 // Check if the current user owns at least one affected system
 const canUpdateStatus = computed(() => {
@@ -51,6 +50,9 @@ const canManageSystems = computed(() => {
 // Check if user can escalate CVEs
 const canEscalate = computed(() => {
   if (!cve.value) return false;
+  
+  // Admins can always escalate
+  if (authStore.isAdmin) return true;
   
   // Security officers and system owners can escalate
   if (!authStore.isSecurityOfficer && !authStore.isSystemOwner) return false;
@@ -140,22 +142,29 @@ const updateCVEStatus = async () => {
 };
 
 const openEscalateModal = () => {
-    adminStore.fetchUsers(); // Make sure we have the user list
     showEscalateModal.value = true;
 };
 
 const escalateCVE = async () => {
-    if (!escalationReason.value || !selectedTechExpertId.value) {
-        alert('Please provide a reason and select a technical expert.');
+    if (!escalationReason.value) {
+        alert('Please provide a reason for escalation.');
         return;
     }
 
-    const systemIdToEscalate = cve.value.affectedSystems[0];
+    const systemIdToEscalate = cve.value.affectedSystems?.[0];
+    
+    if (!systemIdToEscalate) {
+        alert('This CVE is not associated with any systems. Please assign it to a system first.');
+        return;
+    }
     
     try {
-        await cvesStore.escalateCVE(cveId.value, systemIdToEscalate, escalationReason.value, selectedTechExpertId.value);
+        // Escalate without assigning to specific technical expert - available to all experts
+        await cvesStore.escalateCVE(cveId.value, systemIdToEscalate, escalationReason.value, null);
         showEscalateModal.value = false;
+        escalationReason.value = '';
     } catch (error) {
+        console.error('Escalation error:', error);
         alert('Failed to escalate CVE.');
     }
 };
@@ -330,23 +339,30 @@ onMounted(() => {
       <!-- Escalate Modal -->
       <div v-if="showEscalateModal" style="position: fixed; inset: 0; background-color: rgba(107, 114, 128, 0.75); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50;">
         <div style="background-color: white; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); padding: 24px; max-width: 500px; width: 100%;">
-            <h3 style="font-size: 20px; font-weight: 600; color: #111827; margin-bottom: 24px;">Escalate CVE</h3>
+            <h3 style="font-size: 20px; font-weight: 600; color: #111827; margin-bottom: 16px;">Escalate CVE to Technical Experts</h3>
+            <p style="color: #6b7280; font-size: 14px; margin-bottom: 24px;">
+              This CVE will be escalated and made available to all technical experts for analysis and recommendation.
+            </p>
             <div style="display: grid; gap: 16px; margin-bottom: 24px;">
                 <div>
-                    <label for="escalation-reason" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">Reason</label>
-                    <textarea id="escalation-reason" v-model="escalationReason" rows="3" style="width: 100%; border-radius: 6px; border: 1px solid #D1D5DB; padding: 10px 12px; font-size: 14px; line-height: 1.5; color: #111827; background-color: white; transition: border-color 0.2s; box-sizing: border-box;" placeholder="Provide a reason for escalation"></textarea>
+                    <label for="escalation-reason" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">Escalation Reason</label>
+                    <textarea id="escalation-reason" v-model="escalationReason" rows="4" style="width: 100%; border-radius: 6px; border: 1px solid #D1D5DB; padding: 10px 12px; font-size: 14px; line-height: 1.5; color: #111827; background-color: white; transition: border-color 0.2s; box-sizing: border-box;" placeholder="Describe why this CVE requires technical expert analysis (e.g., unclear impact, complex vulnerability, etc.)"></textarea>
                 </div>
-                <div>
-                    <label for="tech-expert" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">Technical Expert</label>
-                    <select id="tech-expert" v-model="selectedTechExpertId" style="width: 100%; border-radius: 6px; border: 1px solid #D1D5DB; padding: 10px 12px; font-size: 14px; line-height: 1.5; color: #111827; background-color: white; transition: border-color 0.2s; box-sizing: border-box;">
-                        <option :value="null" disabled>Select an expert</option>
-                        <option v-for="expert in techExperts" :key="expert.id" :value="expert.id">{{ expert.username }}</option>
-                    </select>
+                <div style="background-color: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 6px; padding: 12px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                        <svg style="width: 16px; height: 16px; color: #0ea5e9;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        <span style="font-size: 14px; font-weight: 500; color: #0ea5e9;">Escalation to Expert Pool</span>
+                    </div>
+                    <p style="font-size: 13px; color: #075985;">CVE will be available to all technical experts. Any expert can pick it up for analysis.</p>
                 </div>
             </div>
             <div style="display: flex; justify-content: flex-end; gap: 12px;">
                 <button @click="showEscalateModal = false" style="padding: 10px 20px; background-color: #F3F4F6; color: #374151; border-radius: 6px; font-weight: 500; border: none; cursor: pointer;">Cancel</button>
-                <button @click="escalateCVE" style="padding: 10px 20px; background-color: #f59e0b; color: white; border-radius: 6px; font-weight: 500; border: none; cursor: pointer;">Escalate</button>
+                <button @click="escalateCVE" style="padding: 10px 20px; background-color: #f59e0b; color: white; border-radius: 6px; font-weight: 500; border: none; cursor: pointer;">
+                  Escalate to Experts
+                </button>
             </div>
         </div>
       </div>
