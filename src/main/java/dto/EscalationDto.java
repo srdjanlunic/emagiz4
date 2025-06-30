@@ -6,7 +6,7 @@ import model.EscalationStatus;
 
 public class EscalationDto {
 
-    private Integer id;
+    private UUID id;
     private UUID systemVulnerabilityId;
     private UUID securityOfficerId;
     private String reason;
@@ -21,11 +21,11 @@ public class EscalationDto {
     public EscalationDto() {}
 
     // Getters and Setters
-    public Integer getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 

@@ -14,24 +14,26 @@ import java.sql.Types;
 public class EscalationDAO {
     
     public Escalation create(Escalation escalation) {
-        String sql = "INSERT INTO escalations (system_vulnerability_id," +
+        String sql = "INSERT INTO escalation (id, system_vulnerability_id," +
                 "security_officer_id, escalation_reason, escalation_date, escalation_status," +
-                "tech_expert_id, response, response_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                "tech_expert_id, response, response_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             
-            stmt.setObject(1, escalation.getSystemVulnerabilityId());
-            stmt.setObject(2, escalation.getSecurityOfficerId());
-            stmt.setString(3, escalation.getEscalationReason());
-            stmt.setTimestamp(4, escalation.getEscalationDate());
-            stmt.setString(5, escalation.getEscalationStatus().getValue());
+            escalation.setId(UUID.randomUUID()); // Generate UUID manually
+            stmt.setObject(1, escalation.getId());
+            stmt.setObject(2, escalation.getSystemVulnerabilityId());
+            stmt.setObject(3, escalation.getSecurityOfficerId());
+            stmt.setString(4, escalation.getEscalationReason());
+            stmt.setTimestamp(5, escalation.getEscalationDate());
+            stmt.setString(6, escalation.getEscalationStatus().getValue());
             if (escalation.getTechExpertId() == null) {
-                stmt.setNull(6, Types.OTHER);
+                stmt.setNull(7, Types.OTHER);
             } else {
-                stmt.setObject(6, escalation.getTechExpertId());
+                stmt.setObject(7, escalation.getTechExpertId());
             }
-            stmt.setString(7, escalation.getResponse());
-            stmt.setTimestamp(8, escalation.getResponseDate());
+            stmt.setString(8, escalation.getResponse());
+            stmt.setTimestamp(9, escalation.getResponseDate());
             
             int affectedRows = stmt.executeUpdate();
 
@@ -39,13 +41,6 @@ public class EscalationDAO {
                 return null;
             }
 
-            try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
-                if (generatedKeys.next()) {
-                    escalation.setId(generatedKeys.getInt(1));
-                } else {
-                    throw new SQLException("Creating escalation failed, no ID obtained.");
-                }
-            }
             return escalation;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -60,7 +55,7 @@ public class EscalationDAO {
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement(
-                    "UPDATE escalations SET system_vulnerability_id = ?, security_officer_id = ?, " +
+                    "UPDATE escalation SET system_vulnerability_id = ?, security_officer_id = ?, " +
                             "escalation_reason = ?, escalation_date = ?, escalation_status = ?, " +
                             "tech_expert_id = ?, response = ?, response_date = ? WHERE id = ?"
             );
@@ -73,7 +68,7 @@ public class EscalationDAO {
             stmt.setObject(6, escalation.getTechExpertId());
             stmt.setString(7, escalation.getResponse());
             stmt.setTimestamp(8, escalation.getResponseDate());
-            stmt.setInt(9, escalation.getId());
+            stmt.setObject(9, escalation.getId());
             
             int affectedRows = stmt.executeUpdate();
             if (affectedRows > 0) {
@@ -87,12 +82,12 @@ public class EscalationDAO {
         return null;
     }
     
-    public boolean delete(Integer id) {
-        String sql = "DELETE FROM escalations WHERE id = ?";
+    public boolean delete(UUID id) {
+        String sql = "DELETE FROM escalation WHERE id = ?";
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
-            stmt.setInt(1, id);
+            stmt.setObject(1, id);
             int affectedRows = stmt.executeUpdate();
             return affectedRows > 0;
             
@@ -102,15 +97,15 @@ public class EscalationDAO {
         return false;
     }
     
-    public Escalation findById(Integer id) {
+    public Escalation findById(UUID id) {
         Connection conn = null;
         PreparedStatement stmt = null;
         ResultSet rs = null;
         
         try {
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("SELECT * FROM escalations WHERE id = ?");
-            stmt.setInt(1, id);
+            stmt = conn.prepareStatement("SELECT * FROM escalation WHERE id = ?");
+            stmt.setObject(1, id);
             rs = stmt.executeQuery();
             
             if (rs.next()) {
@@ -131,7 +126,7 @@ public class EscalationDAO {
         
         try {
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("SELECT * FROM escalations WHERE system_vulnerability_id = ?");
+            stmt = conn.prepareStatement("SELECT * FROM escalation WHERE system_vulnerability_id = ?");
             stmt.setObject(1, systemVulnerabilityId);
             rs = stmt.executeQuery();
             
@@ -155,7 +150,7 @@ public class EscalationDAO {
         
         try {
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("SELECT * FROM escalations WHERE security_officer_id = ?");
+            stmt = conn.prepareStatement("SELECT * FROM escalation WHERE security_officer_id = ?");
             stmt.setObject(1, securityOfficerId);
             rs = stmt.executeQuery();
             
@@ -179,7 +174,7 @@ public class EscalationDAO {
         
         try {
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("SELECT * FROM escalations WHERE tech_expert_id = ?");
+            stmt = conn.prepareStatement("SELECT * FROM escalation WHERE tech_expert_id = ?");
             stmt.setObject(1, techExpertId);
             rs = stmt.executeQuery();
             
@@ -203,7 +198,7 @@ public class EscalationDAO {
         
         try {
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("SELECT * FROM escalations WHERE tech_expert_id = ? OR tech_expert_id IS NULL");
+            stmt = conn.prepareStatement("SELECT * FROM escalation WHERE tech_expert_id = ? OR tech_expert_id IS NULL");
             stmt.setObject(1, techExpertId);
             rs = stmt.executeQuery();
             
@@ -219,7 +214,7 @@ public class EscalationDAO {
     }
     
     public List<Escalation> findAll() {
-        String sql = "SELECT * FROM escalations";
+        String sql = "SELECT * FROM escalation";
         List<Escalation> escalations = new ArrayList<>();
         
         try (Connection conn = DatabaseConfig.getConnection();
@@ -238,7 +233,7 @@ public class EscalationDAO {
     
     private Escalation mapResultSetToEscalation(ResultSet rs) throws SQLException {
         Escalation escalation = new Escalation();
-        escalation.setId(rs.getInt("id"));
+        escalation.setId(rs.getObject("id", UUID.class));
         escalation.setSystemVulnerabilityId((UUID) rs.getObject("system_vulnerability_id"));
         escalation.setSecurityOfficerId((UUID) rs.getObject("security_officer_id"));
         escalation.setEscalationReason(rs.getString("escalation_reason"));

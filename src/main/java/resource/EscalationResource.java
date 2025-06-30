@@ -45,7 +45,7 @@ public class EscalationResource {
     @Path("/review/{id}")
     public Response reviewEscalation(@PathParam("id") String idStr, String responseJson) {
         try {
-            var id = Integer.parseInt(idStr);
+            var id = UUID.fromString(idStr);
             var request = JsonUtil.fromJson(responseJson, EscalationReviewDto.class);
             
             request.setResponse(request.getResponse().trim());
@@ -72,7 +72,7 @@ public class EscalationResource {
     @Path("/{id}")
     public Response updateEscalation(@PathParam("id") String idStr, String escalationJson) {
         try {
-            var id = Integer.parseInt(idStr);
+            var id = UUID.fromString(idStr);
             var escalation = JsonUtil.fromJson(escalationJson, Escalation.class);
             escalation.setId(id);
             
@@ -102,7 +102,7 @@ public class EscalationResource {
     @Path("/{id}")
     public Response deleteEscalation(@PathParam("id") String idStr) {
         try {
-            var id = Integer.parseInt(idStr);
+            var id = UUID.fromString(idStr);
             boolean deleted = svc.delete(id);
             if (deleted) {
                 return Response.ok(JsonUtil.toJson(Map.of("message", "Escalation deleted successfully"))).header("Cache-Control", "no-store").build();
@@ -124,7 +124,7 @@ public class EscalationResource {
     @Path("/{id}")
     public Response findById(@PathParam("id") String idStr) {
         try {
-            var id = Integer.parseInt(idStr);
+            var id = UUID.fromString(idStr);
             var escalation = svc.findById(id);
             if (escalation != null) {
                 return Response.ok(JsonUtil.toJson(escalation)).header("Cache-Control", "no-store").build();

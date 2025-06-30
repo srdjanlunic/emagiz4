@@ -5,7 +5,7 @@ import java.util.UUID;
 
 public class Escalation {
     
-    private Integer id;
+    private UUID id;
     private UUID systemVulnerabilityId;
     private UUID securityOfficerId;
     private String escalationReason;
@@ -15,11 +15,11 @@ public class Escalation {
     private String response;
     private Timestamp responseDate;
     
-    public Integer getId() {
+    public UUID getId() {
         return id;
     }
     
-    public void setId(Integer id) {
+    public void setId(UUID id) {
         this.id = id;
     }
     

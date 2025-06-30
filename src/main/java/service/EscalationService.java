@@ -63,7 +63,7 @@ public class EscalationService {
         return escalationDAO.create(escalation);
     }
     
-    public Escalation review(Integer id, EscalationReviewDto escalationReview) {
+    public Escalation review(UUID id, EscalationReviewDto escalationReview) {
         var escalation = escalationDAO.findById(id);
         
         escalation.setTechExpertId(escalationReview.getTechExpertId());
@@ -78,11 +78,11 @@ public class EscalationService {
         return escalationDAO.update(escalation);
     }
     
-    public boolean delete(Integer id) {
+    public boolean delete(UUID id) {
         return escalationDAO.delete(id);
     }
     
-    public Escalation findById(Integer id) {
+    public Escalation findById(UUID id) {
         return escalationDAO.findById(id);
     }
     
