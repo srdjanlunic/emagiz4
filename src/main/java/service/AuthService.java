@@ -46,8 +46,6 @@ public class AuthService {
         return password != null && !password.isBlank();
     }
     
-    
-    
     /**
      * Authenticates a user by username and password.
      *
@@ -56,12 +54,24 @@ public class AuthService {
      * @return the authenticated User object if credentials are valid; otherwise, null
      */
     public User authenticate(String username, String password) {
+        System.out.println("AuthService.authenticate called with username: " + username);
+        
         if(!isValidUsername(username) || !isValidPassword(password)) {
+            System.out.println("Invalid username or password format");
             return null;
         }
+        
         User user = userDAO.findByUsername(username);
-        if (user != null && verifyPassword(password, user.getPassword())) {
-            return user;
+        System.out.println("User found: " + (user != null ? user.getUsername() : "null"));
+        
+        if (user != null && user.getPassword() != null) {
+            System.out.println("Comparing passwords - provided: " + password + ", stored: " + user.getPassword());
+            if (user.getPassword().equals(password)) {
+                System.out.println("Password match successful");
+                return user;
+            } else {
+                System.out.println("Password mismatch");
+            }
         }
         return null;
     }
@@ -74,9 +84,13 @@ public class AuthService {
      */
     public Role getRoleByUser(User user) {
         if (user == null || user.getRoleId() == null) {
+            System.out.println("User or roleId is null");
             return null;
         }
-        return roleDAO.findById(user.getRoleId());
+        System.out.println("Looking up role with ID: " + user.getRoleId());
+        Role role = roleDAO.findById(user.getRoleId());
+        System.out.println("Role found: " + (role != null ? role.getName() : "null"));
+        return role;
     }
     
     /**
@@ -91,52 +105,6 @@ public class AuthService {
             return userDAO.findFirstByRoleId(role.getId());
         }
         return null;
-    }
-    
-    /**
-     * Hashes a plaintext password using BCrypt for secure storage.
-     *
-     * @param password the plaintext password to hash
-     * @return the BCrypt hashed password string
-     */
-    public String hashPassword(String password) {
-        return BCrypt.hashpw(password, BCrypt.gensalt());
-    }
-    
-    /**
-     * Verifies a plaintext password against a stored BCrypt hash.
-     *
-     * @param password   the plaintext password to verify
-     * @param storedHash the BCrypt hashed password stored in the database
-     * @return true if the password matches the stored hash, false otherwise
-     */
-    public boolean verifyPassword(String password, String storedHash) {
-        if (password == null || storedHash == null) {
-            return false;
-        }
-        return BCrypt.checkpw(password, storedHash);
-    }
-    
-    /**
-     * Stub for verifying simple Base64 encoded passwords (not implemented).
-     *
-     * @param password       the plaintext password to verify
-     * @param storedPassword the stored Base64 encoded password
-     * @return always returns false as method is not implemented
-     */
-    public boolean verifySimplePassword(String password, String storedPassword) {
-        return false;
-    }
-    
-    /**
-     * Stub for verifying legacy "hashed-" prefix passwords (not implemented).
-     *
-     * @param password       the plaintext password to verify
-     * @param storedPassword the stored legacy hashed password
-     * @return always returns false as method is not implemented
-     */
-    public boolean verifyLegacyPassword(String password, String storedPassword) {
-        return false;
     }
     
     /**

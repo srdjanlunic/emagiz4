@@ -28,7 +28,7 @@ CREATE TABLE "useraccount" (
     "id" UUID PRIMARY KEY,
     "username" TEXT NOT NULL UNIQUE,
     "email" TEXT NOT NULL UNIQUE,
-    "password_hash" TEXT NOT NULL,
+    "password" TEXT NOT NULL,
     "first_name" TEXT,
     "last_name" TEXT,
     "role_id" INTEGER,

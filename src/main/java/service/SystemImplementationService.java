@@ -28,7 +28,7 @@ public class SystemImplementationService {
     public SystemImplementationDto createSystemImplementation(SystemImplementationDto implementationDto) {
         SystemImplementation implementation = fromDto(implementationDto);
         int riskScore = calculateRiskScore(implementation);
-        implementation.setRiskScore(riskScore);
+        implementation.setRiskScore(String.valueOf(riskScore));
         implementation.setCreatedAt(new Timestamp(System.currentTimeMillis()));
         implementation.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
         SystemImplementation createdImpl = systemImplementationDAO.create(implementation);
@@ -75,7 +75,7 @@ public class SystemImplementationService {
             implementation.setVersion(implementationDto.getVersion());
             implementation.setEnvironment(implementationDto.getEnvironment());
             
-            implementation.setRiskScore(calculateRiskScore(implementation));
+            implementation.setRiskScore(String.valueOf(calculateRiskScore(implementation)));
             implementation.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
             
             SystemImplementation updatedImpl = systemImplementationDAO.update(implementation);
@@ -150,7 +150,7 @@ public class SystemImplementationService {
         SystemImplementation implementation = systemImplementationDAO.findById(implementationId);
         if (implementation != null) {
             int newRiskScore = calculateRiskScore(implementation);
-            implementation.setRiskScore(newRiskScore);
+            implementation.setRiskScore(String.valueOf(newRiskScore));
             systemImplementationDAO.update(implementation);
             return toDto(implementation);
         }

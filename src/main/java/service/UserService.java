@@ -41,10 +41,10 @@ public class UserService {
         user.setEmail(userRequest.getEmail());
         
         if (userRequest.getPassword() != null && !userRequest.getPassword().isEmpty()) {
-            user.setPassword(authService.hashPassword(userRequest.getPassword()));
+            user.setPassword(userRequest.getPassword());
         } else {
             String tempPassword = UUID.randomUUID().toString().substring(0, 8);
-            user.setPassword(authService.hashPassword(tempPassword));
+            user.setPassword(tempPassword);
         }
         
         Role role = roleService.getRoleByName(userRequest.getRole());
@@ -135,8 +135,8 @@ public class UserService {
     /**
      * Retrieves all users with a specific role.
      *
-     * @param roleId the UUID of the role
-     * @return list of Users with the given role
+     * @param roleId the role identifier
+     * @return list of users with the specified role
      */
     public List<User> getUsersByRole(UUID roleId) {
         return userDAO.findByRole(roleId);

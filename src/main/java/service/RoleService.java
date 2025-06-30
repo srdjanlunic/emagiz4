@@ -29,12 +29,12 @@ public class RoleService {
     }
     
     /**
-     * Finds a role by its unique ID.
+     * Retrieves a role by its unique identifier.
      *
-     * @param roleId the UUID of the role to find
-     * @return the Role object if found, otherwise null
+     * @param id the role ID
+     * @return the role if found, null otherwise
      */
-    public Role getRoleById(UUID roleId) {
-        return roleDAO.findById(roleId);
+    public Role getRoleById(UUID id) {
+        return roleDAO.findById(id);
     }
 }

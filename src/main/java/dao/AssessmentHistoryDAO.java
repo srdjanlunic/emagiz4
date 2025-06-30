@@ -23,37 +23,33 @@ public class AssessmentHistoryDAO {
     public AssessmentHistory create(AssessmentHistory history) {
         Connection conn = null;
         PreparedStatement stmt = null;
-        ResultSet rs = null;
         
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement(
-                    "INSERT INTO AssessmentHistory (assessment_id, changed_by, old_status, " +
-                            "new_status, change_reason, changed_at) VALUES (?, ?, ?::assessment_status, ?::assessment_status, ?, ?) RETURNING id",
-                    Statement.RETURN_GENERATED_KEYS
+                    "INSERT INTO AssessmentHistory (id, assessment_id, changed_by, old_status, " +
+                            "new_status, change_reason, changed_at) VALUES (?, ?, ?, ?::assessment_status, ?::assessment_status, ?, ?)"
             );
             
+            history.setId(UUID.randomUUID());
             // Set query parameters
-            stmt.setObject(1, history.getAssessmentId());
-            stmt.setObject(2, history.getChangedBy());
-            stmt.setString(3, history.getOldStatus() != null ? history.getOldStatus().getValue() : null);
-            stmt.setString(4, history.getNewStatus().getValue());
-            stmt.setString(5, history.getChangeReason());
-            stmt.setTimestamp(6, history.getChangedAt());
+            stmt.setObject(1, history.getId());
+            stmt.setObject(2, history.getAssessmentId());
+            stmt.setObject(3, history.getChangedBy());
+            stmt.setString(4, history.getOldStatus() != null ? history.getOldStatus().getValue() : null);
+            stmt.setString(5, history.getNewStatus().getValue());
+            stmt.setString(6, history.getChangeReason());
+            stmt.setTimestamp(7, new Timestamp(System.currentTimeMillis()));
             
             // Execute and return ID
             int affectedRows = stmt.executeUpdate();
             if (affectedRows > 0) {
-                rs = stmt.getGeneratedKeys();
-                if (rs.next()) {
-                    history.setId((UUID) rs.getObject(1));
-                    return history;
-                }
+                return history;
             }
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
-            DatabaseUtil.closeResources(conn, stmt, rs);
+            DatabaseUtil.closeResources(conn, stmt, null);
         }
         return null;
     }

@@ -244,8 +244,8 @@ export const useCVEsStore = defineStore('cves', {
           body: JSON.stringify({ status, notes: explanation }),
         });
         
-        // After updating, refetch the data for that system to get the new status
-        await this.fetchCVEBySystemAndCveId(systemId, cveId);
+        // After updating, refetch the complete CVE data to preserve all affected systems
+        await this.fetchCVEById(cveId);
 
         notificationsStore.addNotification('CVE status updated successfully!', 'success');
       } catch (error) {

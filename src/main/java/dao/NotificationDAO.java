@@ -20,18 +20,18 @@ public class NotificationDAO {
      * @return the saved notification with generated ID
      */
     public Notification create(Notification notification) {
-        String sql = "INSERT INTO \"notification\" (id, user_id, match_id, system_id, vulnerability_id, message, type, priority, is_read, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id";
+        String sql = "INSERT INTO Notification (id, user_id, match_id, system_id, vulnerability_id, message, type, priority, is_read, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         Connection conn = null;
         PreparedStatement stmt = null;
-        ResultSet rs = null;
         
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement(sql);
             
+            notification.setId(UUID.randomUUID());
             // Set all values for insert
-            stmt.setObject(1, UUID.randomUUID());
+            stmt.setObject(1, notification.getId());
             stmt.setObject(2, notification.getUserId());
             stmt.setObject(3, notification.getMatchId());
             stmt.setObject(4, notification.getSystemId());
@@ -40,17 +40,16 @@ public class NotificationDAO {
             stmt.setString(7, notification.getType());
             stmt.setString(8, notification.getPriority());
             stmt.setBoolean(9, notification.isRead());
-            stmt.setTimestamp(10, new Timestamp(notification.getCreatedAt().getTime()));
+            stmt.setTimestamp(10, new Timestamp(System.currentTimeMillis()));
             
-            rs = stmt.executeQuery();
-            if (rs.next()) {
-                notification.setId((UUID) rs.getObject("id"));
+            int affectedRows = stmt.executeUpdate();
+            if (affectedRows > 0) {
                 return notification;
             }
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
-            DatabaseUtil.closeResources(conn, stmt, rs);
+            DatabaseUtil.closeResources(conn, stmt, null);
         }
         return null;
     }

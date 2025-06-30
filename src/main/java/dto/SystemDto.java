@@ -16,7 +16,7 @@ public class SystemDto {
     // Implementation fields
     private String version;
     private String environment;
-    private int riskScore;
+    private String riskScore;
     private String dataClassification;
     private String criticalityLevel;
     private boolean internetFacing;
@@ -118,12 +118,12 @@ public class SystemDto {
     }
     
     /** @return Risk score */
-    public int getRiskScore() {
+    public String getRiskScore() {
         return riskScore;
     }
     
     /** @param riskScore Risk score */
-    public void setRiskScore(int riskScore) {
+    public void setRiskScore(String riskScore) {
         this.riskScore = riskScore;
     }
     

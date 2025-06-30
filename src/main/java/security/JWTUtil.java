@@ -28,6 +28,8 @@ public class JWTUtil {
      */
     public static String generateToken(User user) {
         try {
+            System.out.println("Generating JWT token for user: " + user.getUsername() + " with roleId: " + user.getRoleId());
+            
             ObjectNode header = mapper.createObjectNode();
             header.put("alg", "HS256");
             header.put("typ", "JWT");
@@ -39,8 +41,12 @@ public class JWTUtil {
             
             if (user.getRoleId() != null) {
                 Role role = roleDAO.findById(user.getRoleId());
+                System.out.println("Role lookup result: " + (role != null ? role.getName() : "null"));
                 if (role != null) {
                     payload.put("role", role.getName());
+                } else {
+                    System.out.println("Warning: Role not found for roleId: " + user.getRoleId());
+                    payload.put("role", "UNKNOWN");
                 }
             }
             
@@ -54,8 +60,11 @@ public class JWTUtil {
             
             String signature = createSignature(headerEncoded + "." + payloadEncoded);
             
+            System.out.println("JWT token generated successfully");
             return headerEncoded + "." + payloadEncoded + "." + signature;
         } catch (Exception e) {
+            System.out.println("Error generating JWT token: " + e.getMessage());
+            e.printStackTrace();
             throw new RuntimeException("Error generating JWT token", e);
         }
     }
@@ -124,10 +133,29 @@ public class JWTUtil {
     }
     
     /**
+     * Extracts the role ID (UUID) from the given JWT token.
+     *
+     * @param token the JWT token string
+     * @return the role ID contained in the token, or null if extraction fails
+     */
+    public static UUID getRoleIdFromToken(String token) {
+        try {
+            String[] parts = token.split("\\.");
+            ObjectNode payload = (ObjectNode) mapper.readTree(
+                    Base64.getUrlDecoder().decode(parts[1])
+            );
+            String roleIdStr = payload.get("roleId").asText();
+            return roleIdStr.isEmpty() ? null : UUID.fromString(roleIdStr);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+    
+    /**
      * Extracts the role name from the given JWT token.
      *
      * @param token the JWT token string
-     * @return the role name contained in the token, or null if not present or extraction fails
+     * @return the role name contained in the token, or null if extraction fails
      */
     public static String getRoleFromToken(String token) {
         try {
@@ -136,25 +164,6 @@ public class JWTUtil {
                     Base64.getUrlDecoder().decode(parts[1])
             );
             return payload.has("role") ? payload.get("role").asText() : null;
-        } catch (Exception e) {
-            return null;
-        }
-    }
-    
-    /**
-     * Extracts the role ID (UUID) from the given JWT token.
-     *
-     * @param token the JWT token string
-     * @return the role UUID contained in the token, or null if not present or extraction fails
-     */
-    public static UUID getRoleIdFromToken(String token) {
-        try {
-            String[] parts = token.split("\\.");
-            ObjectNode payload = (ObjectNode) mapper.readTree(
-                    Base64.getUrlDecoder().decode(parts[1])
-            );
-            String roleId = payload.get("roleId").asText();
-            return roleId.isEmpty() ? null : UUID.fromString(roleId);
         } catch (Exception e) {
             return null;
         }
@@ -180,18 +189,18 @@ public class JWTUtil {
     }
     
     /**
-     * Creates an HMAC SHA-256 signature for the given data using the secret key.
+     * Creates an HMAC SHA-256 signature for the given message.
      *
-     * @param data the data to sign
-     * @return the Base64 URL-safe encoded signature
-     * @throws RuntimeException if signature creation fails
+     * @param message the message to sign
+     * @return the Base64-encoded signature
+     * @throws RuntimeException if signing fails
      */
-    private static String createSignature(String data) {
+    private static String createSignature(String message) {
         try {
-            Mac mac = Mac.getInstance("HmacSHA256");
+            Mac sha256 = Mac.getInstance("HmacSHA256");
             SecretKeySpec secretKeySpec = new SecretKeySpec(SECRET_KEY.getBytes(), "HmacSHA256");
-            mac.init(secretKeySpec);
-            byte[] hash = mac.doFinal(data.getBytes());
+            sha256.init(secretKeySpec);
+            byte[] hash = sha256.doFinal(message.getBytes());
             return Base64.getUrlEncoder().withoutPadding().encodeToString(hash);
         } catch (Exception e) {
             throw new RuntimeException("Error creating signature", e);

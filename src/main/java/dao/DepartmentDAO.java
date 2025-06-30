@@ -29,7 +29,7 @@ public class DepartmentDAO {
             stmt.setString(2, department.getName());
             stmt.setString(3, department.getDescription());
             stmt.setObject(4, department.getOrganizationId());
-            stmt.setTimestamp(5, department.getCreatedAt());
+            stmt.setTimestamp(5, new Timestamp(System.currentTimeMillis()));
             
             stmt.executeUpdate();
             return department;

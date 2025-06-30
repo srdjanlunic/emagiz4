@@ -50,7 +50,7 @@ public class SystemService {
         implementation.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
         
         // Calculate and set the risk score
-        implementation.setRiskScore(calculateRiskScore(registrationDto));
+        implementation.setRiskScore(String.valueOf(calculateRiskScore(registrationDto)));
         
         // Save the implementation
         SystemImplementation createdImplementation = systemImplementationDAO.create(implementation);

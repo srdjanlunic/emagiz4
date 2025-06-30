@@ -40,7 +40,10 @@ public class AuthResource {
     @PermitAll
     public Response login(LoginRequest loginRequest) {
         try {
+            System.out.println("Login attempt for username: " + loginRequest.username);
+            
             if (loginRequest.username == null || loginRequest.password == null) {
+                System.out.println("Missing username or password");
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(Map.of("error", "Username and password are required"))
                         .header("Cache-Control", "no-store")
@@ -49,29 +52,39 @@ public class AuthResource {
             
             User user = authService.authenticate(loginRequest.username, loginRequest.password);
             if (user != null) {
+                System.out.println("User authenticated successfully: " + user.getUsername());
                 String token = JWTUtil.generateToken(user);
                 Role role = authService.getRoleByUser(user);
                 
-                System.out.println("User '" + user.getUsername() + "' logged in with role: " + role.getName().toUpperCase());
+                String roleName = (role != null) ? role.getName().toUpperCase() : "UNKNOWN";
+                
+
+                
+                String roleIdStr = (user.getRoleId() != null) ? user.getRoleId().toString() : "";
+                
+                System.out.println("User '" + user.getUsername() + "' logged in with role: " + roleName);
                 
                 Map<String, Object> response = new HashMap<>();
                 response.put("token", token);
                 response.put("user", Map.of(
                         "id", user.getId().toString(),
                         "username", user.getUsername(),
-                        "roleId", user.getRoleId() != null ? user.getRoleId().toString() : "",
-                        "roleName", role.getName().toUpperCase(),
+                        "roleId", roleIdStr,
+                        "roleName", roleName,
                         "organizationId", user.getOrganizationId() != null ? user.getOrganizationId().toString() : ""
                 ));
                 
                 return Response.ok(response).header("Cache-Control", "no-store").build();
             } else {
+                System.out.println("Authentication failed for username: " + loginRequest.username);
                 return Response.status(Response.Status.UNAUTHORIZED)
                         .entity(Map.of("error", "Invalid credentials"))
                         .header("Cache-Control", "no-store")
                         .build();
             }
         } catch (Exception e) {
+            System.out.println("Login error: " + e.getMessage());
+            e.printStackTrace();
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(Map.of("error", "Login failed: " + e.getMessage()))
                     .header("Cache-Control", "no-store")
@@ -176,6 +189,40 @@ public class AuthResource {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(Map.of("error", "Demo login failed: " + e.getMessage()))
                     .header("Cache-Control", "no-store")
+                    .build();
+        }
+    }
+    
+    /**
+     * Test endpoint to check role data in database.
+     *
+     * @return JSON response with role information
+     */
+    @GET
+    @Path("/test-roles")
+    @PermitAll
+    public Response testRoles() {
+        try {
+            dao.RoleDAO roleDAO = new dao.RoleDAO();
+            java.util.List<model.Role> roles = roleDAO.findAll();
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("totalRoles", roles.size());
+            response.put("roles", roles.stream().map(role -> Map.of(
+                "id", role.getId(),
+                "name", role.getName(),
+                "description", role.getDescription() != null ? role.getDescription() : "No description"
+            )).collect(java.util.stream.Collectors.toList()));
+            
+            // Test finding role by name
+            model.Role systemOwnerRole = roleDAO.findByName("SYSTEM_OWNER");
+            response.put("systemOwnerRoleLookup", systemOwnerRole != null ? 
+                Map.of("id", systemOwnerRole.getId(), "name", systemOwnerRole.getName()) : "null");
+            
+            return Response.ok(response).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(Map.of("error", "Test failed: " + e.getMessage()))
                     .build();
         }
     }

@@ -24,7 +24,6 @@ public class User {
     private Timestamp createdAt;
     private String roleName;
     private Timestamp updatedAt;
-    private String rawNvdData;
     
     /**
      * Default constructor initializes creation timestamp and active flag.
@@ -130,11 +129,7 @@ public class User {
     /** @param updatedAt update timestamp to set */
     public void setUpdatedAt(Timestamp updatedAt) { this.updatedAt = updatedAt; }
     
-    /** @return raw NVD data as JSON string */
-    public String getRawNvdData() { return rawNvdData; }
-    
-    /** @param rawNvdData raw NVD JSON data to set */
-    public void setRawNvdData(String rawNvdData) { this.rawNvdData = rawNvdData; }
+
     
     /**
      * Returns the full name by concatenating first and last names.

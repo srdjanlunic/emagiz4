@@ -14,7 +14,7 @@ public class SystemImplementationDto {
     private String criticalityLevel;
     private boolean internetFacing;
     private boolean sensitiveCustomerData;
-    private int riskScore;
+    private String riskScore;
     private String version;
     private String environment;
     private Timestamp createdAt;
@@ -37,7 +37,7 @@ public class SystemImplementationDto {
      * @param updatedAt             Last updated timestamp
      */
     public SystemImplementationDto(UUID id, UUID systemId, UUID departmentId, String dataClassification, String criticalityLevel,
-                                   boolean internetFacing, boolean sensitiveCustomerData, int riskScore,
+                                   boolean internetFacing, boolean sensitiveCustomerData, String riskScore,
                                    String version, String environment, Timestamp createdAt, Timestamp updatedAt) {
         this.id = id;
         this.systemId = systemId;
@@ -124,12 +124,12 @@ public class SystemImplementationDto {
     }
     
     /** @return Risk score */
-    public int getRiskScore() {
+    public String getRiskScore() {
         return riskScore;
     }
     
     /** @param riskScore Risk score */
-    public void setRiskScore(int riskScore) {
+    public void setRiskScore(String riskScore) {
         this.riskScore = riskScore;
     }
     

@@ -24,15 +24,12 @@ public class SystemDAO {
         PreparedStatement stmt = null;
         
         try {
-            System.out.println("Creating system: " + system.getName());
-            
             // Generate a UUID if none is set
             if (system.getId() == null) {
                 system.setId(UUID.randomUUID());
             }
             
             conn = DatabaseConfig.getConnection();
-            System.out.println("Database connection obtained");
             
             stmt = conn.prepareStatement(
                     "INSERT INTO \"itsystem\" (id, name, vendor, description, created_at) VALUES (?, ?, ?, ?, ?)"
@@ -42,23 +39,14 @@ public class SystemDAO {
             stmt.setString(2, system.getName());
             stmt.setString(3, system.getVendor());
             stmt.setString(4, system.getDescription());
-            stmt.setTimestamp(5, system.getCreatedAt());
+            stmt.setTimestamp(5, new Timestamp(System.currentTimeMillis()));
             
-            System.out.println("Executing insert statement with ID: " + system.getId());
             int affectedRows = stmt.executeUpdate();
-            System.out.println("Affected rows: " + affectedRows);
             
             if (affectedRows > 0) {
-                System.out.println("System created successfully with ID: " + system.getId());
                 return system;
-            } else {
-                System.out.println("No rows affected by insert");
             }
         } catch (SQLException e) {
-            System.out.println("SQLException in SystemDAO.create: " + e.getMessage());
-            e.printStackTrace();
-        } catch (Exception e) {
-            System.out.println("Exception in SystemDAO.create: " + e.getMessage());
             e.printStackTrace();
         } finally {
             DatabaseUtil.closeResources(conn, stmt, null);

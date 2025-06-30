@@ -14,7 +14,7 @@ public class SystemImplementation {
     private String criticalityLevel;
     private boolean internetFacing;
     private boolean sensitiveCustomerData;
-    private int riskScore;
+    private String riskScore;
     private String version;
     private String environment;
     private Timestamp createdAt;
@@ -28,7 +28,7 @@ public class SystemImplementation {
         this.updatedAt = new Timestamp(System.currentTimeMillis());
         this.internetFacing = false;
         this.sensitiveCustomerData = false;
-        this.riskScore = 0;
+        this.riskScore = null;
     }
     
     /**
@@ -117,15 +117,15 @@ public class SystemImplementation {
     
     /**
      * Gets the risk score assigned to this implementation.
-     * @return Risk score integer
+     * @return Risk score string
      */
-    public int getRiskScore() { return riskScore; }
+    public String getRiskScore() { return riskScore; }
     
     /**
      * Sets the risk score assigned to this implementation.
-     * @param riskScore Risk score integer to set
+     * @param riskScore Risk score string to set
      */
-    public void setRiskScore(int riskScore) { this.riskScore = riskScore; }
+    public void setRiskScore(String riskScore) { this.riskScore = riskScore; }
     
     /**
      * Gets the version of the system implementation.

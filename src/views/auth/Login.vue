@@ -49,11 +49,14 @@ const fillDemo = (role) => {
     username.value = 'admin';
     password.value = 'admin123';
   } else if (role === 'security') {
-    username.value = 'security';
-    password.value = 'security123';
-  } else {
-    username.value = 'system_owner';
+    username.value = 'secofficer';
+    password.value = 'officer123';
+  } else if (role === 'owner') {
+    username.value = 'sysowner';
     password.value = 'owner123';
+  } else if (role === 'expert') {
+    username.value = 'techexpert';
+    password.value = 'expert123';
   }
 };
 </script>
@@ -106,17 +109,17 @@ const fillDemo = (role) => {
       <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
         <p style="font-size: 14px; color: #6b7280; margin-bottom: 12px; text-align: center;">Demo Accounts</p>
         <div style="display: grid; gap: 8px;">
-          <button @click="handleDemoLogin('ADMIN')" style="width: 100%; padding: 8px 16px; background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+          <button @click="handleDemoLogin('admin')" style="width: 100%; padding: 8px 16px; background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
             Admin (admin / admin123)
           </button>
-          <button @click="handleDemoLogin('SECURITY_OFFICER')" style="width: 100%; padding: 8px 16px; background-color: #f8fafc; color: #475569; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
-            Security Officer (security / security123)
+          <button @click="handleDemoLogin('security_officer')" style="width: 100%; padding: 8px 16px; background-color: #f8fafc; color: #475569; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+            Security Officer (secofficer / officer123)
           </button>
-          <button @click="handleDemoLogin('SYSTEM_OWNER')" style="width: 100%; padding: 8px 16px; background-color: #f9fafb; color: #374151; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
-            System Owner (system_owner / owner123)
+          <button @click="handleDemoLogin('system_owner')" style="width: 100%; padding: 8px 16px; background-color: #f9fafb; color: #374151; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+            System Owner (sysowner / owner123)
           </button>
-          <button @click="handleDemoLogin('TECHNICAL_EXPERT')" style="width: 100%; padding: 8px 16px; background-color: #f9fafb; color: #374151; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
-            Technical Expert (technical_expert / expert123)
+          <button @click="handleDemoLogin('technical_expert')" style="width: 100%; padding: 8px 16px; background-color: #f9fafb; color: #374151; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+            Technical Expert (techexpert / expert123)
           </button>
         </div>
       </div>

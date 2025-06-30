@@ -22,31 +22,26 @@ public class OrganizationDAO {
     public Organization create(Organization organization) {
         Connection conn = null;
         PreparedStatement stmt = null;
-        ResultSet rs = null;
         
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement(
-                    "INSERT INTO Organization (id, name, created_at) VALUES (?, ?, ?) RETURNING id",
-                    Statement.RETURN_GENERATED_KEYS
+                    "INSERT INTO Organization (id, name, created_at) VALUES (?, ?, ?)"
             );
             
-            stmt.setObject(1, UUID.randomUUID());
+            organization.setId(UUID.randomUUID());
+            stmt.setObject(1, organization.getId());
             stmt.setString(2, organization.getName());
-            stmt.setTimestamp(3, organization.getCreatedAt());
+            stmt.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
             
             int affectedRows = stmt.executeUpdate();
             if (affectedRows > 0) {
-                rs = stmt.getGeneratedKeys();
-                if (rs.next()) {
-                    organization.setId((UUID) rs.getObject(1));
-                    return organization;
-                }
+                return organization;
             }
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
-            DatabaseUtil.closeResources(conn, stmt, rs);
+            DatabaseUtil.closeResources(conn, stmt, null);
         }
         return null;
     }

@@ -22,31 +22,26 @@ public class SystemImplementationDAO {
     public SystemImplementation create(SystemImplementation implementation) {
         Connection conn = null;
         PreparedStatement stmt = null;
-        ResultSet rs = null;
         
         try {
-            System.out.println("=== SystemImplementationDAO.create - START ===");
-            
             conn = DatabaseConfig.getConnection();
             
             // Validate existence of referenced ITSystem
-            PreparedStatement checkSystemStmt = conn.prepareStatement("SELECT id FROM itsystem WHERE id = ?");
-            checkSystemStmt.setObject(1, implementation.getSystemId());
-            ResultSet systemRs = checkSystemStmt.executeQuery();
-            if (!systemRs.next()) {
-                System.out.println("System not found");
-                return null;
+            try (PreparedStatement checkSystemStmt = conn.prepareStatement("SELECT id FROM itsystem WHERE id = ?")) {
+                checkSystemStmt.setObject(1, implementation.getSystemId());
+                try (ResultSet systemRs = checkSystemStmt.executeQuery()) {
+                    if (!systemRs.next()) {
+                        return null; // System not found
+                    }
+                }
             }
-            systemRs.close();
-            checkSystemStmt.close();
             
             // Insert the implementation
             String sql = "INSERT INTO systemimplementation (id, system_id, department_id, data_classification, " +
                     "criticality_level, internet_facing, sensitive_customer_data, risk_score, version, " +
                     "environment, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             
-            UUID newId = UUID.randomUUID();
-            implementation.setId(newId);
+            implementation.setId(UUID.randomUUID());
             
             stmt = conn.prepareStatement(sql);
             stmt.setObject(1, implementation.getId());
@@ -56,23 +51,21 @@ public class SystemImplementationDAO {
             stmt.setString(5, implementation.getCriticalityLevel());
             stmt.setBoolean(6, implementation.isInternetFacing());
             stmt.setBoolean(7, implementation.isSensitiveCustomerData());
-            stmt.setInt(8, implementation.getRiskScore());
+            stmt.setString(8, implementation.getRiskScore());
             stmt.setString(9, implementation.getVersion());
             stmt.setString(10, implementation.getEnvironment());
-            stmt.setTimestamp(11, implementation.getCreatedAt());
-            stmt.setTimestamp(12, implementation.getUpdatedAt());
+            Timestamp now = new Timestamp(System.currentTimeMillis());
+            stmt.setTimestamp(11, now);
+            stmt.setTimestamp(12, now);
             
             int affectedRows = stmt.executeUpdate();
             if (affectedRows > 0) {
-                System.out.println("Implementation created");
                 return implementation;
             }
         } catch (SQLException e) {
-            System.out.println("SQL Exception in create: " + e.getMessage());
             e.printStackTrace();
         } finally {
-            DatabaseUtil.closeResources(conn, stmt, rs);
-            System.out.println("=== SystemImplementationDAO.create - END ===");
+            DatabaseUtil.closeResources(conn, stmt, null);
         }
         return null;
     }
@@ -151,7 +144,7 @@ public class SystemImplementationDAO {
             stmt.setString(4, implementation.getCriticalityLevel());
             stmt.setBoolean(5, implementation.isInternetFacing());
             stmt.setBoolean(6, implementation.isSensitiveCustomerData());
-            stmt.setInt(7, implementation.getRiskScore());
+            stmt.setString(7, implementation.getRiskScore());
             stmt.setString(8, implementation.getVersion());
             stmt.setString(9, implementation.getEnvironment());
             stmt.setTimestamp(10, implementation.getUpdatedAt());
@@ -251,8 +244,8 @@ public class SystemImplementationDAO {
      */
     public List<String> findSystemIdsByVulnerabilityId(UUID vulnerabilityId) {
         List<String> systemIds = new ArrayList<>();
-        String sql = "SELECT DISTINCT si.system_id FROM systemimplementation si " +
-                "JOIN VulnerabilityMatch vm ON si.id = vm.system_implementation_id " +
+        String sql = "SELECT DISTINCT si.system_id FROM \"systemimplementation\" si " +
+                "JOIN \"vulnerabilitymatch\" vm ON si.id = vm.system_implementation_id " +
                 "WHERE vm.vulnerability_id = ?";
         
         try (Connection conn = DatabaseConfig.getConnection();
@@ -282,7 +275,7 @@ public class SystemImplementationDAO {
         implementation.setCriticalityLevel(rs.getString("criticality_level"));
         implementation.setInternetFacing(rs.getBoolean("internet_facing"));
         implementation.setSensitiveCustomerData(rs.getBoolean("sensitive_customer_data"));
-        implementation.setRiskScore(rs.getInt("risk_score"));
+        implementation.setRiskScore(rs.getString("risk_score"));
         implementation.setVersion(rs.getString("version"));
         implementation.setEnvironment(rs.getString("environment"));
         implementation.setCreatedAt(rs.getTimestamp("created_at"));

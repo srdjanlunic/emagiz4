@@ -21,6 +21,16 @@ export const useAuthStore = defineStore('auth', {
   },
   
   actions: {
+    async initialize() {
+      // Initialize the auth store - validate current token if exists
+      if (this.token) {
+        const isValid = await this.validateToken();
+        if (!isValid) {
+          this.logout();
+        }
+      }
+    },
+
     async login(credentials) {
       this.loading = true;
       this.error = null;
@@ -43,12 +53,23 @@ export const useAuthStore = defineStore('auth', {
         this.token = data.token;
         this.user = data.user;
         
+        // Fix role name mapping for known roles
+        if (this.user && this.user.roleName === 'UNKNOWN') {
+          const roleMap = {
+            '1': 'ADMIN',
+            '2': 'SYSTEM_OWNER', 
+            '3': 'SECURITY_OFFICER',
+            '4': 'TECHNICAL_EXPERT'
+          };
+          this.user.roleName = roleMap[this.user.roleId] || 'UNKNOWN';
+        }
+        
         console.log("User logged in:", this.user);
         console.log("User role:", this.user?.roleName);
         
         // Store in localStorage
         localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('user', JSON.stringify(this.user));
         
         return data;
       } catch (error) {

@@ -22,7 +22,7 @@ public class UserDepartmentDAO {
      * @param departmentId ID of the department
      */
     public void assignUserToDepartment(UUID userId, UUID departmentId) {
-        String sql = "INSERT INTO UserDepartment (user_id, department_id) VALUES (?, ?)";
+        String sql = "INSERT INTO \"userdepartment\" (user_id, department_id) VALUES (?, ?)";
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setObject(1, userId);
@@ -41,7 +41,7 @@ public class UserDepartmentDAO {
      * @return true if the record was deleted, false otherwise
      */
     public boolean remove(UUID userId, UUID departmentId) {
-        String sql = "DELETE FROM UserDepartment WHERE user_id = ? AND department_id = ?";
+        String sql = "DELETE FROM \"userdepartment\" WHERE user_id = ? AND department_id = ?";
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setObject(1, userId);
@@ -59,8 +59,8 @@ public class UserDepartmentDAO {
      * @return list of Department objects
      */
     public List<Department> findDepartmentsByUser(UUID userId) {
-        String sql = "SELECT d.* FROM Department d "
-                + "JOIN UserDepartment ud ON d.id = ud.department_id "
+        String sql = "SELECT d.* FROM \"department\" d "
+                + "JOIN \"userdepartment\" ud ON d.id = ud.department_id "
                 + "WHERE ud.user_id = ?";
         List<Department> list = new ArrayList<>();
         try (Connection conn = DatabaseConfig.getConnection();
@@ -90,9 +90,9 @@ public class UserDepartmentDAO {
      * @return list of User objects
      */
     public List<User> findUsersByDepartment(UUID departmentId) {
-        String sql = "SELECT u.*, r.name AS role_name FROM UserAccount u "
-                + "JOIN UserDepartment ud ON u.id = ud.user_id "
-                + "LEFT JOIN Role r ON u.role_id = r.id "
+        String sql = "SELECT u.*, r.name AS role_name FROM \"useraccount\" u "
+                + "JOIN \"userdepartment\" ud ON u.id = ud.user_id "
+                + "LEFT JOIN \"role\" r ON u.role_id = r.id "
                 + "WHERE ud.department_id = ? AND u.is_active = true";
         List<User> list = new ArrayList<>();
         try (Connection conn = DatabaseConfig.getConnection();

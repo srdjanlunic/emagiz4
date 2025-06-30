@@ -52,7 +52,7 @@ public class UserDAO {
      * @return the created user with ID set, or null if creation failed
      */
     public User create(User user) {
-        String sql = "INSERT INTO useraccount (id, username, password_hash, email, first_name, last_name, role_id, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO \"useraccount\" (id, username, password, email, first_name, last_name, role_id, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
@@ -88,7 +88,7 @@ public class UserDAO {
         
         try {
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("SELECT u.*, r.name as role_name FROM UserAccount u LEFT JOIN Role r ON u.role_id = r.id WHERE u.id = ?");
+            stmt = conn.prepareStatement("SELECT u.*, r.name as role_name FROM \"useraccount\" u LEFT JOIN \"role\" r ON u.role_id = r.id WHERE u.id = ?");
             stmt.setObject(1, id);
             rs = stmt.executeQuery();
             
@@ -109,10 +109,9 @@ public class UserDAO {
      * @return list of UserDto with basic information
      */
     public List<UserDto> findAll() {
-        String sql = "SELECT u.id, u.username, u.email, r.role_name " +
-                "FROM useraccount u " +
-                "LEFT JOIN user_role ur ON u.id = ur.user_id " +
-                "LEFT JOIN role r ON ur.role_id = r.id WHERE u.is_active = true";
+        String sql = "SELECT u.id, u.username, u.email, r.name as role_name " +
+                "FROM \"useraccount\" u " +
+                "LEFT JOIN \"role\" r ON u.role_id = r.id WHERE u.is_active = true";
         List<UserDto> users = new ArrayList<>();
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
@@ -146,7 +145,7 @@ public class UserDAO {
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement(
-                    "UPDATE UserAccount SET username = ?, email = ?, first_name = ?, last_name = ?, " +
+                    "UPDATE \"useraccount\" SET username = ?, email = ?, first_name = ?, last_name = ?, " +
                             "role_id = ?, organization_id = ?, is_active = ? WHERE id = ?"
             );
             
@@ -183,7 +182,7 @@ public class UserDAO {
         
         try {
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("UPDATE UserAccount SET is_active = false WHERE id = ?");
+            stmt = conn.prepareStatement("UPDATE \"useraccount\" SET is_active = false WHERE id = ?");
             stmt.setObject(1, id);
             
             return stmt.executeUpdate() > 0;
@@ -210,8 +209,8 @@ public class UserDAO {
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement(
-                    "SELECT u.* FROM UserAccount u " +
-                            "JOIN UserDepartment ud ON u.id = ud.user_id " +
+                    "SELECT u.* FROM \"useraccount\" u " +
+                            "JOIN \"userdepartment\" ud ON u.id = ud.user_id " +
                             "WHERE ud.department_id = ? AND u.is_active = true"
             );
             stmt.setObject(1, departmentId);
@@ -229,10 +228,10 @@ public class UserDAO {
     }
     
     /**
-     * Finds all users by a given role.
+     * Finds all users in a specific role.
      *
-     * @param roleId the UUID of the role
-     * @return list of users with the given role
+     * @param roleId the role ID to search for
+     * @return list of users with that role
      */
     public List<User> findByRole(UUID roleId) {
         List<User> users = new ArrayList<>();
@@ -242,7 +241,9 @@ public class UserDAO {
         
         try {
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("SELECT * FROM UserAccount WHERE role_id = ? AND is_active = true");
+            stmt = conn.prepareStatement(
+                    "SELECT * FROM \"useraccount\" WHERE role_id = ? AND is_active = true"
+            );
             stmt.setObject(1, roleId);
             rs = stmt.executeQuery();
             
@@ -260,8 +261,8 @@ public class UserDAO {
     /**
      * Finds the first user with a specific role ID.
      *
-     * @param roleId the UUID of the role
-     * @return the first matching user, or null if none found
+     * @param roleId the role ID to search for
+     * @return the first user with that role, or null if none found
      */
     public User findFirstByRoleId(UUID roleId) {
         Connection conn = null;
@@ -270,7 +271,9 @@ public class UserDAO {
         
         try {
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("SELECT * FROM UserAccount WHERE role_id = ? AND is_active = true LIMIT 1");
+            stmt = conn.prepareStatement(
+                    "SELECT * FROM \"useraccount\" WHERE role_id = ? AND is_active = true LIMIT 1"
+            );
             stmt.setObject(1, roleId);
             rs = stmt.executeQuery();
             
@@ -286,34 +289,33 @@ public class UserDAO {
     }
     
     /**
-     * Converts a ResultSet row into a User object.
+     * Maps a ResultSet row to a User object.
      *
-     * @param rs the SQL ResultSet
-     * @return the corresponding User object
-     * @throws SQLException if a column access error occurs
+     * @param rs the ResultSet positioned at a valid row
+     * @return a User object with data from the row
+     * @throws SQLException if database access error occurs
      */
     public User mapResultSetToUser(ResultSet rs) throws SQLException {
         User user = new User();
         user.setId((UUID) rs.getObject("id"));
         user.setUsername(rs.getString("username"));
-        user.setPassword(rs.getString("password_hash"));
+        user.setPassword(rs.getString("password"));
         user.setEmail(rs.getString("email"));
         user.setFirstName(rs.getString("first_name"));
         user.setLastName(rs.getString("last_name"));
-        if (hasColumn(rs, "role_id")) {
-            user.setRoleId((UUID) rs.getObject("role_id"));
-        }
-        if (hasColumn(rs, "organization_id")) {
-            user.setOrganizationId((UUID) rs.getObject("organization_id"));
-        }
+        user.setRoleId((UUID) rs.getObject("role_id"));
+        user.setOrganizationId((UUID) rs.getObject("organization_id"));
         user.setActive(rs.getBoolean("is_active"));
         user.setCreatedAt(rs.getTimestamp("created_at"));
-        if (hasColumn(rs, "updated_at")) {
+        
+        if (hasColumn(rs, "updated_at") && rs.getTimestamp("updated_at") != null) {
             user.setUpdatedAt(rs.getTimestamp("updated_at"));
         }
-        if (hasColumn(rs, "role_name")) {
+        
+        if (hasColumn(rs, "role_name") && rs.getString("role_name") != null) {
             user.setRoleName(rs.getString("role_name"));
         }
+        
         return user;
     }
     

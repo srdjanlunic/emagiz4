@@ -33,17 +33,18 @@ public class ReportLogDAO {
      * @return the same object with ID and timestamp set
      * @throws SQLException if insert fails
      */
-    public ReportLog create(ReportLog rl) throws SQLException {
+    public ReportLog create(ReportLog rl) {
         String sql =
-                "INSERT INTO reportlog (" +
+                "INSERT INTO ReportLog (" +
                         "  id, generated_by, type, title, date_range_start, date_range_end, filters, file_path, file_format, generated_at" +
-                        ") VALUES (?,?,?,?,?,?,?,?,?,?) RETURNING id, generated_at";
+                        ") VALUES (?,?,?,?,?,?,?,?,?,?)";
         
         try (
                 Connection conn = DatabaseConfig.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)
         ) {
-            ps.setObject(1, UUID.randomUUID());
+            rl.setId(UUID.randomUUID());
+            ps.setObject(1, rl.getId());
             ps.setObject(2, rl.getGeneratedBy());
             ps.setString(3, rl.getType());
             ps.setString(4, rl.getTitle());
@@ -52,16 +53,16 @@ public class ReportLogDAO {
             ps.setString(7, rl.getFilters());
             ps.setString(8, rl.getFilePath());
             ps.setString(9, rl.getFileFormat());
-            ps.setTimestamp(10, rl.getGeneratedAt());
+            ps.setTimestamp(10, new Timestamp(System.currentTimeMillis()));
             
-            var rs = ps.executeQuery();
-            if (rs.next()) {
-                rl.setId((UUID) rs.getObject("id"));
-                rl.setGeneratedAt(rs.getTimestamp("generated_at"));
+            int affectedRows = ps.executeUpdate();
+            if (affectedRows > 0) {
                 return rl;
             }
-            return null;
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
+        return null;
     }
     
     /**
@@ -72,7 +73,7 @@ public class ReportLogDAO {
      * @throws SQLException if query fails
      */
     public Timestamp findLastByType(String type) throws SQLException {
-        String sql = "SELECT generated_at FROM reportlog WHERE type = ? ORDER BY generated_at DESC LIMIT 1";
+        String sql = "SELECT generated_at FROM ReportLog WHERE type = ? ORDER BY generated_at DESC LIMIT 1";
         var rs = DatabaseUtil.executeQuery(sql, type);
         if (rs.next()) return rs.getTimestamp("generated_at");
         return null;
@@ -85,7 +86,7 @@ public class ReportLogDAO {
      * @throws SQLException if query fails
      */
     public List<ReportLog> findAll() throws SQLException {
-        String sql = "SELECT * FROM reportlog ORDER BY generated_at DESC";
+        String sql = "SELECT * FROM ReportLog ORDER BY generated_at DESC";
         List<ReportLog> out = new ArrayList<>();
         
         try (

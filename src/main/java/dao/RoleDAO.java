@@ -22,31 +22,31 @@ public class RoleDAO {
     public Role create(Role role) {
         Connection conn = null;
         PreparedStatement stmt = null;
-        ResultSet rs = null;
-        
+
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement(
-                    "INSERT INTO Role (name, description, created_at) VALUES (?, ?, ?) RETURNING id",
+                    "INSERT INTO \"role\" (name, description, created_at) VALUES (?, ?, ?)",
                     Statement.RETURN_GENERATED_KEYS
             );
-            
+
             stmt.setString(1, role.getName());
             stmt.setString(2, role.getDescription());
-            stmt.setTimestamp(3, role.getCreatedAt());
-            
+            stmt.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
+
             int affectedRows = stmt.executeUpdate();
             if (affectedRows > 0) {
-                rs = stmt.getGeneratedKeys();
-                if (rs.next()) {
-                    role.setId((UUID) rs.getObject(1));
-                    return role;
+                try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        role.setId(UUID.fromString(generatedKeys.getString(1)));
+                    }
                 }
+                return role;
             }
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
-            DatabaseUtil.closeResources(conn, stmt, rs);
+            DatabaseUtil.closeResources(conn, stmt, null);
         }
         return null;
     }
@@ -58,7 +58,7 @@ public class RoleDAO {
      */
     public List<Role> findAll() {
         List<Role> roles = new ArrayList<>();
-        String sql = "SELECT * FROM Role ORDER BY name";
+        String sql = "SELECT * FROM \"role\" ORDER BY name";
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
@@ -79,7 +79,7 @@ public class RoleDAO {
      * @return the matching role or null
      */
     public Role findByName(String roleName) {
-        String sql = "SELECT * FROM role WHERE LOWER(name) = LOWER(?)";
+        String sql = "SELECT * FROM \"role\" WHERE LOWER(name) = LOWER(?)";
         Connection conn = null;
         PreparedStatement stmt = null;
         ResultSet rs = null;
@@ -89,11 +89,7 @@ public class RoleDAO {
             stmt.setString(1, roleName);
             rs = stmt.executeQuery();
             if (rs.next()) {
-                Role role = new Role();
-                role.setId((UUID) rs.getObject("id"));
-                role.setName(rs.getString("name"));
-                role.setDescription(rs.getString("description"));
-                return role;
+                return mapResultSetToRole(rs);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -111,16 +107,22 @@ public class RoleDAO {
      */
     public Role findById(UUID id) {
         Role role = null;
-        String sql = "SELECT * FROM Role WHERE id = ?";
+        String sql = "SELECT * FROM \"role\" WHERE id = ?";
+        System.out.println("RoleDAO.findById called with ID: " + id);
+        System.out.println("SQL: " + sql);
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setObject(1, id);
+            stmt.setString(1, id.toString());
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     role = mapResultSetToRole(rs);
+                    System.out.println("Role found: " + role.getName() + " (ID: " + role.getId() + ")");
+                } else {
+                    System.out.println("No role found with ID: " + id);
                 }
             }
         } catch (SQLException e) {
+            System.out.println("Error finding role by ID: " + e.getMessage());
             e.printStackTrace();
         }
         return role;
@@ -139,12 +141,12 @@ public class RoleDAO {
         try {
             conn = DatabaseConfig.getConnection();
             stmt = conn.prepareStatement(
-                    "UPDATE Role SET name = ?, description = ? WHERE id = ?"
+                    "UPDATE \"role\" SET name = ?, description = ? WHERE id = ?"
             );
             
             stmt.setString(1, role.getName());
             stmt.setString(2, role.getDescription());
-            stmt.setObject(3, role.getId());
+            stmt.setString(3, role.getId().toString());
             
             int affectedRows = stmt.executeUpdate();
             if (affectedRows > 0) {
@@ -170,8 +172,8 @@ public class RoleDAO {
         
         try {
             conn = DatabaseConfig.getConnection();
-            stmt = conn.prepareStatement("DELETE FROM Role WHERE id = ?");
-            stmt.setObject(1, id);
+            stmt = conn.prepareStatement("DELETE FROM \"role\" WHERE id = ?");
+            stmt.setString(1, id.toString());
             
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -191,10 +193,38 @@ public class RoleDAO {
      */
     private Role mapResultSetToRole(ResultSet rs) throws SQLException {
         Role role = new Role();
-        role.setId((UUID) rs.getObject("id"));
+        role.setId(UUID.fromString(rs.getString("id")));
         role.setName(rs.getString("name"));
-        role.setDescription(rs.getString("description"));
-        role.setCreatedAt(rs.getTimestamp("created_at"));
+        
+        // Only set description if the column exists
+        if (hasColumn(rs, "description")) {
+            role.setDescription(rs.getString("description"));
+        } else {
+            role.setDescription("No description"); // Default value
+        }
+        
+        if (hasColumn(rs, "created_at")) {
+            role.setCreatedAt(rs.getTimestamp("created_at"));
+        }
         return role;
+    }
+    
+    /**
+     * Checks if a result set has a specific column.
+     * 
+     * @param rs the result set
+     * @param columnName the column name to check
+     * @return true if column exists
+     * @throws SQLException if metadata access fails
+     */
+    private boolean hasColumn(ResultSet rs, String columnName) throws SQLException {
+        ResultSetMetaData metaData = rs.getMetaData();
+        int columnCount = metaData.getColumnCount();
+        for (int i = 1; i <= columnCount; i++) {
+            if (columnName.equalsIgnoreCase(metaData.getColumnName(i))) {
+                return true;
+            }
+        }
+        return false;
     }
 }

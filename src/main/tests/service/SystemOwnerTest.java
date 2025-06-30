@@ -45,7 +45,7 @@ public class SystemOwnerTest {
         impl.setEnvironment("Test");
         impl.setCriticalityLevel("Medium");
         impl.setDataClassification("Internal");
-        impl.setRiskScore(10);
+        impl.setRiskScore("10");
         impl.setSensitiveCustomerData(false);
         
         testImplementation = new SystemImplementationDAO().findAll().get(0); //new dao.SystemImplementationDAO().create(impl);

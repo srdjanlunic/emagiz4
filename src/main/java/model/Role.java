@@ -33,13 +33,13 @@ public class Role {
     
     /**
      * Returns the unique identifier of the role.
-     * @return Role UUID
+     * @return Role ID
      */
     public UUID getId() { return id; }
     
     /**
      * Sets the unique identifier of the role.
-     * @param id Role UUID
+     * @param id Role ID
      */
     public void setId(UUID id) { this.id = id; }
     
@@ -78,4 +78,28 @@ public class Role {
      * @param createdAt Creation timestamp
      */
     public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
+    
+    @Override
+    public String toString() {
+        return "Role{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", createdAt=" + createdAt +
+                '}';
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        
+        Role role = (Role) o;
+        return id != null && id.equals(role.id);
+    }
+    
+    @Override
+    public int hashCode() {
+        return id != null ? id.hashCode() : 0;
+    }
 }
