@@ -102,6 +102,9 @@ const toggleUserSelection = (userId) => {
     selectedUserIds.value.splice(index, 1);
   }
 };
+onMounted(() => {
+  adminStore.fetchDepartments();
+});
 </script>
 
 <template>
