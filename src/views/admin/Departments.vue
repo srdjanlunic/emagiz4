@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useAdminStore } from '../../stores/admin';
 
 const adminStore = useAdminStore();
