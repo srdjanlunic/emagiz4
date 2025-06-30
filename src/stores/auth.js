@@ -53,19 +53,43 @@ export const useAuthStore = defineStore('auth', {
         this.token = data.token;
         this.user = data.user;
         
-        // Fix role name mapping for known roles
-        if (this.user && this.user.roleName === 'UNKNOWN') {
-          const roleMap = {
-            '1': 'ADMIN',
-            '2': 'SYSTEM_OWNER', 
-            '3': 'SECURITY_OFFICER',
-            '4': 'TECHNICAL_EXPERT'
+        // If role name is still UNKNOWN, try to map it based on standard role IDs
+        if (this.user && (this.user.roleName === 'UNKNOWN' || !this.user.roleName)) {
+          // Map role names to ensure consistency
+          const roleNameMap = {
+            'admin': 'ADMIN',
+            'system_owner': 'SYSTEM_OWNER', 
+            'security_officer': 'SECURITY_OFFICER',
+            'technical_expert': 'TECHNICAL_EXPERT',
+            'ADMIN': 'ADMIN',
+            'SYSTEM_OWNER': 'SYSTEM_OWNER',
+            'SECURITY_OFFICER': 'SECURITY_OFFICER',
+            'TECHNICAL_EXPERT': 'TECHNICAL_EXPERT'
           };
-          this.user.roleName = roleMap[this.user.roleId] || 'UNKNOWN';
+          
+          // First try to use the roleName from server if it's valid
+          if (this.user.roleName && roleNameMap[this.user.roleName]) {
+            this.user.roleName = roleNameMap[this.user.roleName];
+          } else {
+            // If server didn't provide a valid role name, map based on roleId UUID
+            const roleIdMap = {
+              'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a15': 'ADMIN',
+              'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12': 'SYSTEM_OWNER', 
+              'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13': 'SECURITY_OFFICER',
+              'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a14': 'TECHNICAL_EXPERT'
+            };
+            this.user.roleName = roleIdMap[this.user.roleId] || 'UNKNOWN';
+          }
         }
         
         console.log("User logged in:", this.user);
         console.log("User role:", this.user?.roleName);
+        
+        // If role is still UNKNOWN, this indicates a data issue
+        if (this.user.roleName === 'UNKNOWN') {
+          console.error('Role mapping failed - user has UNKNOWN role after mapping attempts');
+          console.error('User data:', this.user);
+        }
         
         // Store in localStorage
         localStorage.setItem('token', data.token);

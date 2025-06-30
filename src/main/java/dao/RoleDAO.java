@@ -112,20 +112,76 @@ public class RoleDAO {
         System.out.println("SQL: " + sql);
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, id.toString());
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    role = mapResultSetToRole(rs);
-                    System.out.println("Role found: " + role.getName() + " (ID: " + role.getId() + ")");
-                } else {
-                    System.out.println("No role found with ID: " + id);
+            
+            // Try UUID first, then fall back to integer mapping if needed
+            try {
+                stmt.setString(1, id.toString());
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        role = mapResultSetToRole(rs);
+                        System.out.println("Role found: " + role.getName() + " (ID: " + role.getId() + ")");
+                    } else {
+                        System.out.println("No role found with UUID: " + id);
+                        // Try mapping UUID to integer for compatibility
+                        role = findByMappedId(id, conn);
+                    }
                 }
+            } catch (SQLException e) {
+                System.out.println("Error finding role by UUID, trying integer mapping: " + e.getMessage());
+                role = findByMappedId(id, conn);
             }
         } catch (SQLException e) {
             System.out.println("Error finding role by ID: " + e.getMessage());
             e.printStackTrace();
         }
         return role;
+    }
+    
+    /**
+     * Helper method to find role by mapped integer ID when UUID lookup fails
+     *
+     * @param uuidId the UUID to map to integer
+     * @param conn the database connection
+     * @return the role or null
+     */
+    private Role findByMappedId(UUID uuidId, Connection conn) {
+        // Map UUIDs to integer IDs for backward compatibility
+        Integer mappedId = null;
+        String uuidStr = uuidId.toString();
+        switch (uuidStr) {
+            case "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a15":
+                mappedId = 1; // ADMIN
+                break;
+            case "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12":
+                mappedId = 2; // SYSTEM_OWNER
+                break;
+            case "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13":
+                mappedId = 3; // SECURITY_OFFICER
+                break;
+            case "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a14":
+                mappedId = 4; // TECHNICAL_EXPERT
+                break;
+        }
+        
+        if (mappedId != null) {
+            String sql = "SELECT * FROM \"role\" WHERE id = ?";
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setInt(1, mappedId);
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        Role role = mapResultSetToRole(rs);
+                        // Convert the integer ID back to UUID for consistency
+                        role.setId(uuidId);
+                        System.out.println("Role found via integer mapping: " + role.getName() + " (Mapped ID: " + mappedId + " -> UUID: " + uuidId + ")");
+                        return role;
+                    }
+                }
+            } catch (SQLException e) {
+                System.out.println("Error finding role by mapped integer ID: " + e.getMessage());
+            }
+        }
+        
+        return null;
     }
     
     /**

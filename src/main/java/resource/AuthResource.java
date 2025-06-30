@@ -56,9 +56,28 @@ public class AuthResource {
                 String token = JWTUtil.generateToken(user);
                 Role role = authService.getRoleByUser(user);
                 
-                String roleName = (role != null) ? role.getName().toUpperCase() : "UNKNOWN";
+                String roleName = (role != null) ? role.getName().toLowerCase() : "UNKNOWN";
                 
-
+                // Fallback: if role lookup failed, use direct mapping like in JWTUtil
+                if (role == null && user.getRoleId() != null) {
+                    String roleIdStr = user.getRoleId().toString();
+                    switch (roleIdStr) {
+                        case "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a15":
+                            roleName = "admin";
+                            break;
+                        case "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12":
+                            roleName = "system_owner";
+                            break;
+                        case "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13":
+                            roleName = "security_officer";
+                            break;
+                        case "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a14":
+                            roleName = "technical_expert";
+                            break;
+                        default:
+                            roleName = "UNKNOWN";
+                    }
+                }
                 
                 String roleIdStr = (user.getRoleId() != null) ? user.getRoleId().toString() : "";
                 

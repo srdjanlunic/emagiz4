@@ -39,16 +39,41 @@ public class JWTUtil {
             payload.put("userId", user.getId().toString());
             payload.put("roleId", user.getRoleId() != null ? user.getRoleId().toString() : "");
             
+            String roleName = "UNKNOWN";
             if (user.getRoleId() != null) {
+                // First try database lookup
                 Role role = roleDAO.findById(user.getRoleId());
                 System.out.println("Role lookup result: " + (role != null ? role.getName() : "null"));
+                
                 if (role != null) {
-                    payload.put("role", role.getName());
+                    roleName = role.getName().toLowerCase();
                 } else {
-                    System.out.println("Warning: Role not found for roleId: " + user.getRoleId());
-                    payload.put("role", "UNKNOWN");
+                    System.out.println("Warning: Role not found for roleId: " + user.getRoleId() + ", trying direct mapping");
+                    // Fallback: Direct UUID to role name mapping
+                    String roleIdStr = user.getRoleId().toString();
+                    switch (roleIdStr) {
+                        case "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a15":
+                            roleName = "admin";
+                            break;
+                        case "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12":
+                            roleName = "system_owner";
+                            break;
+                        case "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13":
+                            roleName = "security_officer";
+                            break;
+                        case "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a14":
+                            roleName = "technical_expert";
+                            break;
+                        default:
+                            System.out.println("Unknown roleId UUID: " + roleIdStr);
+                            roleName = "UNKNOWN";
+                    }
+                    System.out.println("Mapped roleId " + roleIdStr + " to role: " + roleName);
                 }
             }
+            
+            payload.put("role", roleName);
+            System.out.println("JWT will contain role: " + roleName);
             
             payload.put("iat", System.currentTimeMillis() / 1000);
             payload.put("exp", (System.currentTimeMillis() + EXPIRATION_TIME) / 1000);
@@ -60,7 +85,7 @@ public class JWTUtil {
             
             String signature = createSignature(headerEncoded + "." + payloadEncoded);
             
-            System.out.println("JWT token generated successfully");
+            System.out.println("JWT token generated successfully with role: " + roleName);
             return headerEncoded + "." + payloadEncoded + "." + signature;
         } catch (Exception e) {
             System.out.println("Error generating JWT token: " + e.getMessage());

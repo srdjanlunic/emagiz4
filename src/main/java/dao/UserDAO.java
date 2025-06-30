@@ -303,7 +303,37 @@ public class UserDAO {
         user.setEmail(rs.getString("email"));
         user.setFirstName(rs.getString("first_name"));
         user.setLastName(rs.getString("last_name"));
-        user.setRoleId((UUID) rs.getObject("role_id"));
+        
+        // Handle role_id - it might be an integer or UUID depending on migration state
+        Object roleIdObj = rs.getObject("role_id");
+        if (roleIdObj != null) {
+            if (roleIdObj instanceof Integer) {
+                // Convert integer to UUID for compatibility
+                int roleIdInt = (Integer) roleIdObj;
+                // Map integer role IDs to UUIDs based on the migration data
+                switch (roleIdInt) {
+                    case 1:
+                        user.setRoleId(UUID.fromString("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a15")); // admin
+                        break;
+                    case 2:
+                        user.setRoleId(UUID.fromString("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12")); // system_owner
+                        break;
+                    case 3:
+                        user.setRoleId(UUID.fromString("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13")); // security_officer
+                        break;
+                    case 4:
+                        user.setRoleId(UUID.fromString("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a14")); // technical_expert
+                        break;
+                    default:
+                        user.setRoleId(null);
+                }
+            } else if (roleIdObj instanceof String) {
+                user.setRoleId(UUID.fromString((String) roleIdObj));
+            } else if (roleIdObj instanceof UUID) {
+                user.setRoleId((UUID) roleIdObj);
+            }
+        }
+        
         user.setOrganizationId((UUID) rs.getObject("organization_id"));
         user.setActive(rs.getBoolean("is_active"));
         user.setCreatedAt(rs.getTimestamp("created_at"));

@@ -99,8 +99,17 @@ router.beforeEach(async (to, from, next) => {
   // Role-based access check
   if (to.meta.roles && to.meta.roles.length > 0) {
     const userRole = authStore.userRole; // This is in uppercase
-    if (!userRole || !to.meta.roles.includes(userRole.toLowerCase())) {
+    
+    // Handle UNKNOWN role - redirect to login
+    if (!userRole || userRole === 'UNKNOWN') {
+      console.warn('User has UNKNOWN role, redirecting to login');
+      authStore.logout(); // Clear invalid session
+      return next({ name: 'Login' });
+    }
+    
+    if (!to.meta.roles.includes(userRole.toLowerCase())) {
       // Redirect to a default page if the user doesn't have access
+      console.warn(`User role ${userRole} not allowed for route ${to.name}`);
       return next({ name: 'Dashboard' }); // Or a dedicated "access denied" page
     }
   }

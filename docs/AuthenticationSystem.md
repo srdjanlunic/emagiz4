@@ -1,7 +1,97 @@
 # Authentication System
 
 ## Overview
-The CVE Management System uses a JWT-based authentication system for user login and session management. The system handles user authentication through plaintext password comparison (for demo purposes) and generates JWT tokens for subsequent API requests.
+The authentication system handles user login, role-based access control, and session management using JWT tokens.
+
+## Components
+
+### Backend (Java)
+- **AuthResource.java**: REST endpoints for login, logout, validation
+- **AuthService.java**: Business logic for authentication and role lookup
+- **UserDAO.java**: Database operations for user management
+- **RoleDAO.java**: Database operations for role management
+- **JWTUtil.java**: JWT token generation and validation
+
+### Frontend (Vue.js)
+- **auth.js**: Pinia store for authentication state management
+- **router/index.js**: Navigation guards for route protection
+
+## Role System
+
+### Role Types
+- **ADMIN**: System administrator with full access
+- **SYSTEM_OWNER**: Manages system implementations and assesses vulnerabilities
+- **SECURITY_OFFICER**: Oversees security operations and vulnerability management  
+- **TECHNICAL_EXPERT**: Provides technical expertise on vulnerabilities and systems
+
+### Role ID Mapping
+Due to database migration compatibility, the system handles both integer and UUID role IDs:
+
+**Integer to UUID Mapping:**
+- 1 → `a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a15` (ADMIN)
+- 2 → `a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12` (SYSTEM_OWNER)
+- 3 → `a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13` (SECURITY_OFFICER)
+- 4 → `a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a14` (TECHNICAL_EXPERT)
+
+## Authentication Flow
+
+1. User submits credentials to `/api/auth/login`
+2. AuthService validates username/password against database
+3. If valid, JWT token is generated with user info
+4. Role information is fetched and mapped to proper format
+5. Token and user data returned to frontend
+6. Frontend stores token in localStorage and user data in Pinia store
+7. Navigation guards check authentication and role permissions
+
+## Troubleshooting
+
+### "User role: UNKNOWN" Issue
+This typically indicates a role mapping problem. Check:
+
+1. **Database Migration Status**: Ensure V4 migration has run properly
+2. **Role Data**: Verify role table contains proper entries
+3. **User Role Assignment**: Check user's role_id is valid
+
+**Fixed by:**
+- UserDAO.mapResultSetToUser() handles both integer and UUID role IDs
+- RoleDAO.findById() includes fallback integer mapping
+- Frontend auth store includes comprehensive role name mapping
+
+### Infinite Navigation Redirect
+Caused by navigation guards not handling UNKNOWN roles properly.
+
+**Fixed by:**
+- Router navigation guard detects UNKNOWN role and redirects to login
+- Auth store clears invalid sessions
+- Improved role mapping in login process
+
+### 403 Forbidden Errors
+Result of UNKNOWN role not having proper permissions.
+
+**Fixed by:**
+- Proper role mapping ensures valid role names
+- Navigation guards prevent access with invalid roles
+
+## Test Users
+
+From V2 migration data:
+- **admin/admin123**: ADMIN role
+- **sysowner/owner123**: SYSTEM_OWNER role  
+- **secofficer/officer123**: SECURITY_OFFICER role
+- **techexpert/expert123**: TECHNICAL_EXPERT role
+
+## API Endpoints
+
+- `POST /api/auth/login`: User login
+- `POST /api/auth/logout`: User logout
+- `GET /api/auth/validate`: Token validation
+- `POST /api/auth/demo-login`: Demo login by role name
+
+## Known Issues
+
+- Role table may use integer IDs instead of UUIDs depending on migration state
+- Some legacy data may require manual cleanup
+- Demo login functionality depends on proper role data setup
 
 ## Key Components
 
