@@ -12,6 +12,16 @@ dist
 dist-ssr
 *.local
 
+# Maven build output
+target/
+
+# Local duplicate copy / backups
+emagiz4-final/
+
+# Local DB credentials (never commit real credentials)
+database.properties
+src/main/resources/database.properties
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
